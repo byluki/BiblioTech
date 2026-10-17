@@ -54,53 +54,58 @@ Catálogo, préstamos, reservas, multas y reportes — todo en un solo lugar.
 
 ```
 BiblioTech/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/Api/   # Controladores de la API (Libros, Prestamos, Reservas, etc.)
-│   │   └── Middleware/        # CheckRole: control de acceso por rol
-│   └── Models/                # Usuario, Socio, Bibliotecario, Libro, Ejemplar, Prestamo, Reserva, Multa...
-├── database/
-│   ├── migrations/            # Esquema de la base de datos
-│   └── seeders/                # Roles base + usuario administrador inicial
-├── routes/
-│   └── api.php                 # Rutas públicas, de socio y de gestión (admin/bibliotecario)
-├── public/                     # Frontend (index.html, style.css, script.js, api.js)
-├── docker/                     # Configuración de Nginx para el contenedor
-├── docker-compose.yml          # Orquestación: app, nginx, db, phpmyadmin
-└── Dockerfile
+├── backend/                    # API REST (Laravel 12)
+│   ├── app/                    # Controladores (Http/Controllers/Api), Middleware, Models
+│   ├── database/               # Migraciones y seeders
+│   ├── routes/api.php          # Rutas públicas, de socio y de gestión
+│   ├── docker/nginx/           # Nginx del backend
+│   ├── Dockerfile
+│   └── .env.example
+├── frontend/                   # Cliente estático (HTML + CSS + JS, Bootstrap 5)
+│   ├── index.html · style.css · script.js
+│   ├── config.js               # URL de la API (APP_CONFIG.API_URL)
+│   ├── nginx.conf · Dockerfile
+│   └── images/
+├── Documentacion/
+└── docker-compose.yml          # frontend + api + app (PHP-FPM) + MySQL + phpMyAdmin
 ```
 
 ## 🚀 Puesta en marcha
 
 ### Opción A — Con Docker (recomendada)
 
-1. Clonar el repositorio y ubicarse en la carpeta del proyecto.
-2. Crear el archivo `.env` (podés partir de `.env.docker.example` para el `UID`/`GID`, y completar el resto según tu entorno local: base de datos, `APP_URL`, etc.).
-3. Levantar los contenedores:
-   ```bash
-   docker compose up -d --build
-   ```
-4. Instalar dependencias y preparar la base de datos dentro del contenedor `app`:
-   ```bash
-   docker compose exec app composer install
-   docker compose exec app php artisan key:generate
-   docker compose exec app php artisan migrate --seed
-   ```
-5. Abrir la aplicación:
-   - 🌐 App / API: **http://localhost:8000**
-   - 🗄️ phpMyAdmin: **http://localhost:8080**
+```bash
+cp .env.example .env                              # UID/GID para permisos (opcional)
+cp backend/.env.docker.example backend/.env
+docker compose up -d --build
+docker compose exec app composer install
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
+```
 
-### Opción B — Entorno local (sin Docker)
+- 🖥️ Frontend: **http://localhost:3000**
+- 🔌 API: **http://localhost:8000/api**
+- 🗄️ phpMyAdmin: **http://localhost:8080**
+
+### Opción B — Sin Docker
+
+Backend:
 
 ```bash
+cd backend
 composer install
 cp .env.example .env      # completar datos de conexión a tu MySQL local
 php artisan key:generate
 php artisan migrate --seed
-php artisan serve
+php artisan serve         # http://localhost:8000
 ```
 
-La app quedará disponible en **http://localhost:8000**.
+Frontend (cualquier servidor estático):
+
+```bash
+cd frontend
+python3 -m http.server 3000   # http://localhost:3000
+```
 
 ### 👤 Usuario administrador inicial
 
@@ -109,7 +114,7 @@ El seeder crea automáticamente los tres roles y una cuenta de administrador:
 | Campo | Valor |
 |---|---|
 | Email | `admin@biblioteca.local` |
-| Contraseña | `admin123` |
+| Contraseña | `cambiar123` |
 
 > ⚠️ Cambiá esta contraseña apenas tengas el sistema en marcha.
 
@@ -126,7 +131,9 @@ La autenticación se maneja con **Laravel Sanctum** vía token: iniciá sesión 
 
 ## 🖥️ Frontend
 
-El frontend en `public/` es una página estática que consume la API. La URL del backend se calcula automáticamente a partir de `window.location.origin`, por lo que funciona tanto en `localhost` como accediendo desde otro dispositivo en la misma red, sin tocar código.
+El frontend en `frontend/` es una página estática independiente que consume la API. La URL del backend se define en `frontend/config.js` (`APP_CONFIG.API_URL`). Si se deja vacía, usa el mismo host desde el que se abrió la página con el puerto `8000`, así que funciona en `localhost` y desde otros dispositivos de la red sin tocar código. Para producción, por ejemplo: `API_URL: "https://api.miapp.com/api"`.
+
+En el backend, la variable `CORS_ALLOWED_ORIGINS` (en `backend/.env`) permite restringir qué origen(es) pueden llamar a la API.
 
 ---
 

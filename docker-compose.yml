@@ -1,14 +1,15 @@
 services:
+  # ---------- BACKEND (Laravel API) ----------
   app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
       args:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: bibliotech-app
     volumes:
-      - .:/var/www
+      - ./backend:/var/www
     environment:
       - DB_CONNECTION=mysql
       - DB_HOST=db
@@ -22,19 +23,33 @@ services:
     networks:
       - bibliotech
 
-  webserver:
+  api:
     image: nginx:alpine
-    container_name: bibliotech-nginx
+    container_name: bibliotech-api
     ports:
       - "8000:80"
     volumes:
-      - .:/var/www
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend:/var/www
+      - ./backend/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
     networks:
       - bibliotech
 
+  # ---------- FRONTEND (estático) ----------
+  frontend:
+    build:
+      context: ./frontend
+    container_name: bibliotech-frontend
+    ports:
+      - "3000:80"
+    volumes:
+      # Para desarrollo: los cambios en ./frontend se ven sin reconstruir
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - bibliotech
+
+  # ---------- BASE DE DATOS ----------
   db:
     image: mysql:8.0
     container_name: bibliotech-db
