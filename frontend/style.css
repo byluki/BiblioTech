@@ -1,15 +1,27 @@
+/* Biblioteca Central — estilos
+   Paleta tomada del logo (azul marino, celeste, naranja, verde oliva) sobre
+   un papel gris verdoso. Las portadas son el protagonista: se ven como
+   libros apoyados, no como tarjetas de una app. */
+
 :root {
-  --brand-dark: #a3400f;
-  --brand: #e2661d;
-  --brand-light: #f0955a;
-  --brand-gold: #f2b134;
-  --brand-pink: #f6dfc8;
-  --cream: #faf5ec;
-  --cream-card: #ffffff;
-  --ink: #2b2016;
-  --muted: #8a7a68;
-  --border: #ecdfc9;
-  --shadow: 0 10px 26px rgba(163, 64, 15, 0.08);
+  /* paleta original de la web (naranja, dorado y crema); los nombres de
+     --marino* se mantienen por compatibilidad pero ahora son el naranja */
+  --marino: #e2661d;
+  --marino-hondo: #a3400f;
+  --celeste: #f0955a;
+  --naranja: #f2b134;
+  --oliva: #2f7d46;
+  --ladrillo: #a34a34;
+
+  --tinta: #2b2016;
+  --apagado: #8a7a68;
+  --papel: #faf5ec;
+  --ficha: #ffffff;
+  --linea: #ecdfc9;
+  --linea-suave: #f1e7d6;
+
+  --radio: 4px;
+  --sombra-menu: 0 8px 24px rgba(163, 64, 15, 0.18);
 }
 
 * {
@@ -21,36 +33,48 @@ html {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--cream);
-  color: var(--ink);
+  font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background-color: var(--papel);
+  color: var(--tinta);
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  line-height: 1.5;
 }
 
-/* el contenido principal ocupa todo el espacio sobrante, así el footer
-   queda siempre pegado abajo aunque la página tenga poco contenido */
+/* el contenido ocupa el espacio sobrante: el footer queda siempre abajo */
 main {
   flex: 1 0 auto;
 }
 
-h1, h2, h3, .panel-title {
-  font-family: 'Newsreader', serif;
-  color: var(--brand-dark);
+h1, h2, h3, h4, .panel-title, .modal-title {
+  font-family: 'Young Serif', Georgia, serif;
+  font-weight: 400;
+  color: var(--marino-hondo);
 }
 
 a {
+  color: var(--marino);
   text-decoration: none;
 }
 
+a:hover {
+  color: var(--marino-hondo);
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--marino);
+  outline-offset: 2px;
+}
+
 /* ==========================================================
-   HEADER
+   ENCABEZADO
    ========================================================== */
 
-/* barra principal: logo + acciones */
 .site-header {
-  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background-color: var(--marino);
+  border-bottom: 3px solid var(--marino-hondo);
   color: #fff;
 }
 
@@ -61,71 +85,39 @@ a {
 }
 
 .brand-logo-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  color: var(--brand-gold);
-  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.brand-logo-icon img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
 }
 
 .brand-logo h1 {
-  color: #fff;
-  font-weight: 700;
-  font-size: 1.5rem;
-  letter-spacing: 0.3px;
+  font-size: 1.45rem;
   margin: 0;
   line-height: 1.1;
+  color: #fff;
 }
 
 .header-sub {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.8rem;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
   margin: 2px 0 0 0;
 }
 
-/* botones de acceso del lado derecho del header */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.btn-header {
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: transparent;
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.5rem 1.1rem;
-  border-radius: 999px;
-  transition: background-color 0.15s ease, transform 0.1s ease;
-  white-space: nowrap;
-}
-
-.btn-header:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  transform: translateY(-1px);
-}
-
-.btn-header-solid {
-  background-color: var(--brand-gold);
-  border-color: var(--brand-gold);
-  color: var(--brand-dark);
-}
-
-.btn-header-solid:hover {
-  background-color: #ffc95c;
-  border-color: #ffc95c;
-  color: var(--brand-dark);
 }
 
 .header-icon-btn {
@@ -133,7 +125,7 @@ a {
   height: 42px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   color: #fff;
   display: flex;
   align-items: center;
@@ -143,62 +135,45 @@ a {
   position: relative;
 }
 
-.header-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
+.header-icon-btn:hover,
+.header-icon-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.7);
   color: #fff;
+}
+
+.site-header :focus-visible {
+  outline-color: #fff;
 }
 
 .header-icon-badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  background: var(--brand-gold);
-  color: var(--brand-dark);
-  font-size: 0.65rem;
+  top: -5px;
+  right: -5px;
+  background: var(--naranja);
+  color: var(--marino-hondo);
+  font-size: 0.68rem;
   font-weight: 700;
-  min-width: 18px;
-  height: 18px;
+  min-width: 19px;
+  height: 19px;
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
+  padding: 0 5px;
 }
 
-/* botón de 3 barritas del header que abre las opciones de cuenta */
-.header-account-dropdown .header-icon-btn::after {
-  display: none;
+/* menús desplegables (Mis reservas, opciones de un libro) */
+.dropdown-menu {
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  box-shadow: var(--sombra-menu);
 }
 
-.header-account-menu {
-  min-width: 210px;
-  padding: 8px;
-  margin-top: 10px !important;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 14px 30px rgba(163, 64, 15, 0.18);
+.dropdown-item {
+  border-radius: var(--radio);
 }
 
-.header-account-menu .dropdown-item {
-  border-radius: 8px;
-  padding: 0.55rem 0.75rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--ink);
-}
-
-.header-account-menu .dropdown-item:hover,
-.header-account-menu .dropdown-item:focus {
-  background-color: var(--cream);
-  color: var(--brand-dark);
-}
-
-.header-account-menu .dropdown-item i {
-  color: var(--brand);
-  width: 18px;
-}
-
-/* dropdown de "Mis reservas" (header) */
 .menu-mis-reservas-lista {
   min-width: 280px;
   max-width: 320px;
@@ -206,14 +181,11 @@ a {
   overflow-y: auto;
   padding: 8px;
   margin-top: 10px !important;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 14px 30px rgba(163, 64, 15, 0.18);
 }
 
 .menu-mis-reservas-lista .dropdown-header {
   font-weight: 700;
-  color: var(--brand-dark);
+  color: var(--marino-hondo);
   text-transform: none;
   font-size: 0.85rem;
 }
@@ -223,24 +195,25 @@ a {
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
-  padding: 0.5rem 0.5rem;
-  border-radius: 8px;
+  padding: 0.5rem;
+  border-radius: var(--radio);
 }
 
 .mis-reservas-item:hover {
-  background-color: var(--cream);
+  background-color: var(--papel);
 }
 
 .mis-reservas-item .mis-reservas-info h4 {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--ink);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--tinta);
   margin: 0 0 2px;
 }
 
 .mis-reservas-item .mis-reservas-info p {
-  font-size: 0.75rem;
-  color: var(--ink-muted, #7a6a5c);
+  font-size: 0.78rem;
+  color: var(--apagado);
   margin: 0;
 }
 
@@ -252,75 +225,140 @@ a {
 .mis-reservas-item .btn-cancelar-mi-reserva {
   border: none;
   background: transparent;
-  color: #b3441c;
+  color: var(--ladrillo);
   flex-shrink: 0;
-  padding: 4px;
-  border-radius: 6px;
+  padding: 4px 6px;
+  border-radius: var(--radio);
 }
 
 .mis-reservas-item .btn-cancelar-mi-reserva:hover {
-  background-color: rgba(179, 68, 28, 0.12);
-}
-
-.header-usuario-nombre-item {
-  display: block;
-  padding: 0.4rem 0.75rem;
-  font-weight: 700;
-  color: var(--brand-dark);
+  background-color: rgba(163, 74, 52, 0.12);
 }
 
 /* ==========================================================
-   PANELES / TARJETAS GENERALES
+   PANELES Y FORMULARIOS
    ========================================================== */
 
 .panel {
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background-color: var(--cream-card);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  background-color: var(--ficha);
+  box-shadow: none;
+}
+
+/* el catálogo no va en una caja: las portadas se apoyan sobre el papel */
+.panel-plano {
+  background: transparent;
+  border: 0;
+}
+
+.panel-plano > .card-body {
+  padding: 0 !important;
 }
 
 .panel-title {
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: 1.35rem;
 }
 
-/* boton principal */
+/* ocultamos los íconos decorativos de los títulos */
+.panel-title > i {
+  display: none;
+}
+
+.panel-plano .panel-title {
+  font-size: 1.9rem;
+  line-height: 1.15;
+}
+
 .btn-brand {
-  background-color: var(--brand);
-  border-color: var(--brand);
+  background-color: var(--marino);
+  border: 1px solid var(--marino);
   color: #fff;
   font-weight: 600;
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radio);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.btn-brand:hover {
-  background-color: var(--brand-dark);
-  border-color: var(--brand-dark);
+.btn-brand:hover,
+.btn-brand:focus-visible {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
   color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(163, 64, 15, 0.25);
 }
 
-/* contador de libros */
-.contador {
-  background-color: var(--brand-gold);
-  color: var(--brand-dark);
-  font-weight: 700;
-  font-size: 0.8rem;
-  padding: 6px 14px;
-  border-radius: 999px;
+.btn-outline-secondary {
+  --bs-btn-color: var(--tinta);
+  --bs-btn-border-color: var(--linea);
+  --bs-btn-hover-bg: var(--papel);
+  --bs-btn-hover-border-color: var(--apagado);
+  --bs-btn-hover-color: var(--tinta);
+  --bs-btn-active-bg: var(--linea);
+  --bs-btn-active-border-color: var(--apagado);
+  --bs-btn-active-color: var(--tinta);
+  border-radius: var(--radio);
+}
+
+.btn-agregar-libro {
+  white-space: nowrap;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+  border-color: var(--linea);
+  border-radius: var(--radio);
+  background-color: #fff;
+}
+
+.input-group > .form-control,
+.input-group > .input-group-text {
+  border-radius: 0;
+}
+
+.input-group > :first-child {
+  border-top-left-radius: var(--radio);
+  border-bottom-left-radius: var(--radio);
+}
+
+.input-group > :last-child {
+  border-top-right-radius: var(--radio);
+  border-bottom-right-radius: var(--radio);
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: var(--brand-light);
-  box-shadow: 0 0 0 0.2rem rgba(226, 102, 29, 0.15);
+  border-color: var(--marino);
+  box-shadow: 0 0 0 0.2rem rgba(226, 102, 29, 0.18);
 }
 
-/* portada preview en el formulario */
+.modal-content {
+  background-color: var(--ficha);
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  box-shadow: 0 18px 48px rgba(30, 39, 51, 0.22);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--linea-suave);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+}
+
+.modal-title > i {
+  display: none;
+}
+
+/* vista previa de portada en los formularios */
 .portada-preview-wrap {
   width: 52px;
 }
@@ -329,249 +367,304 @@ a {
   width: 52px;
   height: 72px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  border-radius: 1px 3px 3px 1px;
+  border: 1px solid var(--linea);
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #fff;
-  color: var(--brand-light);
+  color: var(--apagado);
   font-size: 1.1rem;
 }
 
 .portada-placeholder {
-  background-color: var(--cream);
+  background-color: var(--papel);
 }
 
 /* ==========================================================
-   GRILLA DE LIBROS (estilo catálogo de tienda)
+   CONTADOR (pegado al título "Libros disponibles")
+   ========================================================== */
+
+.contador {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 10px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  background-color: var(--naranja);
+  color: var(--marino-hondo);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  position: relative;
+  top: -2px;
+}
+
+.contador:empty {
+  display: none;
+}
+
+/* ==========================================================
+   CATÁLOGO: portadas como libros sobre el estante
    ========================================================== */
 
 .lista-libros {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 18px;
-  max-height: 640px;
-  overflow-y: auto;
-  padding: 4px 6px 4px 2px;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  gap: 34px 24px;
+  padding: 0;
+  margin: 0;
 }
 
 .libro-item {
   display: flex;
   flex-direction: column;
-  background-color: #fff;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 10px;
-  animation: aparecer 0.25s ease;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-width: 0;
+  /* recuadro: ocupa exactamente el mismo lugar de la grilla que antes
+     (mismas columnas y mismo espacio entre filas) */
+  background-color: var(--ficha);
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  padding: 12px;
+  transition: border-color 0.15s ease;
+  /* con cientos de libros, el navegador salta el trabajo de las tarjetas
+     que no están a la vista */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
 }
 
-.libro-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(163, 64, 15, 0.12);
-}
-
-@keyframes aparecer {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* portada dentro de la tarjeta, arriba, con el estado superpuesto */
 .libro-portada-wrap {
   position: relative;
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .libro-portada {
+  display: block;
   width: 100%;
   aspect-ratio: 2 / 3;
   height: auto;
   object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-  background-color: var(--cream);
+  background-color: #dfe3df;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(43, 32, 22, 0.08);
+}
+
+/* libros sin portada: tapa de tela con el título */
+.libro-portada-vacia {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--brand-light);
-  font-size: 1.6rem;
+  padding: 16px 14px 16px 18px;
+  text-align: center;
+  color: #fff;
+  font-family: 'Young Serif', Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow: hidden;
+  position: relative;
 }
 
-.libro-portada-wrap .etiqueta-estado {
+.libro-portada-vacia::before {
+  content: '';
   position: absolute;
-  top: 8px;
-  left: 8px;
+  inset: 10px 10px 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  pointer-events: none;
 }
+
+.libro-portada-vacia span {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.libro-portada-vacia { background-color: #a3400f; }
+.libro-portada-vacia.tono-1 { background-color: #7a5a2b; }
+.libro-portada-vacia.tono-2 { background-color: #2f6b45; }
+.libro-portada-vacia.tono-3 { background-color: #8a3b2e; }
+.libro-portada-vacia.tono-4 { background-color: #b0701c; }
 
 .libro-info {
   flex-grow: 1;
 }
 
 .libro-info h3 {
+  font-family: 'Instrument Sans', sans-serif;
   font-size: 0.98rem;
-  font-weight: 600;
-  margin: 4px 0 2px 0;
-  color: var(--ink);
-  line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  font-weight: 500;
+  margin: 0 0 2px 0;
+  color: var(--tinta);
+  line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.libro-autor {
+  margin: 0 0 8px 0;
+  color: var(--apagado);
+  font-size: 0.9rem;
 }
 
 .libro-info p {
   margin: 0 0 4px 0;
-  color: var(--muted);
-  font-size: 0.82rem;
 }
 
+/* categoría y estado, una al lado de la otra */
 .etiqueta {
   display: inline-block;
-  background-color: var(--brand);
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 999px;
-  letter-spacing: 0.3px;
+  color: var(--apagado);
+  font-size: 0.8rem;
+  margin-right: 8px;
 }
 
-/* acciones al pie de la tarjeta, estilo boton de "agregar" */
+.etiqueta-estado {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: none;
+  letter-spacing: 0;
+}
+
+.estado-disponible { color: var(--oliva); }
+.estado-reservado { color: #96721c; }
+.estado-prestado { color: var(--ladrillo); }
+
+.etiqueta-tipo {
+  display: inline-block;
+  color: var(--marino);
+  border: 1px solid var(--marino);
+  font-size: 0.7rem;
+  padding: 0 7px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.texto-reserva {
+  font-size: 0.84rem;
+  color: var(--apagado);
+  margin-top: 6px !important;
+}
+
+.texto-codigo-barras {
+  font-size: 0.76rem;
+  color: var(--apagado);
+  font-variant-numeric: tabular-nums;
+}
+
+/* acciones al pie de cada libro */
 .acciones-libro {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
+  margin-top: 12px;
 }
 
 .btn-accion-libro {
-  border: none;
-  background: var(--cream);
-  color: var(--brand-dark);
+  border: 1px solid var(--linea);
+  background: var(--ficha);
+  color: var(--marino);
   font-size: 0.9rem;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  transition: background-color 0.15s ease;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radio);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.btn-accion-libro:hover {
-  background-color: var(--brand);
+.btn-accion-libro:hover,
+.btn-accion-libro:focus-visible {
+  background-color: var(--marino);
+  border-color: var(--marino);
   color: #fff;
 }
 
-/* cuando "Reservar" es el único botón de la tarjeta, se estira a todo el
-   ancho disponible y muestra el texto además del ícono.
-   Selector reforzado (con .acciones-libro delante) para que gane siempre
-   sobre el tamaño fijo de 32x32 de .btn-accion-libro, sin importar el
-   orden en que quede el CSS. */
+/* si es el único botón de la fila, ocupa todo el ancho y lleva texto */
 .acciones-libro .btn-accion-libro.btn-accion-libro-full {
   width: 100%;
-  max-width: 100%;
   flex: 1 1 auto;
   height: auto;
   min-height: 36px;
-  padding: 8px 12px;
-  box-sizing: border-box;
+  padding: 7px 12px;
   gap: 6px;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.acciones-libro .btn-accion-libro.btn-accion-libro-grande {
+  flex: 1 1 0;
+  width: auto;
+  height: 38px;
+  font-size: 1rem;
+}
+
 .btn-editar,
 .btn-eliminar {
   border: none;
-  background: var(--cream);
+  background: transparent;
   font-size: 0.9rem;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  transition: background-color 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.btn-editar {
-  color: var(--brand-dark);
-}
+.btn-editar { color: var(--marino-hondo); }
+.btn-eliminar { color: var(--ladrillo); }
 
-.btn-editar:hover {
-  background-color: #f1e0cc;
-}
-
-.btn-eliminar {
-  color: #b5523a;
-}
-
-.btn-eliminar:hover {
-  background-color: #f8e3de;
-}
-
-/* menú de "Editar"/"Eliminar" para administrador: botón circular flotante
-   sobre la esquina superior derecha de la portada */
+/* menú Editar / Eliminar (solo administrador), sobre la esquina de la portada */
 .btn-menu-libro {
   position: absolute;
   top: 8px;
   right: 8px;
+  z-index: 2;
   width: 30px;
   height: 30px;
   border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--brand-dark);
+  border-radius: var(--radio);
+  background: rgba(252, 252, 250, 0.92);
+  color: var(--marino-hondo);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(58, 27, 10, 0.18);
-  transition: background-color 0.15s ease;
+  box-shadow: 0 1px 4px rgba(30, 39, 51, 0.25);
 }
 
 .btn-menu-libro:hover,
-.btn-menu-libro:focus {
+.btn-menu-libro:focus-visible {
   background: #fff;
 }
 
 .menu-libro-admin .dropdown-menu {
-  min-width: 150px;
+  min-width: 140px;
   padding: 6px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  box-shadow: 0 10px 24px rgba(163, 64, 15, 0.18);
 }
 
-/* dentro del menú, "Editar"/"Eliminar" se ven como ítems de lista
-   (ancho completo, ícono + texto), no como los botones cuadrados de
-   32x32 que usan en otros lados; se pisan las reglas de esas clases
-   con selectores más específicos */
 .menu-libro-admin .dropdown-item.btn-editar,
 .menu-libro-admin .dropdown-item.btn-eliminar {
   width: 100%;
   height: auto;
-  background: transparent;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   padding: 7px 10px;
 }
 
 .menu-libro-admin .dropdown-item.btn-editar:hover,
 .menu-libro-admin .dropdown-item.btn-editar:focus {
-  background-color: var(--cream);
+  background-color: var(--papel);
 }
 
 .menu-libro-admin .dropdown-item.btn-eliminar:hover,
@@ -579,25 +672,15 @@ a {
   background-color: #f8e3de;
 }
 
-/* Reservar/Prestar (y similares) más grandes cuando son las únicas
-   acciones de la fila: se reparten el ancho mitad y mitad en vez de
-   quedar como íconos chiquitos de 32x32 */
-.acciones-libro .btn-accion-libro.btn-accion-libro-grande {
-  flex: 1 1 0;
-  width: auto;
-  height: 42px;
-  font-size: 1.05rem;
-  border-radius: 10px;
-}
-
 /* ==========================================================
-   MENÚ OFFCANVAS (3 barritas), estilo Epic Games Store
+   MENÚ LATERAL (3 barritas)
    ========================================================== */
 
 .menu-offcanvas {
-  width: 320px;
-  background-color: var(--cream) !important;
-  border-left: 1px solid var(--border);
+  width: 380px;
+  max-width: 100vw;
+  background-color: var(--ficha) !important;
+  border-left: 1px solid var(--linea);
 }
 
 .menu-offcanvas .offcanvas-header {
@@ -605,68 +688,47 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 1.1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--linea-suave);
 }
 
 .menu-offcanvas-brand {
-  font-family: 'Newsreader', serif;
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--brand-dark);
-  letter-spacing: 0.2px;
-  /* evita que el texto de la marca empuje o achique el botón de cerrar */
+  font-family: 'Young Serif', Georgia, serif;
+  font-size: 1.1rem;
+  color: var(--marino-hondo);
   margin-right: auto;
 }
 
 .menu-offcanvas-brand i {
-  color: var(--brand);
+  display: none;
 }
 
-/* botón de cerrar (X) propio, más visible que el default de Bootstrap */
 .menu-offcanvas-close {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--cream-card);
-  color: var(--brand-dark);
+  border: 1px solid var(--linea);
+  background: transparent;
+  color: var(--marino);
   font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  /* pegado siempre al borde derecho del header, sin importar el ancho del texto de al lado */
   margin-left: auto;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.menu-offcanvas-close:hover {
-  background-color: var(--brand);
+.menu-offcanvas-close:hover,
+.menu-offcanvas-close:focus-visible {
+  background-color: var(--marino);
+  border-color: var(--marino);
   color: #fff;
-  transform: rotate(90deg);
-}
-
-/* animación de apertura del panel: además del slide de Bootstrap, hace un
-   pequeño "settle" y el contenido aparece con fade + leve desplazamiento */
-.menu-offcanvas.offcanvas-end {
-  transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.4, 1);
-}
-
-.menu-offcanvas .offcanvas-body > * {
-  animation: menuContenidoAparece 0.4s ease both;
-  animation-delay: 0.08s;
-}
-
-@keyframes menuContenidoAparece {
-  from { opacity: 0; transform: translateX(14px); }
-  to { opacity: 1; transform: translateX(0); }
 }
 
 .menu-offcanvas .offcanvas-body {
   padding: 1.4rem 1.25rem 1.75rem;
 }
 
-/* bloque de cuenta: botones tipo "Install / Sign in" */
 .menu-auth-block {
   display: flex;
   gap: 10px;
@@ -678,56 +740,53 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  background: var(--cream-card);
-  color: var(--brand-dark);
+  border: 1px solid var(--linea);
+  background: transparent;
+  color: var(--marino-hondo);
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   padding: 0.55rem 0.9rem;
-  border-radius: 999px;
-  transition: background-color 0.15s ease;
+  border-radius: var(--radio);
   white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-menu-cuenta:hover {
-  background-color: var(--cream);
-  color: var(--brand-dark);
+  background-color: var(--papel);
+  color: var(--marino-hondo);
+  text-decoration: none;
 }
 
 .btn-menu-cuenta-solid {
-  background-color: var(--brand);
-  border-color: var(--brand);
+  background-color: var(--marino);
+  border-color: var(--marino);
   color: #fff;
 }
 
 .btn-menu-cuenta-solid:hover {
-  background-color: var(--brand-dark);
-  border-color: var(--brand-dark);
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
   color: #fff;
 }
 
 .menu-usuario-nombre {
-  color: var(--brand-dark);
-  font-weight: 700;
+  color: var(--marino-hondo);
+  font-weight: 600;
   font-size: 1rem;
-  margin: 0 0 0.75rem 0;
 }
 
 .menu-offcanvas-divider {
-  border-color: var(--border);
-  margin: 1.4rem 0 1.1rem 0;
+  border-color: var(--linea);
+  margin: 1.3rem 0 1rem 0;
 }
 
-/* título "Menú" grande, estilo Epic Games */
 .menu-section-label {
-  font-family: 'Newsreader', serif;
-  font-size: 1.7rem;
-  font-weight: 700;
-  color: var(--brand-dark);
-  margin: 0 0 1rem 0;
+  font-family: 'Young Serif', Georgia, serif;
+  font-size: 1.2rem;
+  color: var(--marino-hondo);
+  margin: 0 0 0.6rem 0;
 }
 
-/* lista de secciones, simple y vertical */
 .menu-nav-list {
   list-style: none;
   margin: 0;
@@ -742,134 +801,88 @@ a {
   text-align: left;
   background: transparent;
   border: none;
-  color: var(--ink);
+  border-left: 3px solid transparent;
+  color: var(--tinta);
   font-weight: 500;
   font-size: 1rem;
-  padding: 0.75rem 0.5rem;
-  border-radius: 8px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  padding: 0.7rem 0.75rem;
+  border-radius: 0 var(--radio) var(--radio) 0;
+  transition: background-color 0.15s ease;
 }
 
 .menu-nav-link:hover {
-  background-color: var(--cream-card);
-  color: var(--brand-dark);
+  background-color: var(--papel);
 }
 
 .menu-nav-link.active {
-  color: var(--brand-dark);
-  background-color: #f1e0cc;
+  color: var(--marino-hondo);
+  font-weight: 600;
+  background-color: var(--papel);
+  border-left-color: var(--marino);
 }
 
 .menu-nav-link i {
-  color: var(--brand);
+  color: var(--marino);
   width: 20px;
 }
 
 /* ==========================================================
-   FOOTER
+   PIE
    ========================================================== */
 
 .site-footer {
-  background-color: var(--brand-dark);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
+  background-color: var(--marino-hondo);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.88rem;
   flex-shrink: 0;
 }
 
 /* ==========================================================
-   ESTADOS Y ETIQUETAS
-   ========================================================== */
-
-.etiqueta-estado {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  letter-spacing: 0.3px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-.estado-disponible {
-  background-color: #dcefe0;
-  color: #2f7d46;
-}
-
-.estado-reservado {
-  background-color: #fbeecb;
-  color: #96721c;
-}
-
-.estado-prestado {
-  background-color: #f3ddd8;
-  color: #a34a34;
-}
-
-.etiqueta-tipo {
-  background-color: var(--brand-light);
-  color: #fff;
-  font-size: 0.68rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-weight: 600;
-}
-
-.texto-reserva {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.texto-codigo-barras {
-  font-size: 0.8rem;
-  color: #a1927c;
-  font-family: monospace;
-}
-
-/* ==========================================================
-   RESERVAS Y PRÉSTAMOS (pestaña Contabilidad)
+   RESERVAS, PRÉSTAMOS Y OTRAS LISTAS (pestañas de gestión)
    ========================================================== */
 
 .lista-reservas,
 .lista-prestamos {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
+  padding: 0;
 }
 
+/* filas separadas por una línea, como un registro, sin cajas */
 .reserva-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  background-color: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  transition: box-shadow 0.15s ease;
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--linea-suave);
 }
 
-.reserva-item:hover {
-  box-shadow: 0 6px 14px rgba(163, 64, 15, 0.08);
+.reserva-item:last-child {
+  border-bottom: 0;
 }
 
 .reserva-item h3 {
-  font-size: 1.02rem;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
   margin: 0 0 4px 0;
-  color: var(--brand-dark);
+  color: var(--tinta);
 }
 
-/* Tarjeta de reservas agrupadas por socio: un socio con varios libros
-   reservados aparece una sola vez, con la lista de libros debajo. */
+.notificacion-item {
+  border-left: 3px solid var(--ladrillo);
+  padding-left: 12px;
+}
+
 .reserva-grupo {
-  background-color: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  transition: box-shadow 0.15s ease;
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--linea-suave);
 }
 
-.reserva-grupo:hover {
-  box-shadow: 0 6px 14px rgba(163, 64, 15, 0.08);
+.reserva-grupo:last-child {
+  border-bottom: 0;
 }
 
 .reserva-grupo-header {
@@ -878,37 +891,28 @@ a {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
 }
 
 .reserva-grupo-header h3 {
-  font-size: 1.02rem;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
   margin: 0;
-  color: var(--brand-dark);
+  color: var(--tinta);
 }
 
 .etiqueta-cantidad-reservas {
-  background-color: #f1e7d6;
-  color: var(--brand-dark);
-  font-size: 0.68rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-weight: 600;
+  color: var(--apagado);
+  font-size: 0.78rem;
   margin-left: auto;
 }
 
-/* "Aceptar todas": a diferencia de los botones cuadrados de 32x32, este
-   lleva texto además del ícono, así que necesita ancho automático. Cuando
-   hay contador (etiqueta-cantidad-reservas) el margin-left:auto de esa
-   etiqueta ya empuja este botón al extremo derecho; si no hay contador,
-   el margin-left propio cumple la misma función. */
 .btn-aceptar-todas {
   width: auto;
   height: auto;
   padding: 6px 12px;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
   margin-left: auto;
   white-space: nowrap;
@@ -917,7 +921,7 @@ a {
 .reserva-grupo-libros {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .reserva-grupo-libro {
@@ -925,115 +929,468 @@ a {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  background-color: var(--cream);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  background-color: var(--papel);
+  border-radius: var(--radio);
   padding: 10px 12px;
 }
 
 .reserva-grupo-libro-titulo {
-  font-family: 'Newsreader', serif;
-  font-weight: 600;
+  font-family: 'Young Serif', Georgia, serif;
   font-size: 0.95rem;
   margin: 0 0 2px 0;
-  color: var(--brand-dark);
+  color: var(--marino-hondo);
 }
 
 /* ==========================================================
-   TARJETAS DE ESTADÍSTICAS (pestaña Reportes)
+   REPORTES
    ========================================================== */
 
 .stat-card {
-  background-color: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px;
-  text-align: center;
+  background-color: var(--ficha);
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  padding: 16px 18px;
+  text-align: left;
   height: 100%;
-  box-shadow: var(--shadow);
 }
 
 .stat-numero {
-  font-family: 'Newsreader', serif;
-  font-size: 1.9rem;
-  font-weight: 700;
-  color: var(--brand-dark);
+  font-family: 'Young Serif', Georgia, serif;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--marino-hondo);
 }
 
 .stat-etiqueta {
-  font-size: 0.85rem;
-  color: var(--muted);
+  font-size: 0.88rem;
+  color: var(--apagado);
+  margin-top: 2px;
 }
 
-/* préstamos atrasados (pestaña Reportes) */
-.notificacion-item {
-  border-left: 4px solid #b5523a;
+/* historial de actividad */
+.hist-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-/* barra de desplazamiento */
-.lista-libros::-webkit-scrollbar {
-  width: 6px;
-}
-.lista-libros::-webkit-scrollbar-thumb {
-  background-color: #ddcdb2;
-  border-radius: 4px;
-}
-
-@media (max-width: 767px) {
-  .lista-libros {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  }
+.hist-filtro {
+  background-color: transparent;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 4px 12px;
+  font-size: 0.86rem;
+  color: var(--tinta);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* en tablet/celular grande: botones más compactos pero con texto visible */
-@media (max-width: 767.98px) {
-  .header-actions {
-    gap: 8px;
-  }
-  .btn-header {
-    padding: 0.5rem 0.85rem;
-    font-size: 0.85rem;
-  }
+.hist-filtro:hover { background-color: var(--papel); }
+
+.hist-filtro.activo {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  color: #fff;
 }
 
-/* en celular chico: login/registro pasan a botones circulares (solo ícono) para que entren en la fila */
-@media (max-width: 479.98px) {
-  .btn-header {
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .btn-header .fa-solid {
-    margin: 0 !important;
-    font-size: 1.05rem;
-  }
-  .btn-header-label {
-    display: none;
-  }
-  .header-actions {
-    gap: 6px;
-  }
+.hist-conteo {
+  opacity: 0.7;
+  font-size: 0.78rem;
+  margin-left: 2px;
 }
+
+.hist-badge {
+  display: inline-block;
+  border-radius: 3px;
+  padding: 2px 9px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.hist-reservas  { background: #e3f0ff; color: #1b4f8f; }
+.hist-facturas  { background: #fff1cc; color: #7a5300; }
+.hist-prestamos { background: #e0f5e4; color: #1f6b30; }
+.hist-socios    { background: #ebe4f5; color: #5b2d85; }
+.hist-libros    { background: #fde4e1; color: #8f2b1f; }
+.hist-cuentas   { background: #e6e9e6; color: #343a40; }
+
+.hist-persona { color: var(--marino-hondo); font-weight: 600; }
+
 /* ==========================================================
-   ANIMACIÓN DE APERTURA DE MODALES
+   AVATAR Y ANCHO DE LA PÁGINA
+   ========================================================== */
+
+.avatar-usuario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--marino);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.avatar-usuario.avatar-grande { width: 84px; height: 84px; font-size: 2rem; }
+
+.menu-usuario-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.menu-usuario-fila .menu-usuario-nombre {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#menu-auth-sesion { flex-wrap: wrap; }
+
+.contenedor-ancho {
+  max-width: 1800px;
+  padding-left: clamp(16px, 3vw, 56px);
+  padding-right: clamp(16px, 3vw, 56px);
+}
+
+/* ==========================================================
+   MODALES: entrada suave (responde a la acción de abrir)
    ========================================================== */
 
 .modal.fade .modal-dialog {
-  transform: scale(0.92) translateY(10px);
+  transform: translateY(10px);
   opacity: 0;
-  transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.4, 1), opacity 0.22s ease;
+  transition: transform 0.24s ease, opacity 0.2s ease;
 }
 
 .modal.show .modal-dialog {
-  transform: scale(1) translateY(0);
+  transform: translateY(0);
   opacity: 1;
 }
 
-/* atenúa el fondo con un poco más de suavidad */
-.modal-backdrop.fade {
-  transition: opacity 0.25s ease;
+@media (max-width: 479.98px) {
+  .brand-logo h1 {
+    font-size: 1.25rem;
+  }
+  .lista-libros {
+    gap: 28px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ==========================================================
+   BOTÓN "AGREGAR" (píldora naranja, como en una librería online)
+   ========================================================== */
+
+.btn-agregar-carrito {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 7px 18px;
+  border: 1px solid var(--marino);
+  border-radius: 999px;
+  background-color: var(--marino);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-agregar-carrito:hover,
+.btn-agregar-carrito:focus-visible {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+.btn-agregar-carrito.en-carrito {
+  background-color: transparent;
+  color: var(--marino-hondo);
+}
+
+.btn-agregar-carrito.en-carrito:hover {
+  background-color: #f8e3de;
+  color: var(--ladrillo);
+  border-color: var(--ladrillo);
+}
+
+/* ==========================================================
+   BANNER
+   ========================================================== */
+
+.banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.banner-pistas {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.banner-slide {
+  flex: 0 0 100%;
+  min-height: clamp(150px, 20vw, 250px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 5vw, 72px);
+  padding: 24px clamp(48px, 8vw, 110px);
+}
+
+.banner-texto {
+  max-width: 560px;
+  text-align: center;
+}
+
+.banner-texto h2 {
+  font-size: clamp(1.25rem, 2.6vw, 2rem);
+  line-height: 1.2;
+  margin: 0 0 8px 0;
+  color: inherit;
+}
+
+.banner-texto p {
+  margin: 0;
+  font-size: clamp(0.92rem, 1.3vw, 1.1rem);
+  font-weight: 500;
+}
+
+.banner-logo {
+  width: clamp(72px, 10vw, 130px);
+  height: auto;
+}
+
+.banner-claro { background-color: #fbe2a6; color: var(--marino-hondo); }
+.banner-naranja { background-color: var(--marino); color: #fff; }
+.banner-oscuro { background-color: var(--marino-hondo); color: #fff; }
+
+.banner-flecha,
+.carrusel-flecha {
+  border: 0;
+  background: transparent;
+  color: var(--apagado);
+  font-size: 1.4rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.banner-flecha {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: currentColor;
+  opacity: 0.7;
+}
+
+.banner-flecha:hover { opacity: 1; }
+.banner-prev { left: 4px; }
+.banner-next { right: 4px; }
+
+.banner-puntos {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 16px 0 6px;
+}
+
+.banner-punto {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background-color: #cfc6b8;
+  cursor: pointer;
+}
+
+.banner-punto.activo { background-color: var(--marino); }
+
+/* ==========================================================
+   NOVEDADES
+   ========================================================== */
+
+.novedades {
+  margin: 20px 0 44px;
+}
+
+.novedades-titulo {
+  text-align: center;
+  font-size: 1.7rem;
+  margin: 0 0 22px 0;
+}
+
+.novedades-carrusel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.carrusel-flecha:hover { color: var(--marino); }
+
+.lista-novedades {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 26px;
+  margin: 0;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.lista-novedades::-webkit-scrollbar { display: none; }
+
+.novedad-item {
+  flex: 0 0 clamp(150px, 15vw, 190px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+.novedad-titulo {
+  margin: 12px 0 2px 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.novedad-item .libro-autor { margin-bottom: 10px; }
+.novedad-item .btn-agregar-carrito { flex: 0 0 auto; align-self: flex-start; }
+.novedad-item .etiqueta-estado { align-self: flex-start; }
+
+/* ==========================================================
+   CARRITO
+   ========================================================== */
+
+.carrito-offcanvas {
+  width: 400px;
+  max-width: 100vw;
+  background-color: var(--ficha) !important;
+  border-left: 1px solid var(--linea);
+}
+
+.carrito-offcanvas .offcanvas-header {
+  border-bottom: 1px solid var(--linea-suave);
+  padding: 1.1rem 1.25rem;
+}
+
+.carrito-titulo {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.carrito-offcanvas .offcanvas-body { padding: 1.25rem; }
+
+.carrito-vacio {
+  color: var(--apagado);
+  margin: 0.5rem 0;
+}
+
+.carrito-lista {
+  margin: 0 0 1.25rem 0;
+  padding: 0;
+}
+
+.carrito-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.carrito-miniatura {
+  width: 48px;
+  height: 72px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 2px;
+  background-color: #a3400f;
+  box-shadow: 0 0 0 1px rgba(43, 32, 22, 0.08);
+}
+
+.carrito-miniatura.tono-1 { background-color: #7a5a2b; }
+.carrito-miniatura.tono-2 { background-color: #2f6b45; }
+.carrito-miniatura.tono-3 { background-color: #8a3b2e; }
+.carrito-miniatura.tono-4 { background-color: #b0701c; }
+
+.carrito-datos { flex: 1 1 auto; min-width: 0; }
+
+.carrito-item-titulo {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.carrito-item-autor,
+.carrito-item-aviso {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--apagado);
+}
+
+.carrito-item-aviso { color: var(--ladrillo); font-weight: 600; }
+
+.btn-quitar-carrito {
+  border: 0;
+  background: transparent;
+  color: var(--apagado);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radio);
+  flex-shrink: 0;
+}
+
+.btn-quitar-carrito:hover {
+  background-color: #f8e3de;
+  color: var(--ladrillo);
+}
+
+.carrito-vaciar {
+  color: var(--apagado);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 575.98px) {
+  .banner-slide { padding: 20px 44px; }
+  .banner-logo { display: none; }
+  .novedades-carrusel .carrusel-flecha { display: none; }
 }

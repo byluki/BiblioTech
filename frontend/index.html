@@ -5,16 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Biblioteca Central</title>
 
-  <!-- Bootstrap 5 -->
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <meta name="description" content="Catálogo de la Biblioteca Central de San José: buscá, reservá y pedí libros prestados.">
+  <meta name="theme-color" content="#e2661d">
+  <link rel="icon" href="Bibliotech.ico">
 
-  <!-- Tipografías -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <!-- solo el núcleo y los íconos "solid" (antes se cargaba el paquete completo) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js" defer></script>
+  <script src="config.js" defer></script>
+  <script src="script.js" defer></script>
 </head>
 <body>
 
@@ -22,14 +29,18 @@
   <header class="site-header">
     <div class="container py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
       <div class="brand-logo">
-        <div class="brand-logo-icon"><img src="/images/logo.png" alt="Logo de la Biblioteca" width="55" height="55"></div>
+        <div class="brand-logo-icon"><img src="/images/logo.png" alt="Logo de la Biblioteca" width="44" height="44" fetchpriority="high"></div>
         <div>
           <h1>Biblioteca Central</h1>
-          <p class="header-sub">San José · Catálogo de libros</p>
+          <p class="header-sub">San José</p>
         </div>
       </div>
 
       <div class="header-actions" id="header-auth-invitado">
+        <button type="button" class="header-icon-btn btn-abrir-carrito" data-bs-toggle="offcanvas" data-bs-target="#carrito-offcanvas" aria-controls="carrito-offcanvas" title="Carrito">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="header-icon-badge contador-carrito d-none">0</span>
+        </button>
         <button type="button" class="header-icon-btn" id="header-btn-catalogo-invitado" title="Libros en catálogo">
           <i class="fa-solid fa-book"></i>
           <span class="header-icon-badge" id="contador-libros-header">0</span>
@@ -39,6 +50,10 @@
         </button>
       </div>
       <div class="header-actions d-none" id="header-auth-sesion">
+        <button type="button" class="header-icon-btn btn-abrir-carrito" data-bs-toggle="offcanvas" data-bs-target="#carrito-offcanvas" aria-controls="carrito-offcanvas" title="Carrito">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="header-icon-badge contador-carrito d-none">0</span>
+        </button>
         <button type="button" class="header-icon-btn" id="header-btn-catalogo-sesion" title="Libros en catálogo">
           <i class="fa-solid fa-book"></i>
           <span class="header-icon-badge" id="contador-libros-header-sesion">0</span>
@@ -80,7 +95,10 @@
 
       <!-- bloque de cuenta: con sesión iniciada -->
       <div class="menu-auth-block d-none" id="menu-auth-sesion">
-        <p class="menu-usuario-nombre" id="header-usuario-nombre"></p>
+        <div class="menu-usuario-fila">
+          <span class="avatar-usuario" id="menu-avatar"></span>
+          <p class="menu-usuario-nombre mb-0" id="header-usuario-nombre"></p>
+        </div>
         <a href="#" class="btn btn-menu-cuenta" id="header-btn-mi-cuenta" data-bs-dismiss="offcanvas"><i class="fa-solid fa-user me-2"></i>Mi cuenta</a>
         <a href="#" class="btn btn-menu-cuenta" id="header-btn-logout" data-bs-dismiss="offcanvas"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar sesión</a>
       </div>
@@ -118,82 +136,99 @@
     </div>
   </div>
 
-  <main class="container my-5">
+  <!-- carrito: reserva varios libros de una vez -->
+  <div class="offcanvas offcanvas-end carrito-offcanvas" tabindex="-1" id="carrito-offcanvas" aria-labelledby="carrito-titulo">
+    <div class="offcanvas-header">
+      <h2 class="carrito-titulo" id="carrito-titulo">Tu carrito</h2>
+      <button type="button" class="menu-offcanvas-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+      <div id="carrito-mensaje" class="alert py-2 small d-none" role="status"></div>
+      <p id="carrito-vacio" class="carrito-vacio">Todavía no agregaste libros. Tocá “Agregar” en un libro disponible para sumarlo.</p>
+      <ul class="list-unstyled carrito-lista" id="carrito-lista"></ul>
+
+      <form id="carrito-form" class="carrito-form d-none" novalidate>
+        <div class="mb-3 carrito-solo-gestion d-none">
+          <label for="carrito-nombre" class="form-label">Nombre del solicitante</label>
+          <input type="text" id="carrito-nombre" class="form-control" list="datalist-socios" autocomplete="off">
+        </div>
+        <div class="mb-3 carrito-solo-gestion d-none">
+          <label for="carrito-tipo" class="form-label">Tipo de usuario</label>
+          <select id="carrito-tipo" class="form-select">
+            <option value="Particular">Particular</option>
+            <option value="Centro educativo">Centro educativo</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="carrito-fecha" class="form-label">¿Para cuándo los querés retirar?</label>
+          <input type="date" id="carrito-fecha" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-brand w-100" id="carrito-confirmar">Reservar</button>
+        <button type="button" class="btn btn-link w-100 mt-2 carrito-vaciar" id="carrito-vaciar">Vaciar carrito</button>
+      </form>
+    </div>
+  </div>
+
+  <main class="container-fluid contenedor-ancho my-5">
 
     <div class="tab-content">
     <div class="tab-pane fade show active" id="tab-catalogo" role="tabpanel">
+
+    <!-- banner -->
+    <section class="banner" id="banner" aria-roledescription="carrusel" aria-label="Avisos de la biblioteca">
+      <div class="banner-pistas" id="banner-pistas">
+        <article class="banner-slide banner-claro">
+          <div class="banner-texto">
+            <h2>Bienvenidos a la Biblioteca Central</h2>
+            <p>Buscá, reservá y retirá tus libros.</p>
+          </div>
+          <img class="banner-logo" src="/images/logo.png" alt="" width="120" height="120" loading="lazy">
+        </article>
+        <article class="banner-slide banner-naranja">
+          <div class="banner-texto">
+            <h2>Sumá libros al carrito y reservalos juntos</h2>
+            <p>Los usuarios particulares pueden tener 1 reserva activa a la vez.</p>
+          </div>
+        </article>
+        <article class="banner-slide banner-oscuro">
+          <div class="banner-texto">
+            <h2>Mirá las últimas novedades</h2>
+            <p>Los libros que llegaron más recientemente, acá abajo.</p>
+          </div>
+        </article>
+      </div>
+      <button type="button" class="banner-flecha banner-prev" id="banner-prev" aria-label="Aviso anterior"><i class="fa-solid fa-chevron-left"></i></button>
+      <button type="button" class="banner-flecha banner-next" id="banner-next" aria-label="Aviso siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+    </section>
+    <div class="banner-puntos" id="banner-puntos" role="tablist" aria-label="Elegir aviso"></div>
+
+    <!-- novedades -->
+    <section class="novedades d-none" id="seccion-novedades" aria-labelledby="titulo-novedades">
+      <h2 class="novedades-titulo" id="titulo-novedades">Novedades</h2>
+      <div class="novedades-carrusel">
+        <button type="button" class="carrusel-flecha carrusel-prev" id="novedades-prev" aria-label="Novedades anteriores"><i class="fa-solid fa-chevron-left"></i></button>
+        <ul class="list-unstyled lista-novedades" id="lista-novedades"></ul>
+        <button type="button" class="carrusel-flecha carrusel-next" id="novedades-next" aria-label="Novedades siguientes"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+    </section>
+
     <div class="row g-4">
 
-      <!-- Agregar libro: solo administrador (ver routes/api.php, POST /libros) -->
-      <div class="col-lg-4" data-requiere-rol="administrador">
-        <section class="card panel h-100">
-          <div class="card-body p-4">
-            <h2 class="panel-title"><i class="fa-solid fa-plus me-2"></i>Agregar un libro</h2>
-            <form id="form-libro" class="mt-3" novalidate>
-              <div class="mb-3">
-                <label for="titulo" class="form-label">Título</label>
-                <div class="d-flex gap-3 align-items-start">
-                  <div class="portada-preview-wrap flex-shrink-0">
-                    <img id="preview-portada-img" class="portada-preview d-none" alt="Portada del libro">
-                    <div id="preview-portada-placeholder" class="portada-preview portada-placeholder">
-                      <i class="fa-solid fa-book"></i>
-                    </div>
-                    <div id="preview-portada-loading" class="portada-preview portada-placeholder d-none">
-                      <span class="spinner-border spinner-border-sm" role="status"></span>
-                    </div>
-                  </div>
-                  <input type="text" id="titulo" class="form-control" placeholder="Ej: Cien años de soledad" required>
-                </div>
-              </div>
-              <div class="mb-3">
-                <label for="codigo-barras" class="form-label">Código de barras / ISBN</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-white"><i class="fa-solid fa-barcode"></i></span>
-                  <input type="text" id="codigo-barras" class="form-control" placeholder="Escaneá o escribí el ISBN">
-                  <button type="button" id="btn-buscar-isbn" class="btn btn-outline-secondary">Buscar</button>
-                </div>
-                <div class="form-text">Se guarda junto con el libro para poder identificarlo después.</div>
-              </div>
-              <div class="mb-3">
-                <label for="imagen-local" class="form-label">Imagen de portada (opcional)</label>
-                <input type="file" id="imagen-local" class="form-control" accept="image/*">
-                <div class="form-text">Si no subís una imagen, se busca una automáticamente por título/autor o código de barras.</div>
-              </div>
-              <div class="mb-3">
-                <label for="autor" class="form-label">Autor</label>
-                <input type="text" id="autor" class="form-control" placeholder="Ej: Gabriel García Márquez" required>
-              </div>
-              <div class="mb-4">
-                <label for="categoria" class="form-label">Categoría</label>
-                <select id="categoria" class="form-select">
-                  <option value="Novela">Novela</option>
-                  <option value="Ciencia ficción">Ciencia ficción</option>
-                  <option value="Infantil">Infantil</option>
-                  <option value="Poesía">Poesía</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </div>
-              <div class="mb-4 d-none" id="grupo-nueva-categoria">
-                <label for="nueva-categoria" class="form-label">Nueva categoría</label>
-                <input type="text" id="nueva-categoria" class="form-control" placeholder="Ej: Ensayo">
-                <div class="form-text">Si ya existe una categoría con ese nombre, se usa la existente en vez de crear una nueva.</div>
-              </div>
-              <button type="submit" class="btn btn-brand w-100">
-                <i class="fa-solid fa-book-medical me-2"></i>Agregar libro
-              </button>
-            </form>
-          </div>
-        </section>
-      </div>
-
       <!-- Listado -->
-      <div class="col-lg-8" id="col-listado-libros">
-        <section class="card panel h-100">
+      <div class="col-12" id="col-listado-libros">
+        <section class="card panel panel-plano h-100">
           <div class="card-body p-4">
 
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-              <h2 class="panel-title mb-0"><i class="fa-solid fa-layer-group me-2"></i>Libros disponibles</h2>
-              <span id="contador-libros" class="badge contador"></span>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+              <h2 class="panel-title mb-0">Libros disponibles<span id="contador-libros" class="contador" aria-live="off"></span></h2>
+              <div class="d-flex align-items-center gap-2">
+                <!-- Agregar libro: solo administrador (ver routes/api.php, POST /libros) -->
+                <button type="button" class="btn btn-brand btn-agregar-libro" id="btn-abrir-agregar-libro" data-requiere-rol="administrador" data-bs-toggle="modal" data-bs-target="#modal-agregar-libro" title="Agregar un libro">
+                  <i class="fa-solid fa-plus"></i><span class="d-none d-sm-inline ms-2">Agregar libro</span>
+                </button>
+              </div>
             </div>
 
             <div class="row g-2 mb-4">
@@ -270,20 +305,52 @@
             <div class="card-body p-4">
               <h2 class="panel-title"><i class="fa-solid fa-user-plus me-2"></i>Registrar socio</h2>
               <form id="form-socio" class="mt-3" novalidate>
+                <input type="hidden" id="socio-id">
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label for="socio-nombre" class="form-label">Nombres</label>
+                    <input type="text" id="socio-nombre" class="form-control" placeholder="Ej: José" required>
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="socio-apellido" class="form-label">Apellidos</label>
+                    <input type="text" id="socio-apellido" class="form-control" placeholder="Ej: Pérez" required>
+                  </div>
+                </div>
                 <div class="mb-3">
-                  <label for="socio-nombre" class="form-label">Nombre</label>
-                  <input type="text" id="socio-nombre" class="form-control" placeholder="Nombre y apellido" required>
+                  <label for="socio-cedula" class="form-label">N.º de cédula</label>
+                  <input type="text" id="socio-cedula" class="form-control" placeholder="Ej: 6171717" inputmode="numeric" required>
                 </div>
-                <div class="mb-4">
-                  <label for="socio-tipo" class="form-label">Tipo de usuario</label>
-                  <select id="socio-tipo" class="form-select">
-                    <option value="Particular">Particular</option>
-                    <option value="Centro educativo">Centro educativo</option>
-                  </select>
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label for="socio-telefono" class="form-label">Teléfono</label>
+                    <input type="tel" id="socio-telefono" class="form-control" placeholder="Opcional">
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="socio-email" class="form-label">Correo electrónico</label>
+                    <input type="email" id="socio-email" class="form-control" placeholder="Opcional">
+                  </div>
                 </div>
-                <button type="submit" class="btn btn-brand w-100">
+                <div class="mb-3">
+                  <label for="socio-direccion" class="form-label">Dirección</label>
+                  <input type="text" id="socio-direccion" class="form-control" placeholder="Opcional">
+                </div>
+                <div class="row g-3 mb-4">
+                  <div class="col-sm-6">
+                    <label for="socio-valido-hasta" class="form-label">Carnet válido hasta</label>
+                    <input type="date" id="socio-valido-hasta" class="form-control">
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="socio-tipo" class="form-label">Tipo de usuario</label>
+                    <select id="socio-tipo" class="form-select">
+                      <option value="Particular">Particular</option>
+                      <option value="Centro educativo">Centro educativo</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-brand w-100" id="socio-guardar">
                   <i class="fa-solid fa-user-plus me-2"></i>Registrar socio
                 </button>
+                <button type="button" class="btn btn-outline-secondary w-100 mt-2 d-none" id="socio-cancelar-edicion">Cancelar edición</button>
               </form>
             </div>
           </section>
@@ -344,6 +411,22 @@
           <section class="card panel h-100">
             <div class="card-body p-4">
               <h2 class="panel-title mb-3"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Multas registradas</h2>
+              <div class="row g-2 mb-3">
+                <div class="col-sm-7">
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="search" class="form-control" id="buscador-multas" placeholder="Buscar multa por socio, motivo, monto o estado" autocomplete="off">
+                  </div>
+                </div>
+                <div class="col-sm-5">
+                  <select id="filtro-categoria-multas" class="form-select" aria-label="Filtrar multas por categoría">
+                    <option value="">Todas las categorías</option>
+                    <option value="Atraso en devolución">Atraso en devolución</option>
+                    <option value="Libro perdido">Libro perdido</option>
+                    <option value="Libro deteriorado">Libro deteriorado</option>
+                  </select>
+                </div>
+              </div>
               <ul class="list-unstyled lista-reservas" id="lista-multas"></ul>
               <div id="estado-vacio-multas" class="text-center text-muted py-5 d-none">
                 <i class="fa-solid fa-circle-check fa-2x mb-3"></i>
@@ -390,6 +473,11 @@
       <section class="card panel mt-4">
         <div class="card-body p-4">
           <h2 class="panel-title mb-3"><i class="fa-solid fa-clock-rotate-left me-2"></i>Historial de actividad</h2>
+          <div class="input-group mb-3">
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="search" class="form-control" id="buscador-historial" placeholder="Buscar por persona (nombre del socio o usuario)" autocomplete="off">
+          </div>
+          <div class="hist-filtros mb-3" id="filtros-historial" role="group" aria-label="Filtrar historial por categoría"></div>
           <ul class="list-unstyled lista-reservas" id="lista-historial"></ul>
           <div id="estado-vacio-historial" class="text-center text-muted py-4 d-none">
             <p class="mb-0">Todavía no hay actividad registrada.</p>
@@ -402,7 +490,7 @@
   </main>
 
   <footer class="site-footer text-center py-4">
-    <p class="mb-0">&copy; 2026 Biblioteca Central · San José</p>
+    <p class="mb-0">&copy; 2026 Biblioteca Central, San José</p>
   </footer>
 
   <!-- Modal editar libro -->
@@ -609,8 +697,20 @@
           <div class="modal-body">
             <div id="registro-error" class="alert alert-danger py-2 d-none" role="alert"></div>
             <div class="mb-3">
-              <label for="registro-nombre" class="form-label">Nombre</label>
-              <input type="text" id="registro-nombre" class="form-control" placeholder="Nombre y apellido" required>
+              <label for="registro-nombre" class="form-label">Nombres</label>
+              <input type="text" id="registro-nombre" class="form-control" placeholder="Ej: José" required>
+            </div>
+            <div class="mb-3">
+              <label for="registro-apellido" class="form-label">Apellidos</label>
+              <input type="text" id="registro-apellido" class="form-control" placeholder="Ej: Pérez" required>
+            </div>
+            <div class="mb-3">
+              <label for="registro-cedula" class="form-label">N.º de cédula</label>
+              <input type="text" id="registro-cedula" class="form-control" placeholder="Ej: 6171717" inputmode="numeric" required>
+            </div>
+            <div class="mb-3">
+              <label for="registro-telefono" class="form-label">Teléfono <span class="text-muted small">(opcional)</span></label>
+              <input type="tel" id="registro-telefono" class="form-control">
             </div>
             <div class="mb-3">
               <label for="registro-email" class="form-label">Correo electrónico</label>
@@ -645,8 +745,148 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+  <!-- Modal agregar libro (solo administrador) -->
+  <div class="modal fade" id="modal-agregar-libro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-plus me-2"></i>Agregar un libro</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-libro" class="mt-3" novalidate>
+              <div class="mb-3">
+                <label for="titulo" class="form-label">Título</label>
+                <div class="d-flex gap-3 align-items-start">
+                  <div class="portada-preview-wrap flex-shrink-0">
+                    <img id="preview-portada-img" class="portada-preview d-none" alt="Portada del libro">
+                    <div id="preview-portada-placeholder" class="portada-preview portada-placeholder">
+                      <i class="fa-solid fa-book"></i>
+                    </div>
+                    <div id="preview-portada-loading" class="portada-preview portada-placeholder d-none">
+                      <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                  </div>
+                  <input type="text" id="titulo" class="form-control" placeholder="Ej: Cien años de soledad" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="codigo-barras" class="form-label">Código de barras / ISBN</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white"><i class="fa-solid fa-barcode"></i></span>
+                  <input type="text" id="codigo-barras" class="form-control" placeholder="Escaneá o escribí el ISBN">
+                  <button type="button" id="btn-buscar-isbn" class="btn btn-outline-secondary">Buscar</button>
+                </div>
+                <div class="form-text">Se guarda junto con el libro para poder identificarlo después.</div>
+              </div>
+              <div class="mb-3">
+                <label for="imagen-local" class="form-label">Imagen de portada (opcional)</label>
+                <input type="file" id="imagen-local" class="form-control" accept="image/*">
+                <div class="form-text">Si no subís una imagen, se busca una automáticamente por título/autor o código de barras.</div>
+              </div>
+              <div class="mb-3">
+                <label for="autor" class="form-label">Autor</label>
+                <input type="text" id="autor" class="form-control" placeholder="Ej: Gabriel García Márquez" required>
+              </div>
+              <div class="mb-4">
+                <label for="categoria" class="form-label">Categoría</label>
+                <select id="categoria" class="form-select">
+                  <option value="Novela">Novela</option>
+                  <option value="Ciencia ficción">Ciencia ficción</option>
+                  <option value="Infantil">Infantil</option>
+                  <option value="Poesía">Poesía</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="mb-4 d-none" id="grupo-nueva-categoria">
+                <label for="nueva-categoria" class="form-label">Nueva categoría</label>
+                <input type="text" id="nueva-categoria" class="form-control" placeholder="Ej: Ensayo">
+                <div class="form-text">Si ya existe una categoría con ese nombre, se usa la existente en vez de crear una nueva.</div>
+              </div>
+              <button type="submit" class="btn btn-brand w-100" id="btn-guardar-libro">
+                <i class="fa-solid fa-book-medical me-2"></i>Agregar libro
+              </button>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal mi cuenta -->
+  <div class="modal fade" id="modal-mi-cuenta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="form-mi-cuenta" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa-solid fa-user me-2"></i>Mi cuenta</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div id="mi-cuenta-error" class="alert alert-danger py-2 d-none" role="alert"></div>
+            <div id="mi-cuenta-ok" class="alert alert-success py-2 d-none" role="alert">Datos actualizados.</div>
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <span class="avatar-usuario avatar-grande" id="mi-cuenta-avatar"></span>
+              <div>
+                <input type="file" id="mi-cuenta-foto" accept="image/*" class="d-none">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="mi-cuenta-elegir-foto"><i class="fa-solid fa-image me-1"></i>Elegir foto</button>
+                <button type="button" class="btn btn-outline-danger btn-sm d-none" id="mi-cuenta-quitar-foto"><i class="fa-solid fa-trash me-1"></i>Quitar</button>
+                <div class="form-text">La foto se guarda solo en este navegador.</div>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-sm-6">
+                <label for="mi-cuenta-nombre" class="form-label" id="mi-cuenta-nombre-label">Nombres</label>
+                <input type="text" id="mi-cuenta-nombre" class="form-control" required>
+              </div>
+              <div class="col-sm-6" id="mi-cuenta-grupo-apellido">
+                <label for="mi-cuenta-apellido" class="form-label">Apellidos</label>
+                <input type="text" id="mi-cuenta-apellido" class="form-control">
+              </div>
+            </div>
+            <div id="mi-cuenta-datos-socio">
+              <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                  <label for="mi-cuenta-cedula" class="form-label">N.º de cédula</label>
+                  <input type="text" id="mi-cuenta-cedula" class="form-control" inputmode="numeric">
+                </div>
+                <div class="col-sm-6">
+                  <label for="mi-cuenta-telefono" class="form-label">Teléfono</label>
+                  <input type="tel" id="mi-cuenta-telefono" class="form-control">
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="mi-cuenta-direccion" class="form-label">Dirección</label>
+                <input type="text" id="mi-cuenta-direccion" class="form-control">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="mi-cuenta-email" class="form-label">Correo electrónico</label>
+              <input type="email" id="mi-cuenta-email" class="form-control" required>
+            </div>
+
+            <hr>
+            <p class="small text-muted mb-2">Cambiar contraseña (dejalo vacío si no querés cambiarla)</p>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label for="mi-cuenta-password-actual" class="form-label">Contraseña actual</label>
+                <input type="password" id="mi-cuenta-password-actual" class="form-control" autocomplete="current-password">
+              </div>
+              <div class="col-sm-6">
+                <label for="mi-cuenta-password" class="form-label">Nueva contraseña</label>
+                <input type="password" id="mi-cuenta-password" class="form-control" minlength="6" autocomplete="new-password">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="submit" class="btn btn-brand"><i class="fa-solid fa-floppy-disk me-2"></i>Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

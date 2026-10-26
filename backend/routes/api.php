@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::put('/auth/perfil', [AuthController::class, 'actualizarPerfil']);
 
     // --- Reservas: un socio puede reservar/cancelar su propia reserva ---
     Route::get('/reservas', [ReservaController::class, 'index']);

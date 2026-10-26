@@ -18,8 +18,21 @@ var multas = [];
 var categoriasApi = []; // [{id, nombre}], viene de GET /categorias
 var ejemplaresPorLibro = {}; // libroId(string) -> {id, estado} (usamos 1 ejemplar por libro)
 
+// Categorías del historial. "facturas" agrupa los cobros (multas).
+var CATEGORIAS_HISTORIAL = {
+  reservas:  { etiqueta: "Reservas",  icono: "fa-bookmark",            clase: "hist-reservas" },
+  facturas:  { etiqueta: "Facturas",  icono: "fa-file-invoice-dollar", clase: "hist-facturas" },
+  prestamos: { etiqueta: "Préstamos", icono: "fa-hand-holding",        clase: "hist-prestamos" },
+  socios:    { etiqueta: "Socios",    icono: "fa-users",               clase: "hist-socios" },
+  libros:    { etiqueta: "Libros",    icono: "fa-book",                clase: "hist-libros" },
+  cuentas:   { etiqueta: "Cuentas",   icono: "fa-user-gear",           clase: "hist-cuentas" }
+};
+var filtroHistorial = "todas";
+var busquedaHistorial = "";
+
 var historial = cargarHistorial();
 var sesionActual = cargarSesion();
+var carrito = cargarCarritoGuardado(); // ids (string) de libros agregados al carrito
 var portadaEncontrada = null;
 var portadaEditando = null;
 var tituloOriginalEditando = "";
@@ -105,6 +118,15 @@ var estadoVacioModalPrestamos = document.getElementById("estado-vacio-modal-pres
 // socios
 var formSocio = document.getElementById("form-socio");
 var socioNombreInput = document.getElementById("socio-nombre");
+var socioIdInput = document.getElementById("socio-id");
+var socioApellidoInput = document.getElementById("socio-apellido");
+var socioCedulaInput = document.getElementById("socio-cedula");
+var socioTelefonoInput = document.getElementById("socio-telefono");
+var socioEmailInput = document.getElementById("socio-email");
+var socioDireccionInput = document.getElementById("socio-direccion");
+var socioValidoHastaInput = document.getElementById("socio-valido-hasta");
+var socioGuardarBtn = document.getElementById("socio-guardar");
+var socioCancelarEdicionBtn = document.getElementById("socio-cancelar-edicion");
 var socioTipoInput = document.getElementById("socio-tipo");
 var listaSocios = document.getElementById("lista-socios");
 var estadoVacioSocios = document.getElementById("estado-vacio-socios");
@@ -128,6 +150,9 @@ var loginError = document.getElementById("login-error");
 var modalRegistro = new bootstrap.Modal(document.getElementById("modal-registro"));
 var formRegistro = document.getElementById("form-registro");
 var registroNombre = document.getElementById("registro-nombre");
+var registroApellido = document.getElementById("registro-apellido");
+var registroCedula = document.getElementById("registro-cedula");
+var registroTelefono = document.getElementById("registro-telefono");
 var registroEmail = document.getElementById("registro-email");
 var registroPassword = document.getElementById("registro-password");
 var registroPasswordConfirmar = document.getElementById("registro-password-confirmar");
@@ -139,6 +164,7 @@ var headerBtnLogout = document.getElementById("header-btn-logout");
 var headerAuthInvitado = document.getElementById("header-auth-invitado");
 var headerAuthSesion = document.getElementById("header-auth-sesion");
 var headerUsuarioNombre = document.getElementById("header-usuario-nombre");
+var menuAvatar = document.getElementById("menu-avatar");
 var menuAuthInvitado = document.getElementById("menu-auth-invitado");
 var menuAuthSesion = document.getElementById("menu-auth-sesion");
 var headerBtnCatalogoInvitado = document.getElementById("header-btn-catalogo-invitado");
@@ -277,8 +303,21 @@ function mapLibro(l) {
 }
 
 function mapSocio(s) {
+  var pendiente = s.cedula_pendiente === true || String(s.cedula || "").indexOf("PENDIENTE-") === 0;
+  var validoHasta = s.valido_hasta ? String(s.valido_hasta).substring(0, 10) : "";
   return {
     id: String(s.id),
+    nombres: s.nombre || "",
+    apellidos: s.apellido && s.apellido !== "-" ? s.apellido : "",
+    cedula: pendiente ? "" : (s.cedula || ""),
+    cedulaPendiente: pendiente,
+    numeroSocio: s.numero_socio || "",
+    telefono: s.telefono || "",
+    email: s.email || "",
+    direccion: s.direccion || "",
+    validoHasta: validoHasta,
+    validoHastaTexto: validoHasta ? validoHasta.split("-").reverse().join("/") : "",
+    vencido: validoHasta ? validoHasta < new Date().toISOString().substring(0, 10) : false,
     nombre: nombreCompletoSocio(s),
     tipo: s.tipo === "centro_educativo" ? "Centro educativo" : "Particular",
     verificado: s.verificado_centro_educativo === true,
@@ -435,6 +474,19 @@ var INTERVALO_POLLING_MS = 30000; // 30s: antes 8s, saturaba al servidor y volv�
 var idIntervaloPolling = null;
 var pollingEnCurso = false; // evita que se apilen pedidos si el servidor está lento
 
+// Foto de los datos actuales (lo que está pintado en pantalla). Se compara
+// antes/después de cada actualización en segundo plano: si no cambió nada,
+// no se toca el DOM y la persona no nota que hubo una actualización.
+function firmaDatosActuales() {
+  return {
+    ejemplares: JSON.stringify(ejemplaresPorLibro),
+    reservas: JSON.stringify(reservas),
+    prestamos: JSON.stringify(prestamos),
+    socios: JSON.stringify(socios),
+    multas: JSON.stringify(multas)
+  };
+}
+
 function pollActualizacionesApi() {
   // pestaña en segundo plano: no tiene sentido gastar pedidos
   if (document.hidden) return;
@@ -444,6 +496,8 @@ function pollActualizacionesApi() {
   // si el pedido anterior todavía no terminó, no mandamos otro encima
   if (pollingEnCurso) return;
   pollingEnCurso = true;
+
+  var antes = firmaDatosActuales();
 
   // los libros (con portadas en base64, muy pesados) no se vuelven a bajar:
   // solo refrescamos el estado de los ejemplares y lo aplicamos a los ya cargados
@@ -460,11 +514,21 @@ function pollActualizacionesApi() {
     cargarSociosApi(),
     cargarMultasApi()
   ]).then(function () {
-    renderizarLibros();
-    renderizarReservas();
-    renderizarPrestamos();
-    renderizarSocios();
-    renderizarMultas();
+    var despues = firmaDatosActuales();
+    var cambioReservas = antes.reservas !== despues.reservas;
+    var cambioPrestamos = antes.prestamos !== despues.prestamos;
+    var cambioLibros = antes.ejemplares !== despues.ejemplares || cambioReservas || cambioPrestamos;
+    var cambioSocios = antes.socios !== despues.socios;
+    var cambioMultas = antes.multas !== despues.multas;
+
+    // sin cambios: no se repinta nada
+    if (!cambioLibros && !cambioSocios && !cambioMultas) return;
+
+    if (cambioLibros) renderizarLibros();
+    if (cambioReservas || cambioPrestamos) renderizarReservas();
+    if (cambioPrestamos) renderizarPrestamos();
+    if (cambioSocios) renderizarSocios();
+    if (cambioMultas) renderizarMultas();
     var tabReportes = document.getElementById("tab-reportes");
     if (tabReportes && tabReportes.classList.contains("active") && typeof renderizarReportes === "function") {
       renderizarReportes();
@@ -588,6 +652,22 @@ function actualizarDatalistSocios() {
   }).join("");
 }
 
+// Datos del carnet de socio (cédula, vigencia, código de barras y contacto)
+function datosSocioHtml(socio) {
+  var partes = [];
+  partes.push(socio.cedulaPendiente
+    ? '<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Cédula pendiente de cargar</span>'
+    : '<i class="fa-regular fa-id-card me-1"></i>C.I. ' + escapeHtml(socio.cedula));
+  if (socio.numeroSocio && !socio.cedulaPendiente) partes.push('<i class="fa-solid fa-barcode me-1"></i>' + escapeHtml(socio.numeroSocio));
+  if (socio.validoHastaTexto) {
+    partes.push((socio.vencido ? '<span class="text-danger">' : "<span>") + '<i class="fa-regular fa-calendar me-1"></i>Válido hasta ' + escapeHtml(socio.validoHastaTexto) + (socio.vencido ? " (vencido)" : "") + "</span>");
+  }
+  if (socio.telefono) partes.push('<i class="fa-solid fa-phone me-1"></i>' + escapeHtml(socio.telefono));
+  if (socio.email) partes.push('<i class="fa-solid fa-envelope me-1"></i>' + escapeHtml(socio.email));
+  if (socio.direccion) partes.push('<i class="fa-solid fa-location-dot me-1"></i>' + escapeHtml(socio.direccion));
+  return partes.join(" &nbsp;·&nbsp; ");
+}
+
 function renderizarSocios() {
   actualizarDatalistSocios();
   listaSocios.innerHTML = "";
@@ -613,10 +693,12 @@ function renderizarSocios() {
     var li = document.createElement("li");
     li.className = "reserva-item";
     li.innerHTML =
-      '<div class="flex-grow-1"><h3>' + escapeHtml(socio.nombre) + "</h3>" +
+      '<div class="flex-grow-1"><h3>' + escapeHtml(socio.apellidos ? socio.apellidos.toUpperCase() + ", " + socio.nombres : socio.nombres) + "</h3>" +
+      '<p class="mb-1 small text-muted">' + datosSocioHtml(socio) + "</p>" +
       '<span class="etiqueta etiqueta-tipo me-2">' + escapeHtml(socio.tipo) + "</span>" +
       etiquetaVerificacionHtml +
       '<span class="etiqueta-estado ' + claseEstado + '">' + escapeHtml(socio.estado) + "</span></div>" +
+      '<button class="btn-accion-libro" title="Editar datos" data-accion="editar-socio" data-id="' + socio.id + '"><i class="fa-solid fa-pen"></i></button>' +
       botonCambiarTipoHtml +
       botonVerificarHtml +
       '<button class="btn-accion-libro" title="Cambiar estado" data-accion="toggle-estado-socio" data-id="' + socio.id + '"><i class="fa-solid fa-rotate"></i></button>' +
@@ -625,25 +707,71 @@ function renderizarSocios() {
   }
 }
 
+function limpiarFormSocio() {
+  formSocio.reset();
+  socioIdInput.value = "";
+  socioGuardarBtn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Registrar socio';
+  socioCancelarEdicionBtn.classList.add("d-none");
+}
+
+function editarSocioEnFormulario(socio) {
+  socioIdInput.value = socio.id;
+  socioNombreInput.value = socio.nombres;
+  socioApellidoInput.value = socio.apellidos;
+  socioCedulaInput.value = socio.cedula;
+  socioTelefonoInput.value = socio.telefono;
+  socioEmailInput.value = socio.email;
+  socioDireccionInput.value = socio.direccion;
+  socioValidoHastaInput.value = socio.validoHasta;
+  socioTipoInput.value = socio.tipo;
+  socioGuardarBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>Guardar cambios';
+  socioCancelarEdicionBtn.classList.remove("d-none");
+  formSocio.scrollIntoView({ behavior: "smooth", block: "start" });
+  socioNombreInput.focus();
+}
+
+socioCancelarEdicionBtn.addEventListener("click", limpiarFormSocio);
+
 formSocio.addEventListener("submit", function (e) {
   e.preventDefault();
+  var editandoId = socioIdInput.value;
   var nombre = socioNombreInput.value.trim();
-  if (!nombre) return;
-  if (buscarSocioPorNombre(nombre)) {
+  var apellido = socioApellidoInput.value.trim();
+  var cedula = socioCedulaInput.value.trim();
+  if (!nombre || !apellido || !cedula) {
+    alert("Completá nombres, apellidos y número de cédula.");
+    return;
+  }
+  var nombreCompleto = nombre + " " + apellido;
+  var existente = buscarSocioPorNombre(nombreCompleto);
+  if (existente && existente.id !== editandoId) {
     alert("Ya existe un socio registrado con ese nombre.");
     return;
   }
 
-  var tipoApi = socioTipoInput.value === "Centro educativo" ? "centro_educativo" : "particular";
+  var body = {
+    nombre: nombre,
+    apellido: apellido,
+    cedula: cedula,
+    telefono: socioTelefonoInput.value.trim() || null,
+    email: socioEmailInput.value.trim() || null,
+    direccion: socioDireccionInput.value.trim() || null,
+    tipo: socioTipoInput.value === "Centro educativo" ? "centro_educativo" : "particular"
+  };
+  if (socioValidoHastaInput.value) body.valido_hasta = socioValidoHastaInput.value;
 
-  apiFetch("/socios", { method: "POST", body: { nombre: nombre, tipo: tipoApi } })
+  var peticion = editandoId
+    ? apiFetch("/socios/" + editandoId, { method: "PUT", body: body })
+    : apiFetch("/socios", { method: "POST", body: body });
+
+  peticion
     .then(function () {
-      registrarHistorial("Se registró al socio " + nombre + ".");
+      registrarHistorial((editandoId ? "Se actualizaron los datos del socio " : "Se registró al socio ") + nombreCompleto + ".", "socios", nombreCompleto);
       return cargarSociosApi();
     })
     .then(function () {
       renderizarSocios();
-      formSocio.reset();
+      limpiarFormSocio();
       socioNombreInput.focus();
     })
     .catch(mostrarErrorApi);
@@ -663,11 +791,13 @@ listaSocios.addEventListener("click", function (e) {
   var socio = buscarSocioLocalPorId(boton.dataset.id);
   if (!socio) return;
 
-  if (boton.dataset.accion === "toggle-estado-socio") {
+  if (boton.dataset.accion === "editar-socio") {
+    editarSocioEnFormulario(socio);
+  } else if (boton.dataset.accion === "toggle-estado-socio") {
     var nuevoEstado = socio.estado === "Suspendido" ? "activo" : "suspendido";
     apiFetch("/socios/" + socio.id + "/estado", { method: "PATCH", body: { estado: nuevoEstado } })
       .then(function () {
-        registrarHistorial("El socio " + socio.nombre + " cambió de estado.");
+        registrarHistorial("El socio " + socio.nombre + " cambió de estado.", "socios", socio.nombre);
         return cargarSociosApi();
       })
       .then(renderizarSocios)
@@ -690,7 +820,8 @@ listaSocios.addEventListener("click", function (e) {
       .then(function () {
         registrarHistorial(
           "Se cambió el tipo de socio de " + socio.nombre + " a " +
-          (nuevoTipoApi === "centro_educativo" ? "centro educativo" : "particular") + "."
+          (nuevoTipoApi === "centro_educativo" ? "centro educativo" : "particular") + ".",
+          "socios", socio.nombre
         );
         return cargarSociosApi();
       })
@@ -701,7 +832,8 @@ listaSocios.addEventListener("click", function (e) {
     apiFetch("/socios/" + socio.id + "/verificar-educativo", { method: "PATCH", body: { verificado: nuevoValorVerificado } })
       .then(function () {
         registrarHistorial(
-          (nuevoValorVerificado ? "Se verificó" : "Se quitó la verificación de") + " a " + socio.nombre + " como centro educativo."
+          (nuevoValorVerificado ? "Se verificó" : "Se quitó la verificación de") + " a " + socio.nombre + " como centro educativo.",
+          "socios", socio.nombre
         );
         return cargarSociosApi();
       })
@@ -721,12 +853,29 @@ function buscarMultaLocalPorId(id) {
   return null;
 }
 
+var busquedaMultas = "";
+var filtroCategoriaMultas = "";
+
+function multasFiltradas() {
+  var q = normalizarBusqueda(busquedaMultas);
+  if (!q && !filtroCategoriaMultas) return multas;
+  return multas.filter(function (m) {
+    if (filtroCategoriaMultas && m.motivo !== filtroCategoriaMultas) return false;
+    if (!q) return true;
+    var texto = [m.socio, m.motivo, m.monto, m.pagada ? "pagada" : "pendiente", m.fecha].join(" ");
+    return normalizarBusqueda(texto).indexOf(q) !== -1;
+  });
+}
+
 function renderizarMultas() {
   listaMultas.innerHTML = "";
-  estadoVacioMultas.classList.toggle("d-none", multas.length > 0);
+  var visibles = multasFiltradas();
+  estadoVacioMultas.classList.toggle("d-none", visibles.length > 0);
+  var textoVacio = estadoVacioMultas.querySelector("p");
+  if (textoVacio) textoVacio.textContent = multas.length && !visibles.length ? "Ninguna multa coincide con la búsqueda o el filtro." : "No hay multas registradas.";
 
-  for (var i = 0; i < multas.length; i++) {
-    var multa = multas[i];
+  for (var i = 0; i < visibles.length; i++) {
+    var multa = visibles[i];
     var claseEstado = multa.pagada ? "estado-disponible" : "estado-prestado";
     var textoEstado = multa.pagada ? "Pagada" : "Pendiente";
     var li = document.createElement("li");
@@ -754,7 +903,7 @@ formMulta.addEventListener("submit", function (e) {
       return apiFetch("/multas", { method: "POST", body: { socio_id: socio.id, motivo: motivoApi, monto: monto } });
     })
     .then(function () {
-      registrarHistorial("Se registró una multa de $" + monto + " a " + nombreSocio + " (" + motivoDisplay + ").");
+      registrarHistorial("Se registró una multa de $" + monto + " a " + nombreSocio + " (" + motivoDisplay + ").", "facturas", nombreSocio);
       return cargarMultasApi();
     })
     .then(function () {
@@ -773,7 +922,7 @@ listaMultas.addEventListener("click", function (e) {
   if (boton.dataset.accion === "pagar-multa") {
     apiFetch("/multas/" + multa.id, { method: "PUT", body: { estado: "pagada" } })
       .then(function () {
-        registrarHistorial("Se registró el pago de la multa de " + multa.socio + ".");
+        registrarHistorial("Se registró el pago de la multa de " + multa.socio + ".", "facturas", multa.socio);
         return cargarMultasApi();
       })
       .then(renderizarMultas)
@@ -781,7 +930,10 @@ listaMultas.addEventListener("click", function (e) {
   } else if (boton.dataset.accion === "eliminar-multa") {
     if (!confirm("¿Eliminar esta multa?")) return;
     apiFetch("/multas/" + multa.id, { method: "DELETE" })
-      .then(function () { return cargarMultasApi(); })
+      .then(function () {
+        registrarHistorial("Se eliminó la multa de " + multa.socio + ".", "facturas", multa.socio);
+        return cargarMultasApi();
+      })
       .then(renderizarMultas)
       .catch(mostrarErrorApi);
   }
@@ -791,38 +943,106 @@ listaMultas.addEventListener("click", function (e) {
 // Historial de actividad (RF16) y reportes (RF14) / notificaciones (RF13)
 // ------------------------------
 
+// Entradas viejas (sin categoría) se clasifican según su texto.
+function inferirCategoriaHistorial(texto) {
+  var t = (texto || "").toLowerCase();
+  if (t.indexOf("multa") !== -1) return "facturas";
+  if (t.indexOf("reserva") !== -1) return "reservas";
+  if (t.indexOf("préstamo") !== -1 || t.indexOf("devolu") !== -1) return "prestamos";
+  if (t.indexOf("cuenta") !== -1) return "cuentas";
+  if (t.indexOf("libro") !== -1) return "libros";
+  return "socios";
+}
+
 function cargarHistorial() {
   var guardado = localStorage.getItem(STORAGE_KEY_HISTORIAL);
-  return guardado ? JSON.parse(guardado) : [];
+  var lista = guardado ? JSON.parse(guardado) : [];
+  lista.forEach(function (e) {
+    if (!e.categoria || !CATEGORIAS_HISTORIAL[e.categoria]) e.categoria = inferirCategoriaHistorial(e.texto);
+  });
+  return lista;
 }
 
 function guardarHistorial() {
-  // se conservan solo las últimas 50 entradas para no llenar el localStorage
-  if (historial.length > 50) historial = historial.slice(historial.length - 50);
+  // se conservan solo las últimas 200 entradas para no llenar el localStorage
+  if (historial.length > 200) historial = historial.slice(historial.length - 200);
   localStorage.setItem(STORAGE_KEY_HISTORIAL, JSON.stringify(historial));
 }
 
-function registrarHistorial(texto) {
-  historial.push({ id: crearId(), texto: texto, fecha: fechaHoy() });
+function registrarHistorial(texto, categoria, persona) {
+  if (!CATEGORIAS_HISTORIAL[categoria]) categoria = inferirCategoriaHistorial(texto);
+  historial.push({ id: crearId(), texto: texto, categoria: categoria, persona: persona || "", fecha: fechaHoy() });
   guardarHistorial();
   renderizarHistorial();
 }
 
+function normalizarBusqueda(t) {
+  return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+function renderizarFiltrosHistorial() {
+  var cont = document.getElementById("filtros-historial");
+  if (!cont) return;
+  var conteo = { todas: historial.length };
+  historial.forEach(function (e) { conteo[e.categoria] = (conteo[e.categoria] || 0) + 1; });
+  var html = "";
+  var claves = ["todas"].concat(Object.keys(CATEGORIAS_HISTORIAL));
+  claves.forEach(function (clave) {
+    var cat = CATEGORIAS_HISTORIAL[clave];
+    html += '<button type="button" class="hist-filtro' + (filtroHistorial === clave ? " activo" : "") +
+      '" data-categoria="' + clave + '">' +
+      (cat ? '<i class="fa-solid ' + cat.icono + ' me-1"></i>' : "") +
+      (cat ? cat.etiqueta : "Todas") +
+      ' <span class="hist-conteo">' + (conteo[clave] || 0) + "</span></button>";
+  });
+  cont.innerHTML = html;
+}
+
 function renderizarHistorial() {
   if (!listaHistorial) return;
-  var recientes = historial.slice().reverse().slice(0, 15);
+  renderizarFiltrosHistorial();
+  var consulta = normalizarBusqueda(busquedaHistorial);
+  var coincidentes = historial.slice().reverse().filter(function (e) {
+    if (filtroHistorial !== "todas" && e.categoria !== filtroHistorial) return false;
+    if (!consulta) return true;
+    // busca por persona; en entradas viejas (sin persona) busca dentro del texto
+    return normalizarBusqueda(e.persona || e.texto).indexOf(consulta) !== -1;
+  });
+  var recientes = consulta ? coincidentes.slice(0, 50) : coincidentes.slice(0, 15);
   listaHistorial.innerHTML = "";
   estadoVacioHistorial.classList.toggle("d-none", recientes.length > 0);
 
   for (var i = 0; i < recientes.length; i++) {
     var entrada = recientes[i];
+    var cat = CATEGORIAS_HISTORIAL[entrada.categoria];
     var li = document.createElement("li");
     li.className = "reserva-item";
     li.innerHTML =
-      '<div class="flex-grow-1"><p class="mb-0">' + escapeHtml(entrada.texto) + '</p>' +
+      '<div class="flex-grow-1"><p class="mb-1"><span class="hist-badge ' + cat.clase + '"><i class="fa-solid ' +
+      cat.icono + ' me-1"></i>' + cat.etiqueta + "</span></p>" +
+      '<p class="mb-0">' + escapeHtml(entrada.texto) + '</p>' +
+      (entrada.persona ? '<p class="mb-0 small hist-persona"><i class="fa-solid fa-user me-1"></i>' + escapeHtml(entrada.persona) + '</p>' : "") +
       '<p class="mb-0 text-muted small">' + entrada.fecha + "</p></div>";
     listaHistorial.appendChild(li);
   }
+}
+
+var buscadorHistorialEl = document.getElementById("buscador-historial");
+if (buscadorHistorialEl) {
+  buscadorHistorialEl.addEventListener("input", function () {
+    busquedaHistorial = buscadorHistorialEl.value;
+    renderizarHistorial();
+  });
+}
+
+var filtrosHistorialEl = document.getElementById("filtros-historial");
+if (filtrosHistorialEl) {
+  filtrosHistorialEl.addEventListener("click", function (e) {
+    var btn = e.target.closest(".hist-filtro");
+    if (!btn) return;
+    filtroHistorial = btn.dataset.categoria;
+    renderizarHistorial();
+  });
 }
 
 function prestamosVencidos() {
@@ -1149,7 +1369,8 @@ function librosFiltrados() {
 function renderizarLibros() {
   var filtrados = librosFiltrados();
   estadoVacio.classList.toggle("d-none", filtrados.length > 0);
-  contador.textContent = libros.length + " " + (libros.length === 1 ? "libro" : "libros");
+  var textoContador = libros.length + " " + (libros.length === 1 ? "libro" : "libros");
+  if (contador.textContent !== textoContador) contador.textContent = textoContador;
   // el ícono de libro del header (invitado y con sesión) mostraba siempre
   // "0" porque nunca se actualizaba; lo sincronizamos con el catálogo real
   if (contadorLibrosHeader) contadorLibrosHeader.textContent = libros.length;
@@ -1158,13 +1379,15 @@ function renderizarLibros() {
   // armamos el HTML de todas las tarjetas en un array y lo pintamos de una
   // sola vez al final (una sola escritura al DOM) en vez de ir agregando
   // tarjeta por tarjeta con appendChild, que fuerza un reflow por cada una
-  var htmlTarjetas = [];
+  var tarjetas = [];
 
   for (var i = 0; i < filtrados.length; i++) {
     var libro = filtrados[i];
+    // el src de la portada (puede ser un base64 enorme) NO va dentro del
+    // string de la tarjeta: se asigna por DOM solo cuando la tarjeta se crea
     var portadaContenidoHtml = libro.portada
-      ? '<img class="libro-portada" src="' + libro.portada + '" alt="Portada" loading="lazy">'
-      : '<div class="libro-portada"><i class="fa-solid fa-book"></i></div>';
+      ? '<img class="libro-portada" alt="Portada de ' + escapeHtml(libro.titulo) + '" loading="lazy" decoding="async" width="200" height="300">'
+      : '<div class="libro-portada libro-portada-vacia tono-' + ((parseInt(libro.id, 10) || 0) % 5) + '"><span>' + escapeHtml(libro.titulo) + "</span></div>";
 
     // menú de "Editar"/"Eliminar" para administrador: antes eran dos
     // botones sueltos al pie de la tarjeta, compitiendo por espacio con
@@ -1232,11 +1455,11 @@ function renderizarLibros() {
       // el texto en vez de dejarlo como ícono solo. Si es gestión, en
       // cambio, tiene a "Prestar" al lado: ambos quedan grandes, mitad y
       // mitad, en vez del ícono chiquito de antes.
-      var reservarSolo = !permisos.esGestion;
+      // libro disponible: "Agregar" lo suma al carrito (se reserva desde
+      // ahí); la gestión además puede prestarlo directamente
       accionesEstadoHtml =
-        '<button class="btn-accion-libro' + (reservarSolo ? " btn-accion-libro-full" : " btn-accion-libro-grande") + '" title="Reservar" data-accion="reservar" data-id="' + libro.id + '"><i class="fa-solid fa-bookmark"></i>' +
-        (reservarSolo ? " Reservar" : "") + "</button>" +
-        (permisos.esGestion ? '<button class="btn-accion-libro btn-accion-libro-grande" title="Prestar" data-accion="prestar" data-id="' + libro.id + '"><i class="fa-solid fa-right-from-bracket"></i></button>' : "");
+        htmlBotonAgregar(libro) +
+        (permisos.esGestion ? '<button class="btn-accion-libro btn-accion-libro-grande btn-prestar-rapido" title="Prestar" data-accion="prestar" data-id="' + libro.id + '"><i class="fa-solid fa-right-from-bracket"></i></button>' : "");
     }
 
     // si el libro está prestado (o cualquier otro estado) y la persona no
@@ -1245,21 +1468,385 @@ function renderizarLibros() {
     // (Editar/Eliminar ya no van acá, se movieron al menú sobre la portada)
     var accionesLibroHtml = accionesEstadoHtml ? '<div class="acciones-libro">' + accionesEstadoHtml + "</div>" : "";
 
-    htmlTarjetas.push(
-      '<li class="libro-item">' +
+    tarjetas.push({
+      libro: libro,
+      // firma corta de la portada: así comparamos tarjetas sin tener que
+      // comparar cientos de KB de base64 en cada actualización
+      firmaPortada: firmaPortada(libro),
+      html:
       portadaHtml +
       '<div class="libro-info flex-grow-1"><h3>' + escapeHtml(libro.titulo) + "</h3>" +
-      "<p>Autor: " + escapeHtml(libro.autor) + "</p>" +
+      '<p class="libro-autor">' + escapeHtml(libro.autor) + "</p>" +
       codigoBarrasHtml +
       '<span class="etiqueta">' + escapeHtml(libro.categoria) + "</span> " + estadoHtml +
       extraInfoHtml + "</div>" +
-      accionesLibroHtml +
-      "</li>"
-    );
+      accionesLibroHtml
+    });
   }
 
-  lista.innerHTML = htmlTarjetas.join("");
+  reconciliarTarjetas(lista, tarjetas, "libro-item");
+  renderizarNovedades();
+  renderizarCarrito();
 }
+
+// Actualiza la grilla tocando solo lo que cambió: las tarjetas iguales se
+// reutilizan tal cual (sin repintar ni volver a decodificar la portada), las
+// nuevas se crean y las que ya no están se quitan. Antes se reescribía todo
+// el catálogo con innerHTML, y por eso se notaba cada actualización.
+function reconciliarTarjetas(contenedor, tarjetas, clase) {
+  var existentes = {};
+  var hijos = contenedor.children;
+  for (var i = 0; i < hijos.length; i++) existentes[hijos[i].dataset.id] = hijos[i];
+
+  var usadas = {};
+  var anterior = null;
+
+  tarjetas.forEach(function (t) {
+    var id = t.libro.id;
+    var firma = t.firmaPortada + "|" + t.html;
+    var li = existentes[id];
+
+    if (!li || li._firma !== firma) {
+      var nuevo = document.createElement("li");
+      nuevo.className = clase;
+      nuevo.dataset.id = id;
+      nuevo._firma = firma;
+      nuevo.innerHTML = t.html;
+      var img = nuevo.querySelector("img.libro-portada");
+      if (img) img.src = t.libro.portada;
+      if (li) contenedor.replaceChild(nuevo, li);
+      li = nuevo;
+    }
+
+    usadas[id] = true;
+    // solo se mueve en el DOM si no está ya en su lugar
+    var esperado = anterior ? anterior.nextSibling : contenedor.firstChild;
+    if (li !== esperado) contenedor.insertBefore(li, esperado);
+    anterior = li;
+  });
+
+  for (var k in existentes) {
+    if (!usadas[k] && existentes[k].parentNode === contenedor) contenedor.removeChild(existentes[k]);
+  }
+}
+
+function firmaPortada(libro) {
+  return libro.portada ? libro.portada.length + ":" + libro.portada.slice(-32) : "";
+}
+
+function htmlPortadaLibro(libro) {
+  return libro.portada
+    ? '<img class="libro-portada" alt="Portada de ' + escapeHtml(libro.titulo) + '" loading="lazy" decoding="async" width="200" height="300">'
+    : '<div class="libro-portada libro-portada-vacia tono-' + ((parseInt(libro.id, 10) || 0) % 5) + '"><span>' + escapeHtml(libro.titulo) + "</span></div>";
+}
+
+// ------------------------------
+// Carrito (reservar varios libros en un solo paso)
+// ------------------------------
+
+var STORAGE_KEY_CARRITO = "biblioteca-carrito";
+
+function cargarCarritoGuardado() {
+  try {
+    var guardado = JSON.parse(localStorage.getItem(STORAGE_KEY_CARRITO) || "[]");
+    return Array.isArray(guardado) ? guardado.map(String) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function guardarCarrito() {
+  try { localStorage.setItem(STORAGE_KEY_CARRITO, JSON.stringify(carrito)); } catch (e) { /* sin storage: el carrito dura mientras la página */ }
+}
+
+function enCarrito(id) {
+  return carrito.indexOf(String(id)) !== -1;
+}
+
+function alternarCarrito(id) {
+  id = String(id);
+  var pos = carrito.indexOf(id);
+  if (pos === -1) carrito.push(id); else carrito.splice(pos, 1);
+  guardarCarrito();
+  limpiarMensajeCarrito();
+  renderizarLibros(); // también actualiza novedades, contadores y el panel del carrito
+}
+
+function htmlBotonAgregar(libro) {
+  if (enCarrito(libro.id)) {
+    return '<button type="button" class="btn-agregar-carrito en-carrito" data-id="' + libro.id + '" title="Quitar del carrito"><i class="fa-solid fa-check"></i> En el carrito</button>';
+  }
+  return '<button type="button" class="btn-agregar-carrito" data-id="' + libro.id + '"><i class="fa-solid fa-bag-shopping"></i> Agregar</button>';
+}
+
+function mostrarMensajeCarrito(html, tipo) {
+  var el = document.getElementById("carrito-mensaje");
+  if (!el) return;
+  el.className = "alert py-2 small alert-" + tipo;
+  el.innerHTML = html;
+}
+
+function limpiarMensajeCarrito() {
+  var el = document.getElementById("carrito-mensaje");
+  if (el) el.className = "alert py-2 small d-none";
+}
+
+function renderizarCarrito() {
+  var listaEl = document.getElementById("carrito-lista");
+  if (!listaEl) return;
+
+  // contador del header (queda oculto cuando está vacío)
+  var badges = document.querySelectorAll(".contador-carrito");
+  for (var b = 0; b < badges.length; b++) {
+    if (badges[b].textContent !== String(carrito.length)) badges[b].textContent = carrito.length;
+    badges[b].classList.toggle("d-none", carrito.length === 0);
+  }
+
+  var items = [];
+  var disponibles = 0;
+  carrito.forEach(function (id) {
+    var libro = buscarLibroPorId(id);
+    if (!libro) return;
+    var ok = libro.estado === "Disponible";
+    if (ok) disponibles++;
+    items.push(
+      '<li class="carrito-item" data-id="' + libro.id + '">' +
+      (libro.portada
+        ? '<img class="carrito-miniatura" src="' + escapeHtml(libro.portada) + '" alt="" width="48" height="72">'
+        : '<div class="carrito-miniatura tono-' + ((parseInt(libro.id, 10) || 0) % 5) + '"></div>') +
+      '<div class="carrito-datos"><p class="carrito-item-titulo">' + escapeHtml(libro.titulo) + "</p>" +
+      '<p class="carrito-item-autor">' + escapeHtml(libro.autor) + "</p>" +
+      (ok ? "" : '<p class="carrito-item-aviso">Ya no está disponible</p>') + "</div>" +
+      '<button type="button" class="btn-quitar-carrito" data-id="' + libro.id + '" aria-label="Quitar ' + escapeHtml(libro.titulo) + ' del carrito"><i class="fa-solid fa-xmark"></i></button>' +
+      "</li>"
+    );
+  });
+
+  var html = items.join("");
+  if (listaEl._html !== html) {
+    listaEl._html = html;
+    listaEl.innerHTML = html;
+  }
+
+  var hayItems = items.length > 0;
+  document.getElementById("carrito-vacio").classList.toggle("d-none", hayItems);
+  document.getElementById("carrito-form").classList.toggle("d-none", !hayItems);
+
+  // administrador/bibliotecario reservan a nombre de un socio
+  var soloGestion = document.querySelectorAll(".carrito-solo-gestion");
+  for (var g = 0; g < soloGestion.length; g++) soloGestion[g].classList.toggle("d-none", !permisos.esGestion);
+
+  var boton = document.getElementById("carrito-confirmar");
+  var textoBoton = disponibles === 1 ? "Reservar 1 libro" : "Reservar " + disponibles + " libros";
+  if (boton.textContent !== textoBoton) boton.textContent = textoBoton;
+  boton.disabled = disponibles === 0;
+}
+
+function confirmarCarrito() {
+  var ids = carrito.filter(function (id) {
+    var l = buscarLibroPorId(id);
+    return l && l.estado === "Disponible";
+  });
+  if (!ids.length) return;
+
+  if (!sesionActual) {
+    mostrarMensajeCarrito("Iniciá sesión para reservar los libros del carrito.", "warning");
+    var panel = bootstrap.Offcanvas.getInstance(document.getElementById("carrito-offcanvas"));
+    if (panel) panel.hide();
+    abrirModalLogin();
+    return;
+  }
+
+  var fecha = document.getElementById("carrito-fecha").value;
+  if (!fecha) {
+    mostrarMensajeCarrito("Elegí para cuándo querés retirar los libros.", "warning");
+    return;
+  }
+
+  var obtenerSocio;
+  var nombrePersona;
+  if (permisos.esGestion) {
+    nombrePersona = document.getElementById("carrito-nombre").value.trim();
+    if (!nombrePersona) {
+      mostrarMensajeCarrito("Escribí el nombre de quien reserva.", "warning");
+      return;
+    }
+    obtenerSocio = buscarOCrearSocio(nombrePersona, document.getElementById("carrito-tipo").value);
+  } else {
+    if (!sesionActual.socioId) {
+      mostrarMensajeCarrito("Tu cuenta no tiene un socio asociado; no podés reservar. Contactá a un bibliotecario.", "danger");
+      return;
+    }
+    nombrePersona = sesionActual.nombre || "un socio";
+    obtenerSocio = Promise.resolve({ id: String(sesionActual.socioId) });
+  }
+
+  var boton = document.getElementById("carrito-confirmar");
+  boton.disabled = true;
+  var reservados = [];
+  var fallidos = [];
+
+  obtenerSocio.then(function (socio) {
+    // de a uno: el servidor valida el límite de reservas en cada pedido
+    return ids.reduce(function (cadena, id) {
+      return cadena.then(function () {
+        return apiFetch("/reservas", { method: "POST", body: { socio_id: socio.id, libro_id: id, fecha_deseada: fecha } })
+          .then(function () { reservados.push(id); })
+          .catch(function (err) { fallidos.push({ id: id, mensaje: err && err.message ? err.message : "Error desconocido." }); });
+      });
+    }, Promise.resolve());
+  }).then(function () {
+    reservados.forEach(function (id) {
+      var l = buscarLibroPorId(id);
+      registrarHistorial("Se reservó \"" + (l ? l.titulo : "un libro") + "\" a nombre de " + nombrePersona + ".", "reservas", nombrePersona);
+      var pos = carrito.indexOf(id);
+      if (pos !== -1) carrito.splice(pos, 1);
+    });
+    guardarCarrito();
+    return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
+  }).then(function () {
+    renderizarLibros();
+    renderizarReservas();
+
+    var partes = [];
+    if (reservados.length) partes.push("Reservaste " + reservados.length + (reservados.length === 1 ? " libro." : " libros."));
+    fallidos.forEach(function (f) {
+      var l = buscarLibroPorId(f.id);
+      partes.push("No se pudo reservar «" + escapeHtml(l ? l.titulo : "un libro") + "»: " + escapeHtml(f.mensaje));
+    });
+    mostrarMensajeCarrito(partes.join("<br>"), fallidos.length ? (reservados.length ? "warning" : "danger") : "success");
+  }).catch(mostrarErrorApi).then(function () {
+    renderizarCarrito();
+  });
+}
+
+document.addEventListener("click", function (e) {
+  var agregar = e.target.closest(".btn-agregar-carrito");
+  if (agregar) { alternarCarrito(agregar.dataset.id); return; }
+  var quitar = e.target.closest(".btn-quitar-carrito");
+  if (quitar) { alternarCarrito(quitar.dataset.id); }
+});
+
+document.getElementById("carrito-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  confirmarCarrito();
+});
+
+document.getElementById("carrito-vaciar").addEventListener("click", function () {
+  carrito = [];
+  guardarCarrito();
+  limpiarMensajeCarrito();
+  renderizarLibros();
+});
+
+document.getElementById("carrito-offcanvas").addEventListener("show.bs.offcanvas", function () {
+  var hoyISO = new Date().toISOString().slice(0, 10);
+  var campo = document.getElementById("carrito-fecha");
+  campo.min = hoyISO;
+  if (!campo.value || campo.value < hoyISO) campo.value = hoyISO;
+  renderizarCarrito();
+});
+
+// ------------------------------
+// Novedades (carrusel de los últimos libros cargados)
+// ------------------------------
+
+function renderizarNovedades() {
+  var contenedor = document.getElementById("lista-novedades");
+  var seccion = document.getElementById("seccion-novedades");
+  if (!contenedor || !seccion) return;
+
+  var recientes = libros.slice().sort(function (a, b) {
+    return (parseInt(b.id, 10) || 0) - (parseInt(a.id, 10) || 0);
+  }).slice(0, 12);
+
+  seccion.classList.toggle("d-none", recientes.length === 0);
+
+  var tarjetas = recientes.map(function (libro) {
+    var claseEstado = libro.estado === "Prestado" ? "estado-prestado" : "estado-reservado";
+    var pie = libro.estado === "Disponible"
+      ? htmlBotonAgregar(libro)
+      : '<span class="etiqueta-estado ' + claseEstado + '">' + escapeHtml(libro.estado) + "</span>";
+    return {
+      libro: libro,
+      firmaPortada: firmaPortada(libro),
+      html:
+        '<div class="libro-portada-wrap">' + htmlPortadaLibro(libro) + "</div>" +
+        '<p class="novedad-titulo" title="' + escapeHtml(libro.titulo) + '">' + escapeHtml(libro.titulo) + "</p>" +
+        '<p class="libro-autor">' + escapeHtml(libro.autor) + "</p>" + pie
+    };
+  });
+
+  reconciliarTarjetas(contenedor, tarjetas, "novedad-item");
+}
+
+(function () {
+  var pista = document.getElementById("lista-novedades");
+  function mover(sentido) {
+    pista.scrollBy({ left: sentido * pista.clientWidth * 0.85, behavior: "smooth" });
+  }
+  document.getElementById("novedades-prev").addEventListener("click", function () { mover(-1); });
+  document.getElementById("novedades-next").addEventListener("click", function () { mover(1); });
+})();
+
+// ------------------------------
+// Banner con avisos
+// ------------------------------
+
+(function () {
+  var pistas = document.getElementById("banner-pistas");
+  var puntosEl = document.getElementById("banner-puntos");
+  var slides = pistas.children;
+  var actual = 0;
+  var temporizador = null;
+  var reducido = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  for (var i = 0; i < slides.length; i++) {
+    var punto = document.createElement("button");
+    punto.type = "button";
+    punto.className = "banner-punto";
+    punto.setAttribute("aria-label", "Aviso " + (i + 1));
+    punto.dataset.indice = i;
+    puntosEl.appendChild(punto);
+  }
+
+  function mostrar(indice) {
+    actual = (indice + slides.length) % slides.length;
+    pistas.style.transform = "translateX(-" + actual * 100 + "%)";
+    for (var j = 0; j < puntosEl.children.length; j++) {
+      puntosEl.children[j].classList.toggle("activo", j === actual);
+      if (j === actual) puntosEl.children[j].setAttribute("aria-current", "true");
+      else puntosEl.children[j].removeAttribute("aria-current");
+    }
+  }
+
+  function arrancar() {
+    detener();
+    if (reducido) return;
+    temporizador = setInterval(function () {
+      if (!document.hidden) mostrar(actual + 1);
+    }, 7000);
+  }
+
+  function detener() {
+    if (temporizador) { clearInterval(temporizador); temporizador = null; }
+  }
+
+  document.getElementById("banner-prev").addEventListener("click", function () { mostrar(actual - 1); arrancar(); });
+  document.getElementById("banner-next").addEventListener("click", function () { mostrar(actual + 1); arrancar(); });
+  puntosEl.addEventListener("click", function (e) {
+    var p = e.target.closest(".banner-punto");
+    if (p) { mostrar(parseInt(p.dataset.indice, 10)); arrancar(); }
+  });
+  var banner = document.getElementById("banner");
+  banner.addEventListener("mouseenter", detener);
+  banner.addEventListener("mouseleave", arrancar);
+  banner.addEventListener("focusin", detener);
+  banner.addEventListener("focusout", arrancar);
+
+  mostrar(0);
+  arrancar();
+})();
 
 function buscarReservaPorLibro(libroId) {
   for (var i = 0; i < reservas.length; i++) {
@@ -1309,10 +1896,13 @@ form.addEventListener("submit", function (e) {
       body: { codigo_interno: generarCodigoInterno(), libro_id: nuevoLibro.id }
     });
   }).then(function () {
-    registrarHistorial("Se agregó el libro \"" + titulo + "\".");
+    registrarHistorial("Se agregó el libro \"" + titulo + "\".", "libros");
     return cargarLibrosApi();
   }).then(function () {
     form.reset();
+    var modalAgregarEl = document.getElementById("modal-agregar-libro");
+    var modalAgregar = modalAgregarEl && bootstrap.Modal.getInstance(modalAgregarEl);
+    if (modalAgregar) modalAgregar.hide();
     portadaEncontrada = null;
     portadaEsManual = false;
     inputImagenLocal.value = "";
@@ -1508,8 +2098,10 @@ formReservar.addEventListener("submit", function (e) {
       alert("Tu cuenta no tiene un socio asociado; no podés reservar. Contactá a un bibliotecario.");
       return;
     }
+    var libroReservadoAuto = buscarLibroPorId(libroId);
     apiFetch("/reservas", { method: "POST", body: { socio_id: socioIdPropio, libro_id: libroId, fecha_deseada: fechaDeseada } })
       .then(function () {
+        registrarHistorial("Se reservó \"" + (libroReservadoAuto ? libroReservadoAuto.titulo : "un libro") + "\" a nombre de " + (sesionActual.nombre || "un socio") + ".", "reservas", sesionActual.nombre);
         return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
       }).then(function () {
         renderizarLibros();
@@ -1531,9 +2123,11 @@ formReservar.addEventListener("submit", function (e) {
     return;
   }
 
+  var libroReservado = buscarLibroPorId(libroId);
   buscarOCrearSocio(nombre, tipo).then(function (socio) {
     return apiFetch("/reservas", { method: "POST", body: { socio_id: socio.id, libro_id: libroId, fecha_deseada: fechaDeseada } });
   }).then(function () {
+    registrarHistorial("Se reservó \"" + (libroReservado ? libroReservado.titulo : "un libro") + "\" a nombre de " + nombre + ".", "reservas", nombre);
     return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
   }).then(function () {
     renderizarLibros();
@@ -1547,8 +2141,11 @@ function cancelarReserva(libroId) {
   var reserva = buscarReservaPorLibro(libroId);
   if (!reserva) return;
 
+  var libroCancelado = buscarLibroPorId(libroId);
   apiFetch("/reservas/" + reserva.id + "/cancelar", { method: "PATCH" })
-    .then(function () { return Promise.all([cargarLibrosApi(), cargarReservasApi()]); })
+    .then(function () {
+      registrarHistorial("Se canceló la reserva de \"" + (libroCancelado ? libroCancelado.titulo : "un libro") + "\" de " + (reserva.nombre || "un socio") + ".", "reservas", reserva.nombre);
+      return Promise.all([cargarLibrosApi(), cargarReservasApi()]); })
     .then(function () {
       renderizarLibros();
       renderizarReservas();
@@ -1802,7 +2399,10 @@ function prestarTodasReservasDelGrupo(indiceGrupo) {
 
   var cadenaDePromesas = itemsPrestables.reduce(function (promesaPrevia, item) {
     return promesaPrevia.then(function () {
-      return apiFetch("/prestamos", { method: "POST", body: { socio_id: socioId, ejemplar_id: item.libro.ejemplarId } });
+      return apiFetch("/prestamos", { method: "POST", body: { socio_id: socioId, ejemplar_id: item.libro.ejemplarId } })
+        .then(function () {
+          registrarHistorial("Se prestó \"" + item.libro.titulo + "\" a " + grupo.nombre + ".", "prestamos", grupo.nombre);
+        });
     });
   }, Promise.resolve());
 
@@ -1863,6 +2463,7 @@ formPrestar.addEventListener("submit", function (e) {
   socioPromise.then(function (socio) {
     return apiFetch("/prestamos", { method: "POST", body: { socio_id: socio.id, ejemplar_id: libro.ejemplarId } });
   }).then(function () {
+    registrarHistorial("Se prestó \"" + libro.titulo + "\" a " + nombre + ".", "prestamos", nombre);
     return Promise.all([cargarLibrosApi(), cargarReservasApi(), cargarPrestamosApi()]);
   }).then(function () {
     renderizarLibros();
@@ -1877,8 +2478,11 @@ function devolverLibro(libroId) {
   var prestamo = buscarPrestamoActivoPorLibro(libroId);
   if (!prestamo) return;
 
+  var libroDevuelto = buscarLibroPorId(libroId);
   apiFetch("/prestamos/" + prestamo.id + "/devolver", { method: "PATCH" })
-    .then(function () { return Promise.all([cargarLibrosApi(), cargarReservasApi(), cargarPrestamosApi()]); })
+    .then(function () {
+      registrarHistorial("Se registró la devolución de \"" + (libroDevuelto ? libroDevuelto.titulo : "un libro") + "\" de " + (prestamo.nombre || "un socio") + ".", "prestamos", prestamo.nombre);
+      return Promise.all([cargarLibrosApi(), cargarReservasApi(), cargarPrestamosApi()]); })
     .then(function () {
       renderizarLibros();
       renderizarReservas();
@@ -1985,6 +2589,7 @@ function actualizarUIAuth() {
 
   if (haySesion) {
     headerUsuarioNombre.textContent = sesionActual.nombre + (sesionActual.rol ? " (" + sesionActual.rol + ")" : "");
+    pintarAvatar(menuAvatar);
   }
 
   aplicarPermisosUI();
@@ -2028,15 +2633,6 @@ function aplicarPermisosUI() {
     nodosSocio[s].classList.toggle("d-none", permisos.esGestion);
   }
 
-  // al ocultarse el panel "Agregar libro" (col-lg-4), el listado (col-lg-8)
-  // queda solo y descentrado en la fila; lo expandimos para que ocupe todo
-  // el ancho disponible en vez de dejarlo pegado a la izquierda
-  var colListado = document.getElementById("col-listado-libros");
-  if (colListado) {
-    colListado.classList.toggle("col-lg-8", permisos.esAdmin);
-    colListado.classList.toggle("col-lg-12", !permisos.esAdmin);
-  }
-
   // si la pestaña activa quedó oculta (por ejemplo, cambió el rol al
   // volver a loguearse), volvemos a mostrar el Catálogo
   var panelActivo = document.querySelector(".tab-pane.active");
@@ -2064,16 +2660,194 @@ function mapearUsuarioSesion(usuario) {
   };
 }
 
+// ------------------------------
+// Mi cuenta: editar datos y foto de perfil (la foto queda solo en este
+// navegador, en localStorage, y se reduce a 256px para que pese poco)
+// ------------------------------
+var modalMiCuenta = new bootstrap.Modal(document.getElementById("modal-mi-cuenta"));
+var formMiCuenta = document.getElementById("form-mi-cuenta");
+var miCuentaError = document.getElementById("mi-cuenta-error");
+var miCuentaOk = document.getElementById("mi-cuenta-ok");
+var miCuentaAvatar = document.getElementById("mi-cuenta-avatar");
+var miCuentaFotoInput = document.getElementById("mi-cuenta-foto");
+var miCuentaQuitarFoto = document.getElementById("mi-cuenta-quitar-foto");
+var miCuentaCampos = {
+  nombre: document.getElementById("mi-cuenta-nombre"),
+  apellido: document.getElementById("mi-cuenta-apellido"),
+  cedula: document.getElementById("mi-cuenta-cedula"),
+  telefono: document.getElementById("mi-cuenta-telefono"),
+  direccion: document.getElementById("mi-cuenta-direccion"),
+  email: document.getElementById("mi-cuenta-email"),
+  passwordActual: document.getElementById("mi-cuenta-password-actual"),
+  password: document.getElementById("mi-cuenta-password")
+};
+// foto elegida pero aún no guardada: undefined = sin cambios, null = quitar
+var miCuentaFotoPendiente;
+
+function claveFoto() {
+  return sesionActual ? "bibliotech_foto_" + sesionActual.id : null;
+}
+
+function obtenerFotoLocal() {
+  try {
+    var clave = claveFoto();
+    return clave ? localStorage.getItem(clave) : null;
+  } catch (e) { return null; }
+}
+
+// dibuja la foto (o la inicial del nombre) dentro de un .avatar-usuario
+function pintarAvatar(nodo, fotoForzada) {
+  if (!nodo || !sesionActual) return;
+  var foto = fotoForzada === undefined ? obtenerFotoLocal() : fotoForzada;
+  if (foto) {
+    nodo.style.backgroundImage = 'url("' + foto + '")';
+    nodo.textContent = "";
+  } else {
+    nodo.style.backgroundImage = "";
+    nodo.textContent = (sesionActual.nombre || "?").trim().charAt(0).toUpperCase();
+  }
+}
+
+function redimensionarImagen(archivo, lado) {
+  return new Promise(function (resolve, reject) {
+    var lector = new FileReader();
+    lector.onerror = function () { reject(new Error("No se pudo leer la imagen.")); };
+    lector.onload = function () {
+      var img = new Image();
+      img.onerror = function () { reject(new Error("El archivo no es una imagen válida.")); };
+      img.onload = function () {
+        var canvas = document.createElement("canvas");
+        canvas.width = lado;
+        canvas.height = lado;
+        var ctx = canvas.getContext("2d");
+        // recorte cuadrado centrado
+        var min = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, lado, lado);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
+function mostrarMensajeMiCuenta(mensaje, esError) {
+  miCuentaError.classList.toggle("d-none", !(esError && mensaje));
+  if (esError) miCuentaError.textContent = mensaje;
+  miCuentaOk.classList.toggle("d-none", esError || !mensaje);
+}
+
+function abrirMiCuenta() {
+  mostrarMensajeMiCuenta("", true);
+  miCuentaFotoPendiente = undefined;
+  formMiCuenta.reset();
+  pintarAvatar(miCuentaAvatar);
+  miCuentaQuitarFoto.classList.toggle("d-none", !obtenerFotoLocal());
+
+  var esSocio = !!sesionActual.socioId;
+  document.getElementById("mi-cuenta-grupo-apellido").classList.toggle("d-none", !esSocio);
+  document.getElementById("mi-cuenta-datos-socio").classList.toggle("d-none", !esSocio);
+  document.getElementById("mi-cuenta-nombre-label").textContent = esSocio ? "Nombres" : "Nombre";
+
+  apiFetch("/auth/me").then(function (u) {
+    var soc = u.socio;
+    miCuentaCampos.nombre.value = soc ? soc.nombre : u.nombre;
+    miCuentaCampos.email.value = u.email || "";
+    if (soc) {
+      miCuentaCampos.apellido.value = soc.apellido && soc.apellido !== "-" ? soc.apellido : "";
+      miCuentaCampos.cedula.value = String(soc.cedula || "").indexOf("PENDIENTE-") === 0 ? "" : (soc.cedula || "");
+      miCuentaCampos.telefono.value = soc.telefono || "";
+      miCuentaCampos.direccion.value = soc.direccion || "";
+    }
+  }).catch(mostrarErrorApi);
+
+  modalMiCuenta.show();
+}
+
+document.getElementById("header-btn-mi-cuenta").addEventListener("click", function (e) {
+  e.preventDefault();
+  if (sesionActual) abrirMiCuenta();
+});
+
+document.getElementById("mi-cuenta-elegir-foto").addEventListener("click", function () {
+  miCuentaFotoInput.click();
+});
+
+miCuentaFotoInput.addEventListener("change", function () {
+  var archivo = miCuentaFotoInput.files[0];
+  if (!archivo) return;
+  redimensionarImagen(archivo, 256).then(function (dataUrl) {
+    miCuentaFotoPendiente = dataUrl;
+    pintarAvatar(miCuentaAvatar, dataUrl);
+    miCuentaQuitarFoto.classList.remove("d-none");
+  }).catch(function (err) { mostrarMensajeMiCuenta(err.message, true); });
+  miCuentaFotoInput.value = "";
+});
+
+miCuentaQuitarFoto.addEventListener("click", function () {
+  miCuentaFotoPendiente = null;
+  pintarAvatar(miCuentaAvatar, null);
+  miCuentaQuitarFoto.classList.add("d-none");
+});
+
+formMiCuenta.addEventListener("submit", function (e) {
+  e.preventDefault();
+  mostrarMensajeMiCuenta("", true);
+  var esSocio = !!sesionActual.socioId;
+  var c = miCuentaCampos;
+
+  var body = { nombre: c.nombre.value.trim(), email: c.email.value.trim() };
+  if (!body.nombre || !body.email) { mostrarMensajeMiCuenta("Completá nombre y correo.", true); return; }
+  if (esSocio) {
+    body.apellido = c.apellido.value.trim();
+    body.cedula = c.cedula.value.trim();
+    body.telefono = c.telefono.value.trim() || null;
+    body.direccion = c.direccion.value.trim() || null;
+    if (!body.apellido || !body.cedula) { mostrarMensajeMiCuenta("Completá apellidos y cédula.", true); return; }
+  }
+  if (c.password.value) {
+    if (c.password.value.length < 6) { mostrarMensajeMiCuenta("La nueva contraseña debe tener al menos 6 caracteres.", true); return; }
+    if (!c.passwordActual.value) { mostrarMensajeMiCuenta("Ingresá tu contraseña actual para cambiarla.", true); return; }
+    body.password = c.password.value;
+    body.password_actual = c.passwordActual.value;
+  }
+
+  apiFetch("/auth/perfil", { method: "PUT", body: body }).then(function (usuario) {
+    // foto: solo local
+    if (miCuentaFotoPendiente !== undefined) {
+      try {
+        if (miCuentaFotoPendiente) localStorage.setItem(claveFoto(), miCuentaFotoPendiente);
+        else localStorage.removeItem(claveFoto());
+      } catch (err) {
+        mostrarMensajeMiCuenta("Los datos se guardaron, pero no se pudo guardar la foto en este navegador.", true);
+      }
+      miCuentaFotoPendiente = undefined;
+    }
+    sesionActual = mapearUsuarioSesion(usuario);
+    guardarSesion();
+    actualizarUIAuth();
+    c.password.value = "";
+    c.passwordActual.value = "";
+    if (miCuentaError.classList.contains("d-none")) mostrarMensajeMiCuenta("Datos actualizados.", false);
+    return cargarSociosApi().then(renderizarSocios).catch(function () {});
+  }).catch(function (err) {
+    mostrarMensajeMiCuenta(err.message || "No se pudieron guardar los cambios.", true);
+  });
+});
+
 formRegistro.addEventListener("submit", function (e) {
   e.preventDefault();
   registroError.classList.add("d-none");
 
   var nombre = registroNombre.value.trim();
+  var apellido = registroApellido.value.trim();
+  var cedula = registroCedula.value.trim();
+  var telefono = registroTelefono.value.trim();
   var email = registroEmail.value.trim();
   var password = registroPassword.value;
   var passwordConfirmar = registroPasswordConfirmar.value;
 
-  if (!nombre || !email || !password) return;
+  if (!nombre || !apellido || !cedula || !email || !password) return;
 
   if (password.length < 6) {
     mostrarErrorRegistro("La contraseña debe tener al menos 6 caracteres.");
@@ -2088,13 +2862,13 @@ formRegistro.addEventListener("submit", function (e) {
   // el registro público siempre crea una cuenta con rol "socio" (ver AuthController::registro);
   // declarar "centro educativo" acá no lo verifica: un bibliotecario tiene
   // que confirmarlo a mano desde la pestaña de socios
-  apiFetch("/auth/registro", { method: "POST", body: { nombre: nombre, email: email, password: password } })
+  apiFetch("/auth/registro", { method: "POST", body: { nombre: nombre, apellido: apellido, cedula: cedula, telefono: telefono || null, email: email, password: password } })
     .then(function (resp) {
       guardarToken(resp.token);
       sesionActual = mapearUsuarioSesion(resp.usuario);
       guardarSesion();
       actualizarUIAuth();
-      registrarHistorial("Se registró la cuenta de " + nombre + ".");
+      registrarHistorial("Se registró la cuenta de " + nombre + " " + apellido + ".", "cuentas", nombre + " " + apellido);
       modalRegistro.hide();
       return cargarTodoDesdeApi();
     })
@@ -2261,4 +3035,19 @@ if (sesionActual && getToken()) {
 } else {
   cargarCatalogoPublico();
   abrirModalLogin();
+}
+var buscadorMultasEl = document.getElementById("buscador-multas");
+if (buscadorMultasEl) {
+  buscadorMultasEl.addEventListener("input", function () {
+    busquedaMultas = buscadorMultasEl.value;
+    renderizarMultas();
+  });
+}
+
+var filtroCategoriaMultasEl = document.getElementById("filtro-categoria-multas");
+if (filtroCategoriaMultasEl) {
+  filtroCategoriaMultasEl.addEventListener("change", function () {
+    filtroCategoriaMultas = filtroCategoriaMultasEl.value;
+    renderizarMultas();
+  });
 }

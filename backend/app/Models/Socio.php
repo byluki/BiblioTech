@@ -11,12 +11,20 @@ class Socio extends Model
 
     protected $fillable = [
         'usuario_id', 'numero_socio', 'foto', 'nombre', 'apellido',
-        'cedula', 'direccion', 'telefono', 'email', 'fecha_alta',
+        'cedula', 'direccion', 'telefono', 'email', 'fecha_alta', 'valido_hasta',
         'tipo', 'estado', 'verificado_centro_educativo',
     ];
 
+    protected $appends = ['cedula_pendiente'];
+
+    public function getCedulaPendienteAttribute(): bool
+    {
+        return $this->cedulaPendiente();
+    }
+
     protected $casts = [
         'fecha_alta' => 'date',
+        'valido_hasta' => 'date',
         'verificado_centro_educativo' => 'boolean',
     ];
 
@@ -43,6 +51,18 @@ class Socio extends Model
     public function notificaciones()
     {
         return $this->hasMany(Notificacion::class);
+    }
+
+    // true mientras no se haya cargado una cédula real (alta rápida o
+    // registro público con datos autogenerados)
+    public function cedulaPendiente(): bool
+    {
+        return str_starts_with((string) $this->cedula, 'PENDIENTE-');
+    }
+
+    public function carnetVigente(): bool
+    {
+        return $this->valido_hasta === null || $this->valido_hasta->endOfDay()->isFuture();
     }
 
     public function estaActivo(): bool

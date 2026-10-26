@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/images/logo.png" alt="Logo BiblioTech" width="90" height="90">
+<img src="frontend/images/logo.png" alt="Logo BiblioTech" width="90" height="90">
 
 # 📚 BiblioTech
 

@@ -7,6 +7,7 @@ use App\Models\HistorialActividad;
 use App\Models\Socio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SocioController extends Controller
 {
@@ -45,10 +46,11 @@ class SocioController extends Controller
             // proporciona, pero ahora son opcionales para los formularios
             // rápidos de alta/reserva del frontend.
             'numero_socio' => ['sometimes', 'string', 'unique:socios,numero_socio'],
+            'valido_hasta' => ['sometimes', 'nullable', 'date'],
             'foto' => ['nullable', 'string'],
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['sometimes', 'string', 'max:150'],
-            'cedula' => ['sometimes', 'string', 'unique:socios,cedula'],
+            'cedula' => ['sometimes', 'string', 'max:30', 'unique:socios,cedula'],
             'direccion' => ['nullable', 'string'],
             'telefono' => ['nullable', 'string'],
             'email' => ['nullable', 'email'],
@@ -63,10 +65,13 @@ class SocioController extends Controller
         // automáticamente cuando no vienen informados.
         $partesNombre = preg_split('/\s+/', trim($data['nombre']), 2);
         $data['apellido'] = $data['apellido'] ?? ($partesNombre[1] ?? '-');
-        $data['numero_socio'] = $data['numero_socio'] ?? 'AUTO-' . strtoupper(Str::random(10));
         $data['cedula'] = $data['cedula'] ?? 'PENDIENTE-' . Str::uuid();
+        $data['numero_socio'] = $data['numero_socio']
+            ?? (str_starts_with($data['cedula'], 'PENDIENTE-') ? 'AUTO-' . strtoupper(Str::random(10)) : $data['cedula']);
         $data['fecha_alta'] = $data['fecha_alta'] ?? now()->toDateString();
         $data['estado'] = $data['estado'] ?? 'activo';
+        // el carnet vale hasta fin de año si no se indica otra fecha
+        $data['valido_hasta'] = $data['valido_hasta'] ?? now()->endOfYear()->toDateString();
 
         $socio = Socio::create($data);
 
@@ -88,11 +93,19 @@ class SocioController extends Controller
             'foto' => ['nullable', 'string'],
             'nombre' => ['sometimes', 'string', 'max:150'],
             'apellido' => ['sometimes', 'string', 'max:150'],
+            'cedula' => ['sometimes', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
             'direccion' => ['nullable', 'string'],
             'telefono' => ['nullable', 'string'],
             'email' => ['nullable', 'email'],
+            'valido_hasta' => ['sometimes', 'nullable', 'date'],
             'tipo' => ['sometimes', 'in:particular,centro_educativo'],
         ]);
+
+        // si la cédula pendiente se reemplaza por una real, el código de
+        // barras (numero_socio) pasa a ser la cédula
+        if (isset($data['cedula']) && $socio->cedulaPendiente() && !str_starts_with($data['cedula'], 'PENDIENTE-')) {
+            $data['numero_socio'] = $data['cedula'];
+        }
 
         $socio->update($data);
 
