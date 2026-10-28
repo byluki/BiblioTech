@@ -53,10 +53,13 @@ class SocioController extends Controller
             'cedula' => ['sometimes', 'string', 'max:30', 'unique:socios,cedula'],
             'direccion' => ['nullable', 'string'],
             'telefono' => ['nullable', 'string'],
-            'email' => ['nullable', 'email'],
+            'email' => ['required', 'email', 'max:150'],
             'fecha_alta' => ['sometimes', 'date'],
             'tipo' => ['required', 'in:particular,centro_educativo'],
             'estado' => ['sometimes', 'in:activo,suspendido,inactivo'],
+        ], [
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico no es válido.',
         ]);
 
         // El frontend puede crear un socio desde "Reservar" o "Prestar"
@@ -96,9 +99,12 @@ class SocioController extends Controller
             'cedula' => ['sometimes', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
             'direccion' => ['nullable', 'string'],
             'telefono' => ['nullable', 'string'],
-            'email' => ['nullable', 'email'],
+            'email' => ['sometimes', 'required', 'email', 'max:150'],
             'valido_hasta' => ['sometimes', 'nullable', 'date'],
             'tipo' => ['sometimes', 'in:particular,centro_educativo'],
+        ], [
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico no es válido.',
         ]);
 
         // si la cédula pendiente se reemplaza por una real, el código de

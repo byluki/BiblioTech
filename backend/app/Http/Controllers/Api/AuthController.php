@@ -14,6 +14,19 @@ use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
+    // Contraseña segura: 8+ caracteres, mayúscula, minúscula y número.
+    // (mismas reglas que muestra el verificador del frontend)
+    private const REGEX_PASSWORD = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/';
+
+    private const MENSAJES = [
+        'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+        'password.regex' => 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.',
+        'email.required' => 'El correo electrónico es obligatorio.',
+        'email.email' => 'El correo electrónico no es válido.',
+        'email.unique' => 'Ya existe una cuenta con ese correo electrónico.',
+        'cedula.unique' => 'Ya existe un socio con esa cédula.',
+    ];
+
     // POST /auth/login
     public function login(Request $request)
     {
@@ -72,8 +85,8 @@ class AuthController extends Controller
             'telefono' => ['nullable', 'string', 'max:50'],
             'direccion' => ['nullable', 'string'],
             'email' => ['required', 'email', 'max:150', 'unique:usuarios,email'],
-            'password' => ['required', 'string', 'min:6'],
-        ]);
+            'password' => ['required', 'string', 'min:8', 'regex:'.self::REGEX_PASSWORD],
+        ], self::MENSAJES);
 
         $usuarioYSocio = DB::transaction(function () use ($data, $request) {
             $rolSocio = Rol::where('nombre', 'socio')->firstOrFail();
@@ -135,7 +148,7 @@ class AuthController extends Controller
         $reglas = [
             'nombre' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', Rule::unique('usuarios', 'email')->ignore($usuario->id)],
-            'password' => ['nullable', 'string', 'min:6'],
+            'password' => ['nullable', 'string', 'min:8', 'regex:'.self::REGEX_PASSWORD],
             'password_actual' => ['required_with:password', 'nullable', 'string'],
         ];
         if ($socio) {
@@ -146,7 +159,7 @@ class AuthController extends Controller
                 'direccion' => ['nullable', 'string'],
             ];
         }
-        $data = $request->validate($reglas);
+        $data = $request->validate($reglas, self::MENSAJES);
 
         if (! empty($data['password']) && ! Hash::check($data['password_actual'], $usuario->password)) {
             return response()->json(['message' => 'La contraseña actual no es correcta.'], 422);

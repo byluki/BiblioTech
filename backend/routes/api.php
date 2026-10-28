@@ -69,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/libros', [LibroController::class, 'store']);
         Route::put('/libros/{libro}', [LibroController::class, 'update']);
         Route::delete('/libros/{libro}', [LibroController::class, 'destroy']);
+        Route::put('/libros/{libro}/cantidad', [LibroController::class, 'cambiarCantidad']);
 
         Route::post('/categorias', [CategoriaController::class, 'store']);
         Route::put('/categorias/{categoria}', [CategoriaController::class, 'update']);

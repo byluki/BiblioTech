@@ -16,10 +16,14 @@
   <!-- solo el núcleo y los íconos "solid" (antes se cargaba el paquete completo) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <!-- calendario web (mismo aspecto en todos los navegadores y en el celular) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/es.min.js" defer></script>
   <script src="config.js" defer></script>
   <script src="script.js" defer></script>
 </head>
@@ -154,7 +158,7 @@
           <label for="carrito-nombre" class="form-label">Nombre del solicitante</label>
           <input type="text" id="carrito-nombre" class="form-control" list="datalist-socios" autocomplete="off">
         </div>
-        <div class="mb-3 carrito-solo-gestion d-none">
+        <div class="mb-3 d-none">
           <label for="carrito-tipo" class="form-label">Tipo de usuario</label>
           <select id="carrito-tipo" class="form-select">
             <option value="Particular">Particular</option>
@@ -163,7 +167,7 @@
         </div>
         <div class="mb-3">
           <label for="carrito-fecha" class="form-label">¿Para cuándo los querés retirar?</label>
-          <input type="date" id="carrito-fecha" class="form-control" required>
+          <input type="text" id="carrito-fecha" class="form-control" data-calendario placeholder="Elegí una fecha" required>
         </div>
         <button type="submit" class="btn btn-brand w-100" id="carrito-confirmar">Reservar</button>
         <button type="button" class="btn btn-link w-100 mt-2 carrito-vaciar" id="carrito-vaciar">Vaciar carrito</button>
@@ -181,21 +185,21 @@
       <div class="banner-pistas" id="banner-pistas">
         <article class="banner-slide banner-claro">
           <div class="banner-texto">
-            <h2>Bienvenidos a la Biblioteca Central</h2>
-            <p>Buscá, reservá y retirá tus libros.</p>
+            <h2>Biblioteca Central de San José</h2>
+            <p>Reservá desde acá y retirá el libro en el mostrador.</p>
           </div>
           <img class="banner-logo" src="/images/logo.png" alt="" width="120" height="120" loading="lazy">
         </article>
         <article class="banner-slide banner-naranja">
           <div class="banner-texto">
-            <h2>Sumá libros al carrito y reservalos juntos</h2>
-            <p>Los usuarios particulares pueden tener 1 reserva activa a la vez.</p>
+            <h2>Reservá varios libros a la vez</h2>
+            <p>Sumalos al carrito. Las cuentas particulares pueden tener una reserva activa por vez.</p>
           </div>
         </article>
         <article class="banner-slide banner-oscuro">
           <div class="banner-texto">
-            <h2>Mirá las últimas novedades</h2>
-            <p>Los libros que llegaron más recientemente, acá abajo.</p>
+            <h2>Llegaron libros nuevos</h2>
+            <p>Están en Novedades, más abajo.</p>
           </div>
         </article>
       </div>
@@ -327,7 +331,7 @@
                   </div>
                   <div class="col-sm-6">
                     <label for="socio-email" class="form-label">Correo electrónico</label>
-                    <input type="email" id="socio-email" class="form-control" placeholder="Opcional">
+                    <input type="email" id="socio-email" class="form-control" placeholder="nombre@correo.com" required>
                   </div>
                 </div>
                 <div class="mb-3">
@@ -337,7 +341,7 @@
                 <div class="row g-3 mb-4">
                   <div class="col-sm-6">
                     <label for="socio-valido-hasta" class="form-label">Carnet válido hasta</label>
-                    <input type="date" id="socio-valido-hasta" class="form-control">
+                    <input type="text" id="socio-valido-hasta" class="form-control" data-calendario placeholder="Fin de año si lo dejás vacío">
                   </div>
                   <div class="col-sm-6">
                     <label for="socio-tipo" class="form-label">Tipo de usuario</label>
@@ -412,21 +416,40 @@
             <div class="card-body p-4">
               <h2 class="panel-title mb-3"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Multas registradas</h2>
               <div class="row g-2 mb-3">
-                <div class="col-sm-7">
+                <div class="col-12">
+                  <label for="buscador-multas" class="form-label">Buscar por socio</label>
                   <div class="input-group">
                     <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="search" class="form-control" id="buscador-multas" placeholder="Buscar multa por socio, motivo, monto o estado" autocomplete="off">
+                    <input type="search" class="form-control" id="buscador-multas" list="datalist-socios" placeholder="Nombre, apellido o cédula" autocomplete="off">
                   </div>
                 </div>
-                <div class="col-sm-5">
-                  <select id="filtro-categoria-multas" class="form-select" aria-label="Filtrar multas por categoría">
-                    <option value="">Todas las categorías</option>
+                <div class="col-sm-4">
+                  <select id="filtro-estado-multas" class="form-select" aria-label="Filtrar por estado">
+                    <option value="">Pendientes y pagadas</option>
+                    <option value="pendiente">Solo pendientes</option>
+                    <option value="pagada">Solo pagadas</option>
+                  </select>
+                </div>
+                <div class="col-sm-4">
+                  <select id="filtro-metodo-multas" class="form-select" aria-label="Filtrar por método de pago">
+                    <option value="">Cualquier método</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="debito">Tarjeta de débito</option>
+                    <option value="credito">Tarjeta de crédito</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="mercado_pago">Mercado Pago</option>
+                  </select>
+                </div>
+                <div class="col-sm-4">
+                  <select id="filtro-categoria-multas" class="form-select" aria-label="Filtrar por motivo">
+                    <option value="">Cualquier motivo</option>
                     <option value="Atraso en devolución">Atraso en devolución</option>
                     <option value="Libro perdido">Libro perdido</option>
                     <option value="Libro deteriorado">Libro deteriorado</option>
                   </select>
                 </div>
               </div>
+              <div id="resumen-multas" class="resumen-multas d-none" aria-live="polite"></div>
               <ul class="list-unstyled lista-reservas" id="lista-multas"></ul>
               <div id="estado-vacio-multas" class="text-center text-muted py-5 d-none">
                 <i class="fa-solid fa-circle-check fa-2x mb-3"></i>
@@ -497,7 +520,7 @@
   <div class="modal fade" id="modal-editar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <form id="form-editar">
+        <form id="form-editar" novalidate>
           <div class="modal-header">
             <h5 class="modal-title"><i class="fa-solid fa-pen me-2"></i>Editar libro</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -526,6 +549,11 @@
             <div class="mb-3">
               <label for="editar-codigo-barras" class="form-label">Código de barras / ISBN</label>
               <input type="text" id="editar-codigo-barras" class="form-control" placeholder="Escaneá o escribí el ISBN">
+            </div>
+            <div class="mb-3">
+              <label for="editar-copias" class="form-label">Cantidad de copias</label>
+              <input type="number" id="editar-copias" class="form-control campo-copias" min="1" max="200" step="1" inputmode="numeric">
+              <div class="form-text" id="editar-copias-ayuda"></div>
             </div>
             <div class="mb-3">
               <label for="editar-imagen-local" class="form-label">Imagen de portada (opcional)</label>
@@ -562,7 +590,7 @@
   <div class="modal fade" id="modal-reservar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <form id="form-reservar">
+        <form id="form-reservar" novalidate>
           <div class="modal-header">
             <h5 class="modal-title"><i class="fa-solid fa-bookmark me-2"></i>Reservar libro</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -573,7 +601,7 @@
             <p id="reservar-como-socio-info" class="text-muted small mb-3 d-none">Vas a reservarlo con tu cuenta de socio.</p>
             <div class="mb-3" id="grupo-reservar-nombre">
               <label for="reservar-nombre" class="form-label">Nombre del solicitante</label>
-              <input type="text" id="reservar-nombre" class="form-control">
+              <input type="text" id="reservar-nombre" class="form-control" list="datalist-socios" autocomplete="off" placeholder="Socio registrado">
             </div>
             <div class="mb-2" id="grupo-reservar-tipo">
               <label for="reservar-tipo" class="form-label">Tipo de usuario</label>
@@ -585,7 +613,7 @@
             </div>
             <div class="mb-2">
               <label for="reservar-fecha" class="form-label">¿Para cuándo lo querés retirar?</label>
-              <input type="date" id="reservar-fecha" class="form-control" required>
+              <input type="text" id="reservar-fecha" class="form-control" data-calendario placeholder="Elegí una fecha" required>
             </div>
           </div>
           <div class="modal-footer">
@@ -624,7 +652,7 @@
   <div class="modal fade" id="modal-prestar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <form id="form-prestar">
+        <form id="form-prestar" novalidate>
           <div class="modal-header">
             <h5 class="modal-title"><i class="fa-solid fa-right-from-bracket me-2"></i>Prestar libro</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -632,10 +660,11 @@
           <div class="modal-body">
             <input type="hidden" id="prestar-libro-id">
             <input type="hidden" id="prestar-socio-id">
+            <input type="hidden" id="prestar-ejemplar-id">
             <p class="mb-3">Libro: <strong id="prestar-libro-titulo"></strong></p>
             <div class="mb-2">
               <label for="prestar-nombre" class="form-label">Nombre de quien retira</label>
-              <input type="text" id="prestar-nombre" class="form-control" required>
+              <input type="text" id="prestar-nombre" class="form-control" list="datalist-socios" autocomplete="off" placeholder="Socio registrado" required>
             </div>
             <p class="text-muted small mb-0">Fecha de préstamo: <span id="prestar-fecha-hoy"></span></p>
           </div>
@@ -654,20 +683,19 @@
   <div class="modal fade" id="modal-login" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <form id="form-login">
+        <form id="form-login" novalidate>
           <div class="modal-header">
             <h5 class="modal-title"><i class="fa-solid fa-right-to-bracket me-2"></i>Iniciar sesión</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
-            <div id="login-error" class="alert alert-danger py-2 d-none" role="alert"></div>
             <div class="mb-3">
               <label for="login-email" class="form-label">Correo electrónico</label>
               <input type="email" id="login-email" class="form-control" placeholder="tu@correo.com" required>
             </div>
             <div class="mb-2">
               <label for="login-password" class="form-label">Contraseña</label>
-              <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+              <input type="password" id="login-password" class="form-control" autocomplete="current-password" required>
             </div>
             <p class="mb-0 mt-3 small text-muted">
               ¿No tenés cuenta?
@@ -689,13 +717,12 @@
   <div class="modal fade" id="modal-registro" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <form id="form-registro">
+        <form id="form-registro" novalidate>
           <div class="modal-header">
             <h5 class="modal-title"><i class="fa-solid fa-user-plus me-2"></i>Crear cuenta</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
-            <div id="registro-error" class="alert alert-danger py-2 d-none" role="alert"></div>
             <div class="mb-3">
               <label for="registro-nombre" class="form-label">Nombres</label>
               <input type="text" id="registro-nombre" class="form-control" placeholder="Ej: José" required>
@@ -718,11 +745,11 @@
             </div>
             <div class="mb-3">
               <label for="registro-password" class="form-label">Contraseña</label>
-              <input type="password" id="registro-password" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6" required>
+              <input type="password" id="registro-password" class="form-control" placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password" required data-verificar="fuerza">
             </div>
             <div class="mb-2">
               <label for="registro-password-confirmar" class="form-label">Confirmar contraseña</label>
-              <input type="password" id="registro-password-confirmar" class="form-control" placeholder="Repetí la contraseña" minlength="6" required>
+              <input type="password" id="registro-password-confirmar" class="form-control" placeholder="Repetí la contraseña" minlength="8" autocomplete="new-password" required data-verificar="igual:registro-password">
             </div>
             <p class="mb-0 small text-muted">
               Tu cuenta se crea como usuario particular (1 reserva activa a la vez). Si pertenecés a un
@@ -788,6 +815,11 @@
                 <label for="autor" class="form-label">Autor</label>
                 <input type="text" id="autor" class="form-control" placeholder="Ej: Gabriel García Márquez" required>
               </div>
+              <div class="mb-3">
+                <label for="cantidad-copias" class="form-label">Cantidad de copias</label>
+                <input type="number" id="cantidad-copias" class="form-control campo-copias" min="1" max="200" step="1" value="1" inputmode="numeric" required>
+                <div class="form-text">Cuántos ejemplares físicos hay. Cada copia la puede reservar una persona distinta.</div>
+              </div>
               <div class="mb-4">
                 <label for="categoria" class="form-label">Categoría</label>
                 <select id="categoria" class="form-select">
@@ -822,8 +854,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
-            <div id="mi-cuenta-error" class="alert alert-danger py-2 d-none" role="alert"></div>
-            <div id="mi-cuenta-ok" class="alert alert-success py-2 d-none" role="alert">Datos actualizados.</div>
 
             <div class="d-flex align-items-center gap-3 mb-4">
               <span class="avatar-usuario avatar-grande" id="mi-cuenta-avatar"></span>
@@ -869,13 +899,13 @@
             <hr>
             <p class="small text-muted mb-2">Cambiar contraseña (dejalo vacío si no querés cambiarla)</p>
             <div class="row g-3">
-              <div class="col-sm-6">
+              <div class="col-12">
                 <label for="mi-cuenta-password-actual" class="form-label">Contraseña actual</label>
                 <input type="password" id="mi-cuenta-password-actual" class="form-control" autocomplete="current-password">
               </div>
-              <div class="col-sm-6">
+              <div class="col-12">
                 <label for="mi-cuenta-password" class="form-label">Nueva contraseña</label>
-                <input type="password" id="mi-cuenta-password" class="form-control" minlength="6" autocomplete="new-password">
+                <input type="password" id="mi-cuenta-password" class="form-control" minlength="8" autocomplete="new-password" data-verificar="fuerza">
               </div>
             </div>
           </div>
@@ -887,6 +917,71 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal registrar pago de multa -->
+  <div class="modal fade" id="modal-pagar-multa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-pagar-multa" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title">Registrar pago</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="pagar-multa-id">
+            <dl class="ficha-multa" id="pagar-multa-detalle"></dl>
+            <label for="pagar-multa-metodo" class="form-label">Método de pago</label>
+            <select id="pagar-multa-metodo" class="form-select" required>
+              <option value="">Elegí cómo pagó</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="debito">Tarjeta de débito</option>
+              <option value="credito">Tarjeta de crédito</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="mercado_pago">Mercado Pago</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">Registrar pago</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal elegir qué copia se devuelve (libros con varias copias prestadas) -->
+  <div class="modal fade" id="modal-devolver" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Registrar devolución</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">¿Quién devuelve <strong id="devolver-libro-titulo"></strong>?</p>
+          <ul class="list-unstyled lista-reservas mb-0" id="lista-devolver"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación (reemplaza al confirm() del navegador) -->
+  <div class="modal fade" id="modal-confirmar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-body pt-4">
+          <p class="mb-0" id="confirmar-texto"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" id="confirmar-no">Cancelar</button>
+          <button type="button" class="btn btn-brand" id="confirmar-si">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- avisos (errores en rojo), abajo a la derecha -->
+  <div class="zona-avisos" id="zona-avisos" aria-live="assertive" aria-atomic="false"></div>
 
 </body>
 </html>

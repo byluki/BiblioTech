@@ -177,12 +177,30 @@ class ReservaController extends Controller
         }
 
         return DB::transaction(function () use ($request, $reserva) {
-            // Si había un ejemplar apartado para esta reserva, se libera.
-            if ($reserva->ejemplar_id) {
-                $reserva->ejemplar->update(['estado' => 'disponible']);
-            }
+            $ejemplar = $reserva->ejemplar_id ? $reserva->ejemplar : null;
 
             $reserva->update(['estado' => 'cancelada']);
+
+            // Si había un ejemplar apartado para esta reserva, pasa al
+            // siguiente socio en espera (si hay); si no, queda disponible.
+            if ($ejemplar) {
+                $siguiente = Reserva::where('libro_id', $reserva->libro_id)
+                    ->where('estado', 'pendiente')
+                    ->oldest('fecha_reserva')
+                    ->oldest('id')
+                    ->first();
+
+                if ($siguiente) {
+                    $ejemplar->update(['estado' => 'reservado']);
+                    $siguiente->update([
+                        'ejemplar_id' => $ejemplar->id,
+                        'estado' => 'pendiente_retiro',
+                        'fecha_limite' => now()->addDays(2)->toDateString(),
+                    ]);
+                } else {
+                    $ejemplar->update(['estado' => 'disponible']);
+                }
+            }
 
             HistorialActividad::registrar($request->user()?->id, 'reserva_cancelada', 'reservas', $reserva->id);
 

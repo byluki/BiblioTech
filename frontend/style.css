@@ -1,17 +1,18 @@
 /* Biblioteca Central — estilos
-   Paleta tomada del logo (azul marino, celeste, naranja, verde oliva) sobre
-   un papel gris verdoso. Las portadas son el protagonista: se ven como
-   libros apoyados, no como tarjetas de una app. */
+   Paleta original (naranja, dorado y crema) con una sola familia
+   tipográfica (Libre Franklin). Las portadas son el protagonista. */
 
 :root {
   /* paleta original de la web (naranja, dorado y crema); los nombres de
-     --marino* se mantienen por compatibilidad pero ahora son el naranja */
+     --marino* se mantienen por compatibilidad pero son el naranja */
   --marino: #e2661d;
   --marino-hondo: #a3400f;
   --celeste: #f0955a;
   --naranja: #f2b134;
   --oliva: #2f7d46;
   --ladrillo: #a34a34;
+  --rojo-aviso: #b4232c;
+  --resalte: #fdebd3;       /* fondos suaves (etiquetas, calendario) */
 
   --tinta: #2b2016;
   --apagado: #8a7a68;
@@ -20,7 +21,8 @@
   --linea: #ecdfc9;
   --linea-suave: #f1e7d6;
 
-  --radio: 4px;
+  --radio: 6px;
+  --radio-grande: 10px;
   --sombra-menu: 0 8px 24px rgba(163, 64, 15, 0.18);
 }
 
@@ -33,7 +35,7 @@ html {
 }
 
 body {
-  font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Libre Franklin', system-ui, -apple-system, 'Segoe UI', sans-serif;
   background-color: var(--papel);
   color: var(--tinta);
   min-height: 100%;
@@ -48,8 +50,9 @@ main {
 }
 
 h1, h2, h3, h4, .panel-title, .modal-title {
-  font-family: 'Young Serif', Georgia, serif;
-  font-weight: 400;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.012em;
   color: var(--marino-hondo);
 }
 
@@ -91,8 +94,8 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  background: #fff;
 }
 
 .brand-logo-icon img {
@@ -103,6 +106,8 @@ a:hover {
 
 .brand-logo h1 {
   font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   margin: 0;
   line-height: 1.1;
   color: #fff;
@@ -204,7 +209,7 @@ a:hover {
 }
 
 .mis-reservas-item .mis-reservas-info h4 {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--tinta);
@@ -241,7 +246,7 @@ a:hover {
 
 .panel {
   border: 1px solid var(--linea);
-  border-radius: 6px;
+  border-radius: var(--radio-grande);
   background-color: var(--ficha);
   box-shadow: none;
 }
@@ -257,7 +262,7 @@ a:hover {
 }
 
 .panel-title {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
 }
 
 /* ocultamos los íconos decorativos de los títulos */
@@ -266,7 +271,8 @@ a:hover {
 }
 
 .panel-plano .panel-title {
-  font-size: 1.9rem;
+  font-size: 1.75rem;
+  font-weight: 800;
   line-height: 1.15;
 }
 
@@ -341,8 +347,8 @@ a:hover {
 .modal-content {
   background-color: var(--ficha);
   border: 1px solid var(--linea);
-  border-radius: 6px;
-  box-shadow: 0 18px 48px rgba(30, 39, 51, 0.22);
+  border-radius: var(--radio-grande);
+  box-shadow: 0 18px 48px rgba(43, 32, 22, 0.22);
 }
 
 .modal-header,
@@ -393,7 +399,7 @@ a:hover {
   border-radius: 3px;
   background-color: var(--naranja);
   color: var(--marino-hondo);
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
   line-height: 1.2;
@@ -426,7 +432,7 @@ a:hover {
      (mismas columnas y mismo espacio entre filas) */
   background-color: var(--ficha);
   border: 1px solid var(--linea);
-  border-radius: 8px;
+  border-radius: var(--radio);
   padding: 12px;
   transition: border-color 0.15s ease;
   /* con cientos de libros, el navegador salta el trabajo de las tarjetas
@@ -460,7 +466,7 @@ a:hover {
   padding: 16px 14px 16px 18px;
   text-align: center;
   color: #fff;
-  font-family: 'Young Serif', Georgia, serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
   font-size: 1rem;
   line-height: 1.25;
   overflow: hidden;
@@ -483,7 +489,7 @@ a:hover {
   overflow-wrap: anywhere;
 }
 
-.libro-portada-vacia { background-color: #a3400f; }
+.libro-portada-vacia { background-color: #a3400f; font-weight: 600; }
 .libro-portada-vacia.tono-1 { background-color: #7a5a2b; }
 .libro-portada-vacia.tono-2 { background-color: #2f6b45; }
 .libro-portada-vacia.tono-3 { background-color: #8a3b2e; }
@@ -494,7 +500,7 @@ a:hover {
 }
 
 .libro-info h3 {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
   font-size: 0.98rem;
   font-weight: 500;
   margin: 0 0 2px 0;
@@ -524,15 +530,25 @@ a:hover {
 }
 
 .etiqueta-estado {
-  display: inline-block;
-  font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
   font-weight: 600;
-  padding: 1px 7px;
-  border: 1px solid currentColor;
-  border-radius: 3px;
+  padding: 0;
+  border: 0;
   background: transparent;
   box-shadow: none;
   letter-spacing: 0;
+}
+
+.etiqueta-estado::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
 }
 
 .estado-disponible { color: var(--oliva); }
@@ -541,11 +557,11 @@ a:hover {
 
 .etiqueta-tipo {
   display: inline-block;
-  color: var(--marino);
-  border: 1px solid var(--marino);
-  font-size: 0.7rem;
-  padding: 0 7px;
-  border-radius: 3px;
+  color: var(--marino-hondo);
+  background-color: var(--resalte);
+  font-size: 0.74rem;
+  padding: 1px 8px;
+  border-radius: 999px;
   font-weight: 600;
 }
 
@@ -692,7 +708,8 @@ a:hover {
 }
 
 .menu-offcanvas-brand {
-  font-family: 'Young Serif', Georgia, serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 800;
   font-size: 1.1rem;
   color: var(--marino-hondo);
   margin-right: auto;
@@ -781,8 +798,9 @@ a:hover {
 }
 
 .menu-section-label {
-  font-family: 'Young Serif', Georgia, serif;
-  font-size: 1.2rem;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
   color: var(--marino-hondo);
   margin: 0 0 0.6rem 0;
 }
@@ -864,7 +882,7 @@ a:hover {
 }
 
 .reserva-item h3 {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
   font-size: 1rem;
   font-weight: 600;
   margin: 0 0 4px 0;
@@ -894,7 +912,7 @@ a:hover {
 }
 
 .reserva-grupo-header h3 {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
@@ -935,7 +953,8 @@ a:hover {
 }
 
 .reserva-grupo-libro-titulo {
-  font-family: 'Young Serif', Georgia, serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 600;
   font-size: 0.95rem;
   margin: 0 0 2px 0;
   color: var(--marino-hondo);
@@ -948,14 +967,17 @@ a:hover {
 .stat-card {
   background-color: var(--ficha);
   border: 1px solid var(--linea);
-  border-radius: 6px;
+  border-left: 4px solid var(--marino);
+  border-radius: var(--radio);
   padding: 16px 18px;
   text-align: left;
   height: 100%;
 }
 
 .stat-numero {
-  font-family: 'Young Serif', Georgia, serif;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
   font-size: 2rem;
   line-height: 1.1;
   color: var(--marino-hondo);
@@ -1113,10 +1135,9 @@ a:hover {
   border-radius: 999px;
   background-color: var(--marino);
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -1147,7 +1168,7 @@ a:hover {
 .banner {
   position: relative;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radio-grande);
 }
 
 .banner-pistas {
@@ -1160,18 +1181,20 @@ a:hover {
   min-height: clamp(150px, 20vw, 250px);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: clamp(16px, 5vw, 72px);
-  padding: 24px clamp(48px, 8vw, 110px);
+  padding: 28px clamp(52px, 8vw, 110px);
 }
 
 .banner-texto {
-  max-width: 560px;
-  text-align: center;
+  max-width: 620px;
+  text-align: left;
 }
 
 .banner-texto h2 {
-  font-size: clamp(1.25rem, 2.6vw, 2rem);
+  font-size: clamp(1.35rem, 2.8vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
   line-height: 1.2;
   margin: 0 0 8px 0;
   color: inherit;
@@ -1246,7 +1269,7 @@ a:hover {
 }
 
 .novedades-titulo {
-  text-align: center;
+  text-align: left;
   font-size: 1.7rem;
   margin: 0 0 22px 0;
 }
@@ -1394,3 +1417,322 @@ a:hover {
   .banner-logo { display: none; }
   .novedades-carrusel .carrusel-flecha { display: none; }
 }
+
+/* ==========================================================
+   AVISOS (errores en recuadro rojo, abajo a la derecha)
+   ========================================================== */
+
+.zona-avisos {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2000; /* por encima de modales y menús */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.aviso {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 12px 14px 16px;
+  border-radius: var(--radio);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(20, 24, 30, 0.28);
+  animation: aviso-entra 0.22s ease-out;
+}
+
+.aviso-error { background-color: var(--rojo-aviso); border: 1px solid #8e1a22; }
+.aviso-ok { background-color: var(--oliva); border: 1px solid #1f5a31; }
+
+.aviso-icono { font-size: 1.15rem; margin-top: 2px; flex-shrink: 0; }
+.aviso-cuerpo { flex: 1 1 auto; min-width: 0; }
+.aviso-titulo { margin: 0 0 2px; font-weight: 700; font-size: 0.92rem; }
+.aviso-texto { margin: 0; font-size: 0.88rem; line-height: 1.4; overflow-wrap: anywhere; }
+
+.aviso-cerrar {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.aviso-cerrar:hover,
+.aviso-cerrar:focus-visible { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.aviso :focus-visible { outline-color: #fff; }
+
+.aviso.saliendo {
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+@keyframes aviso-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 575.98px) {
+  .zona-avisos { right: 16px; bottom: 16px; }
+}
+
+/* ==========================================================
+   BOTONES OCUPADOS (deshabilitados mientras carga)
+   ========================================================== */
+
+.cargando {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.cargando::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.05em;
+  height: 1.05em;
+  margin: -0.525em 0 0 -0.525em;
+  border-radius: 50%;
+  border: 2px solid var(--spinner, var(--marino));
+  border-right-color: transparent;
+  animation: girar 0.7s linear infinite;
+}
+
+.btn-brand.cargando,
+.btn-agregar-carrito.cargando,
+.btn-peligro.cargando { --spinner: #fff; }
+
+.btn:disabled,
+.btn-accion-libro:disabled { cursor: not-allowed; }
+.btn-brand:disabled,
+.btn-brand.cargando {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  opacity: 0.85;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.btn-peligro {
+  background-color: var(--ladrillo);
+  border-color: var(--ladrillo);
+}
+
+.btn-peligro:hover,
+.btn-peligro:focus-visible {
+  background-color: #8e2c20;
+  border-color: #8e2c20;
+}
+
+/* ==========================================================
+   CONTRASEÑAS: ver / ocultar y verificador
+   ========================================================== */
+
+.campo-password { position: relative; }
+.campo-password .form-control { padding-right: 46px; }
+
+.btn-ver-password {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--apagado);
+}
+
+.btn-ver-password:hover,
+.btn-ver-password[aria-pressed="true"] { color: var(--marino); background-color: var(--papel); }
+
+.medidor-password { margin-top: 8px; }
+
+.medidor-barra {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.medidor-barra span {
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--linea);
+  transition: background-color 0.2s ease;
+}
+
+.medidor-password[data-nivel="1"] .medidor-barra span:nth-child(-n+1) { background-color: var(--ladrillo); }
+.medidor-password[data-nivel="2"] .medidor-barra span:nth-child(-n+2) { background-color: #c08a1e; }
+.medidor-password[data-nivel="3"] .medidor-barra span { background-color: var(--oliva); }
+
+.medidor-nivel {
+  margin: 6px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--apagado);
+  min-height: 1.2em;
+}
+
+.medidor-password[data-nivel="1"] .medidor-nivel { color: var(--ladrillo); }
+.medidor-password[data-nivel="3"] .medidor-nivel { color: var(--oliva); }
+
+.medidor-reglas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 12px;
+  font-size: 0.8rem;
+  color: var(--apagado);
+}
+
+.medidor-reglas i { font-size: 0.45rem; width: 14px; vertical-align: middle; margin-right: 4px; }
+.medidor-reglas li.ok { color: var(--oliva); }
+.medidor-reglas li.ok i { font-size: 0.75rem; }
+
+.coincidencia-password { margin: 6px 0 0; font-size: 0.8rem; font-weight: 600; min-height: 1.2em; }
+.coincidencia-password.ok { color: var(--oliva); }
+.coincidencia-password.mal { color: var(--ladrillo); }
+
+/* ==========================================================
+   CALENDARIO (flatpickr)
+   ========================================================== */
+
+.flatpickr-wrapper { display: block; width: 100%; }
+.flatpickr-input[readonly] { background-color: #fff; cursor: pointer; }
+
+.flatpickr-calendar {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-menu);
+  border: 1px solid var(--linea);
+}
+
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after { display: none; }
+
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month .flatpickr-monthDropdown-months { color: var(--marino-hondo); font-weight: 700; }
+.flatpickr-current-month { font-size: 1rem; }
+.flatpickr-months .flatpickr-prev-month:hover svg,
+.flatpickr-months .flatpickr-next-month:hover svg { fill: var(--naranja); }
+span.flatpickr-weekday { color: var(--apagado); font-weight: 600; }
+
+.flatpickr-day { border-radius: var(--radio); color: var(--tinta); }
+.flatpickr-day.today { border-color: var(--marino); }
+.flatpickr-day:hover,
+.flatpickr-day:focus { background: var(--resalte); border-color: var(--resalte); }
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus { background: var(--marino); border-color: var(--marino); color: #fff; }
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover { color: #cbbfae; }
+
+/* ==========================================================
+   MULTAS: buscador por socio, resumen y pago
+   ========================================================== */
+
+.resumen-multas {
+  background-color: var(--papel);
+  border-radius: var(--radio);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+
+.resumen-multas-titulo { margin: 0 0 8px; font-weight: 700; color: var(--marino-hondo); }
+
+.resumen-multas-cifras { display: flex; flex-wrap: wrap; gap: 8px 32px; }
+.resumen-multas-cifras > div { display: flex; flex-direction: column; }
+
+.resumen-cifra {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.resumen-cifra.pendiente { color: var(--ladrillo); }
+.resumen-cifra.pagado { color: var(--oliva); }
+.resumen-etiqueta { font-size: 0.8rem; color: var(--apagado); }
+
+.monto-multa { font-variant-numeric: tabular-nums; margin-left: 6px; }
+.cedula-multa { font-weight: 400; font-size: 0.82rem; color: var(--apagado); margin-left: 4px; }
+.detalle-pago { color: var(--oliva); margin-top: 2px; }
+
+.ficha-multa {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: var(--radio);
+  background-color: var(--papel);
+}
+
+.ficha-multa dt { font-size: 0.78rem; font-weight: 600; color: var(--apagado); }
+.ficha-multa dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+@media (max-width: 479.98px) {
+  .ficha-multa { grid-template-columns: 1fr; }
+}
+
+/* datos del carnet de socio, sin separadores de punto medio */
+.datos-socio { display: flex; flex-wrap: wrap; gap: 2px 16px; }
+
+/* el menú "⋮" del administrador va sobre la esquina de la portada
+   (el .dropdown de Bootstrap es position:relative y lo empujaba debajo) */
+.menu-libro-admin {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+.menu-libro-admin .btn-menu-libro { position: static; }
+
+/* encabezado en celulares: logo y botones en una sola fila */
+@media (max-width: 479.98px) {
+  .site-header .container { flex-wrap: nowrap !important; gap: 8px !important; }
+  .brand-logo { gap: 8px; min-width: 0; }
+  .brand-logo-icon { width: 42px; height: 42px; }
+  .brand-logo-icon img { width: 34px; height: 34px; }
+  .brand-logo h1 { font-size: 1.05rem; }
+  .header-sub { font-size: 0.75rem; }
+  .header-actions { gap: 6px; }
+  .header-icon-btn { width: 38px; height: 38px; font-size: 0.95rem; }
+}
+
+/* ==========================================================
+   COPIAS (varios ejemplares por libro)
+   ========================================================== */
+
+.texto-copias {
+  font-size: 0.8rem;
+  color: var(--apagado);
+  margin: 4px 0 0 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.texto-en-espera {
+  display: inline-block;
+  margin-left: 6px;
+  color: #96721c;
+  font-weight: 600;
+}
+
+.campo-copias { max-width: 140px; }
+
+.acciones-compactas .btn-agregar-carrito { flex: 1 1 auto; min-width: 0; padding: 7px 10px; }
+.acciones-compactas .btn-agregar-carrito .texto-boton { display: none; }
+.acciones-compactas .btn-accion-libro.btn-accion-libro-grande { flex: 0 0 36px; width: 36px; height: 36px; font-size: 0.9rem; }

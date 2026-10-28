@@ -16,7 +16,7 @@ var prestamos = [];
 var socios = [];
 var multas = [];
 var categoriasApi = []; // [{id, nombre}], viene de GET /categorias
-var ejemplaresPorLibro = {}; // libroId(string) -> {id, estado} (usamos 1 ejemplar por libro)
+var ejemplaresPorLibro = {}; // libroId(string) -> [{id, estado}, ...] (una entrada por copia física)
 
 // Categorías del historial. "facturas" agrupa los cobros (multas).
 var CATEGORIAS_HISTORIAL = {
@@ -72,6 +72,7 @@ var editarCategoria = document.getElementById("editar-categoria");
 var grupoEditarNuevaCategoria = document.getElementById("grupo-editar-nueva-categoria");
 var inputEditarNuevaCategoria = document.getElementById("editar-nueva-categoria");
 var editarCodigoBarras = document.getElementById("editar-codigo-barras");
+var editarCopias = document.getElementById("editar-copias");
 var editarImagenLocal = document.getElementById("editar-imagen-local");
 var editarPreviewImg = document.getElementById("editar-preview-img");
 var editarPreviewPlaceholder = document.getElementById("editar-preview-placeholder");
@@ -94,6 +95,7 @@ var formPrestar = document.getElementById("form-prestar");
 var prestarLibroId = document.getElementById("prestar-libro-id");
 var prestarLibroTitulo = document.getElementById("prestar-libro-titulo");
 var prestarSocioId = document.getElementById("prestar-socio-id");
+var prestarEjemplarId = document.getElementById("prestar-ejemplar-id");
 var prestarNombre = document.getElementById("prestar-nombre");
 var prestarFechaHoy = document.getElementById("prestar-fecha-hoy");
 
@@ -145,7 +147,6 @@ var modalLogin = new bootstrap.Modal(document.getElementById("modal-login"));
 var formLogin = document.getElementById("form-login");
 var loginEmail = document.getElementById("login-email");
 var loginPassword = document.getElementById("login-password");
-var loginError = document.getElementById("login-error");
 
 var modalRegistro = new bootstrap.Modal(document.getElementById("modal-registro"));
 var formRegistro = document.getElementById("form-registro");
@@ -156,7 +157,6 @@ var registroTelefono = document.getElementById("registro-telefono");
 var registroEmail = document.getElementById("registro-email");
 var registroPassword = document.getElementById("registro-password");
 var registroPasswordConfirmar = document.getElementById("registro-password-confirmar");
-var registroError = document.getElementById("registro-error");
 
 var headerBtnLogin = document.getElementById("header-btn-login");
 var headerBtnRegistro = document.getElementById("header-btn-registro");
@@ -184,6 +184,270 @@ var estadoVacioHistorial = document.getElementById("estado-vacio-historial");
 
 function crearId() {
   return Date.now() + "-" + Math.floor(Math.random() * 1000000);
+}
+
+// ------------------------------
+// Avisos: los errores aparecen abajo a la derecha, en un recuadro rojo
+// (antes eran ventanas emergentes del navegador, que frenan toda la página)
+// ------------------------------
+var zonaAvisos = document.getElementById("zona-avisos");
+
+function avisar(mensaje, tipo) {
+  tipo = tipo || "error";
+  if (!zonaAvisos || !mensaje) return;
+  var aviso = document.createElement("div");
+  aviso.className = "aviso aviso-" + tipo;
+  aviso.setAttribute("role", tipo === "error" ? "alert" : "status");
+  aviso.innerHTML =
+    '<i class="fa-solid ' + (tipo === "error" ? "fa-circle-exclamation" : "fa-circle-check") + ' aviso-icono" aria-hidden="true"></i>' +
+    '<div class="aviso-cuerpo"><p class="aviso-titulo"></p><p class="aviso-texto"></p></div>' +
+    '<button type="button" class="aviso-cerrar" aria-label="Cerrar aviso"><i class="fa-solid fa-xmark"></i></button>';
+  aviso.querySelector(".aviso-titulo").textContent = tipo === "error" ? "No se pudo completar" : "Listo";
+  aviso.querySelector(".aviso-texto").textContent = mensaje;
+  zonaAvisos.appendChild(aviso);
+  // como máximo 4 avisos a la vez: se va el más viejo
+  while (zonaAvisos.children.length > 4) zonaAvisos.removeChild(zonaAvisos.firstChild);
+
+  var temporizador = null;
+  function programarCierre() { temporizador = setTimeout(cerrar, tipo === "error" ? 8000 : 4000); }
+  function cerrar() {
+    clearTimeout(temporizador);
+    aviso.classList.add("saliendo");
+    setTimeout(function () { if (aviso.parentNode) aviso.parentNode.removeChild(aviso); }, 220);
+  }
+  aviso.querySelector(".aviso-cerrar").addEventListener("click", cerrar);
+  // mientras el mouse está encima, el aviso no se va (da tiempo a leerlo)
+  aviso.addEventListener("mouseenter", function () { clearTimeout(temporizador); });
+  aviso.addEventListener("mouseleave", programarCierre);
+  programarCierre();
+}
+
+function avisarError(mensaje) { avisar(mensaje, "error"); }
+function avisarOk(mensaje) { avisar(mensaje, "ok"); }
+
+// ------------------------------
+// Confirmaciones con un modal propio (en lugar de confirm())
+// ------------------------------
+var modalConfirmarEl = document.getElementById("modal-confirmar");
+var modalConfirmar = new bootstrap.Modal(modalConfirmarEl);
+var resolverConfirmacion = null;
+
+function confirmar(texto, textoBoton, esPeligroso) {
+  document.getElementById("confirmar-texto").textContent = texto;
+  var botonSi = document.getElementById("confirmar-si");
+  botonSi.textContent = textoBoton || "Confirmar";
+  botonSi.classList.toggle("btn-peligro", !!esPeligroso);
+  if (resolverConfirmacion) resolverConfirmacion(false);
+  return new Promise(function (resolve) {
+    resolverConfirmacion = resolve;
+    modalConfirmar.show();
+  });
+}
+
+function responderConfirmacion(valor) {
+  var resolver = resolverConfirmacion;
+  resolverConfirmacion = null;
+  modalConfirmar.hide();
+  if (resolver) resolver(valor);
+}
+
+document.getElementById("confirmar-si").addEventListener("click", function () { responderConfirmacion(true); });
+document.getElementById("confirmar-no").addEventListener("click", function () { responderConfirmacion(false); });
+modalConfirmarEl.addEventListener("hidden.bs.modal", function () { if (resolverConfirmacion) responderConfirmacion(false); });
+modalConfirmarEl.addEventListener("shown.bs.modal", function () { document.getElementById("confirmar-si").focus(); });
+
+// ------------------------------
+// Botones: mientras la acción está en curso, el botón queda deshabilitado
+// (con un indicador de carga) para que no se mande dos veces
+// ------------------------------
+function conCarga(boton, promesa) {
+  if (!boton) return Promise.resolve(promesa);
+  boton.disabled = true;
+  boton.classList.add("cargando");
+  boton.setAttribute("aria-busy", "true");
+  function liberar() {
+    boton.disabled = false;
+    boton.classList.remove("cargando");
+    boton.removeAttribute("aria-busy");
+  }
+  return Promise.resolve(promesa).then(
+    function (valor) { liberar(); return valor; },
+    function (error) { liberar(); throw error; }
+  );
+}
+
+function botonEnviar(formulario) {
+  return formulario.querySelector('[type="submit"]');
+}
+
+// ------------------------------
+// Contraseñas: botón para verlas y verificador de seguridad
+// (las mismas reglas valida el backend en AuthController)
+// ------------------------------
+var REGLAS_PASSWORD = [
+  { texto: "8 caracteres o más", cumple: function (v) { return v.length >= 8; } },
+  { texto: "Una mayúscula", cumple: function (v) { return /[A-Z]/.test(v); } },
+  { texto: "Una minúscula", cumple: function (v) { return /[a-z]/.test(v); } },
+  { texto: "Un número", cumple: function (v) { return /\d/.test(v); } }
+];
+
+function passwordValida(valor) {
+  return REGLAS_PASSWORD.every(function (r) { return r.cumple(valor); });
+}
+
+function requisitosFaltantes(valor) {
+  return REGLAS_PASSWORD.filter(function (r) { return !r.cumple(valor); })
+    .map(function (r) { return r.texto.toLowerCase(); });
+}
+
+// 0 = vacía, 1 = débil, 2 = aceptable, 3 = fuerte
+function nivelPassword(valor) {
+  if (!valor) return 0;
+  var cumplidas = REGLAS_PASSWORD.filter(function (r) { return r.cumple(valor); }).length;
+  if (cumplidas < REGLAS_PASSWORD.length) return 1;
+  var extra = /[^A-Za-z0-9]/.test(valor) || valor.length >= 12;
+  return extra ? 3 : 2;
+}
+
+var TEXTO_NIVEL = ["", "Débil", "Aceptable", "Fuerte"];
+
+function instalarCamposPassword() {
+  var campos = document.querySelectorAll('input[type="password"]');
+  Array.prototype.forEach.call(campos, function (input) {
+    var envoltura = document.createElement("div");
+    envoltura.className = "campo-password";
+    input.parentNode.insertBefore(envoltura, input);
+    envoltura.appendChild(input);
+
+    var ver = document.createElement("button");
+    ver.type = "button";
+    ver.className = "btn-ver-password";
+    ver.setAttribute("aria-label", "Mostrar contraseña");
+    ver.setAttribute("aria-pressed", "false");
+    ver.setAttribute("aria-controls", input.id);
+    ver.innerHTML = '<i class="fa-solid fa-eye" aria-hidden="true"></i>';
+    envoltura.appendChild(ver);
+
+    ver.addEventListener("click", function () {
+      var mostrar = input.type === "password";
+      input.type = mostrar ? "text" : "password";
+      ver.setAttribute("aria-pressed", String(mostrar));
+      ver.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
+      ver.innerHTML = '<i class="fa-solid ' + (mostrar ? "fa-eye-slash" : "fa-eye") + '" aria-hidden="true"></i>';
+      input.focus();
+    });
+
+    var modo = input.dataset.verificar || "";
+    if (modo === "fuerza") {
+      var medidor = document.createElement("div");
+      medidor.className = "medidor-password";
+      medidor.innerHTML =
+        '<div class="medidor-barra" aria-hidden="true"><span></span><span></span><span></span></div>' +
+        '<p class="medidor-nivel" aria-live="polite"></p>' +
+        '<ul class="medidor-reglas">' + REGLAS_PASSWORD.map(function (r) {
+          return '<li><i class="fa-solid fa-circle" aria-hidden="true"></i>' + r.texto + "</li>";
+        }).join("") + "</ul>";
+      envoltura.parentNode.insertBefore(medidor, envoltura.nextSibling);
+
+      var actualizar = function () {
+        var valor = input.value;
+        var nivel = nivelPassword(valor);
+        medidor.dataset.nivel = nivel;
+        medidor.querySelector(".medidor-nivel").textContent = nivel ? "Seguridad: " + TEXTO_NIVEL[nivel] : "";
+        var items = medidor.querySelectorAll(".medidor-reglas li");
+        REGLAS_PASSWORD.forEach(function (r, i) {
+          var ok = r.cumple(valor);
+          items[i].classList.toggle("ok", ok);
+          items[i].querySelector("i").className = "fa-solid " + (ok ? "fa-check" : "fa-circle");
+        });
+      };
+      input.addEventListener("input", actualizar);
+      actualizar();
+    } else if (modo.indexOf("igual:") === 0) {
+      var original = document.getElementById(modo.slice(6));
+      var estado = document.createElement("p");
+      estado.className = "coincidencia-password";
+      estado.setAttribute("aria-live", "polite");
+      envoltura.parentNode.insertBefore(estado, envoltura.nextSibling);
+      var comparar = function () {
+        if (!input.value) { estado.textContent = ""; estado.className = "coincidencia-password"; return; }
+        var iguales = input.value === original.value;
+        estado.textContent = iguales ? "Las contraseñas coinciden" : "Las contraseñas no coinciden";
+        estado.className = "coincidencia-password " + (iguales ? "ok" : "mal");
+      };
+      input.addEventListener("input", comparar);
+      if (original) original.addEventListener("input", comparar);
+    }
+  });
+}
+
+// después de un form.reset(): vuelve a ocultar las contraseñas y refresca los verificadores
+function reiniciarCamposPassword(formulario) {
+  var campos = formulario.querySelectorAll(".campo-password input");
+  Array.prototype.forEach.call(campos, function (input) {
+    var ver = input.parentNode.querySelector(".btn-ver-password");
+    if (input.type !== "password" && ver) ver.click();
+    input.dispatchEvent(new Event("input"));
+  });
+}
+
+function correoValido(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+// ------------------------------
+// Calendario web (flatpickr, en español). Mismo aspecto en todos los
+// navegadores y en el celular; el valor sigue siendo AAAA-MM-DD.
+// ------------------------------
+var calendarios = {};
+
+// español con los meses en minúscula ("27 de octubre de 2026")
+function localeCalendario() {
+  var es = flatpickr.l10ns.es;
+  return Object.assign({}, es, {
+    months: {
+      shorthand: es.months.shorthand.map(function (m) { return m.toLowerCase(); }),
+      longhand: es.months.longhand.map(function (m) { return m.toLowerCase(); })
+    }
+  });
+}
+
+function instalarCalendarios() {
+  var campos = document.querySelectorAll("[data-calendario]");
+  Array.prototype.forEach.call(campos, function (input) {
+    if (typeof flatpickr === "undefined") {
+      input.type = "date"; // si no cargó el CDN, queda el calendario del navegador
+      return;
+    }
+    calendarios[input.id] = flatpickr(input, {
+      locale: localeCalendario(),
+      dateFormat: "Y-m-d",
+      altInput: true,
+      altFormat: "j \\d\\e F \\d\\e Y",
+      disableMobile: true,
+      static: true,
+      monthSelectorType: "static"
+    });
+  });
+}
+
+function fijarFecha(id, valor, minimo) {
+  var fp = calendarios[id];
+  var input = document.getElementById(id);
+  if (fp) {
+    if (minimo !== undefined) fp.set("minDate", minimo || null);
+    if (valor) fp.setDate(valor, false); else fp.clear();
+  } else if (input) {
+    if (minimo !== undefined) input.min = minimo || "";
+    input.value = valor || "";
+  }
+}
+
+// fecha de hoy en hora local (toISOString usa UTC y después de las 21 h en
+// Uruguay ya devolvía el día siguiente)
+function hoyIso() {
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
 // ------------------------------
@@ -228,7 +492,13 @@ function apiFetch(path, opciones) {
 
     return r.json().catch(function () { return null; }).then(function (datos) {
       if (!r.ok) {
-        if (r.status === 401) cerrarSesionLocal();
+        // 401 con sesión abierta = el token venció: se cierra la sesión pero el
+        // catálogo público se vuelve a cargar. Un 401 al iniciar sesión (clave
+        // incorrecta) no debe tocar nada.
+        if (r.status === 401 && token && path.indexOf("/auth/") !== 0) {
+          cerrarSesionLocal();
+          cargarCatalogoPublico();
+        }
         var mensaje = (datos && datos.message) ? datos.message : ("Error " + r.status + " al comunicarse con la API.");
         if (datos && datos.errors) {
           var primerCampo = Object.keys(datos.errors)[0];
@@ -255,7 +525,7 @@ function apiFetch(path, opciones) {
 
 function mostrarErrorApi(err) {
   console.error(err);
-  alert(err && err.message ? err.message : "Ocurrió un error al comunicarse con el servidor.");
+  avisarError(err && err.message ? err.message : "Ocurrió un error al comunicarse con el servidor.");
 }
 
 // las listas paginadas de Laravel vienen como {data: [...], ...}; las que no
@@ -275,6 +545,18 @@ var ESTADO_EJEMPLAR_LABEL = {
 
 var MOTIVO_MULTA_LABEL = { atraso: "Atraso en devolución", perdida: "Libro perdido", deterioro: "Libro deteriorado" };
 var MOTIVO_MULTA_VALOR = { "Atraso en devolución": "atraso", "Libro perdido": "perdida", "Libro deteriorado": "deterioro" };
+var METODO_PAGO_LABEL = {
+  efectivo: "Efectivo",
+  debito: "Tarjeta de débito",
+  credito: "Tarjeta de crédito",
+  transferencia: "Transferencia",
+  mercado_pago: "Mercado Pago"
+};
+
+function formatearMonto(valor) {
+  var n = Number(valor) || 0;
+  return "$ " + n.toLocaleString("es-UY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
 
 function nombreCompletoSocio(s) {
   if (!s) return "";
@@ -282,24 +564,61 @@ function nombreCompletoSocio(s) {
 }
 
 function fechaDesdeApi(valor) {
-  return valor ? formatearFecha(new Date(valor)) : null;
+  if (!valor) return null;
+  // fechas "solas" (AAAA-MM-DD o medianoche UTC): se leen como fecha local;
+  // new Date("2026-10-27") las toma en UTC y en Uruguay mostraba el día anterior
+  var texto = String(valor);
+  var soloFecha = /^(\d{4})-(\d{2})-(\d{2})(T00:00:00(\.0+)?Z)?$/.exec(texto);
+  if (soloFecha) return soloFecha[3] + "/" + soloFecha[2] + "/" + soloFecha[1];
+  return formatearFecha(new Date(texto));
 }
 
 // mapea un Libro de la API + su ejemplar (copia física) al objeto que ya
 // esperan las funciones de renderizado existentes ({id, titulo, autor, categoria, estado...})
+// Copias "en la biblioteca" (las extraviadas o fuera de circulación no cuentan)
+var ESTADOS_EN_CIRCULACION = { disponible: true, prestado: true, reservado: true };
+
+function resumenCopias(libroId) {
+  var copias = (ejemplaresPorLibro[String(libroId)] || []).filter(function (ej) { return ESTADOS_EN_CIRCULACION[ej.estado]; });
+  var r = { total: copias.length, disponibles: 0, prestadas: 0, reservadas: 0, ejemplarDisponibleId: null };
+  copias.forEach(function (ej) {
+    if (ej.estado === "disponible") {
+      r.disponibles++;
+      if (!r.ejemplarDisponibleId) r.ejemplarDisponibleId = String(ej.id);
+    } else if (ej.estado === "prestado") r.prestadas++;
+    else if (ej.estado === "reservado") r.reservadas++;
+  });
+  return r;
+}
+
+// estado general del libro a partir de sus copias: "Disponible" mientras
+// quede al menos una copia libre
+function aplicarCopias(libro) {
+  var r = resumenCopias(libro.id);
+  libro.copias = r.total;
+  libro.disponibles = r.disponibles;
+  libro.prestadas = r.prestadas;
+  libro.reservadas = r.reservadas;
+  libro.ejemplarId = r.ejemplarDisponibleId; // copia libre para prestar directo
+  if (r.disponibles > 0) libro.estado = "Disponible";
+  else if (r.reservadas > 0) libro.estado = "Reservado";
+  else if (r.prestadas > 0) libro.estado = "Prestado";
+  else libro.estado = "Sin copias";
+  return libro;
+}
+
+// mapea un Libro de la API al objeto que usan las funciones de renderizado
+// ({id, titulo, autor, categoria, estado, copias, disponibles...})
 function mapLibro(l) {
-  var info = ejemplaresPorLibro[String(l.id)];
-  return {
+  return aplicarCopias({
     id: String(l.id),
     titulo: l.titulo,
     autor: l.autor,
     categoria: l.categoria ? l.categoria.nombre : "Sin categoría",
     categoriaId: l.categoria_id || (l.categoria ? l.categoria.id : null),
     portada: l.foto_portada || null,
-    codigoBarras: l.isbn || null,
-    estado: info ? (ESTADO_EJEMPLAR_LABEL[info.estado] || "Disponible") : "Disponible",
-    ejemplarId: info ? String(info.id) : null
-  };
+    codigoBarras: l.isbn || null
+  });
 }
 
 function mapSocio(s) {
@@ -332,7 +651,10 @@ function mapReserva(r) {
     socioId: r.socio_id ? String(r.socio_id) : (r.socio ? String(r.socio.id) : null),
     nombre: r.socio ? nombreCompletoSocio(r.socio) : "",
     tipo: r.socio && r.socio.tipo === "centro_educativo" ? "Centro educativo" : "Particular",
-    fecha: fechaDesdeApi(r.fecha_reserva) || ""
+    fecha: fechaDesdeApi(r.fecha_reserva) || "",
+    // "pendiente_retiro": ya tiene una copia apartada; "pendiente": en espera
+    estado: r.estado || "",
+    ejemplarId: r.ejemplar_id ? String(r.ejemplar_id) : null
   };
 }
 
@@ -357,9 +679,15 @@ function mapMulta(m) {
     socio: m.socio ? nombreCompletoSocio(m.socio) : "",
     socioId: m.socio_id ? String(m.socio_id) : null,
     motivo: MOTIVO_MULTA_LABEL[m.motivo] || m.motivo,
+    socioCedula: m.socio && String(m.socio.cedula || "").indexOf("PENDIENTE-") !== 0 ? (m.socio.cedula || "") : "",
+    socioNumero: m.socio ? (m.socio.numero_socio || "") : "",
+    motivoValor: m.motivo,
     monto: m.monto,
     fecha: fechaDesdeApi(m.fecha) || "",
-    pagada: m.estado === "pagada"
+    pagada: m.estado === "pagada",
+    metodoPago: m.metodo_pago || "",
+    metodoPagoTexto: METODO_PAGO_LABEL[m.metodo_pago] || "",
+    fechaPago: fechaDesdeApi(m.fecha_pago) || ""
   };
 }
 
@@ -368,10 +696,11 @@ function mapMulta(m) {
 // ------------------------------
 
 function cargarEjemplaresApi() {
-  return apiFetch("/ejemplares?per_page=500").then(function (resp) {
+  return apiFetch("/ejemplares?per_page=5000").then(function (resp) {
     ejemplaresPorLibro = {};
     extraerDatos(resp).forEach(function (ej) {
-      ejemplaresPorLibro[String(ej.libro_id)] = { id: ej.id, estado: ej.estado };
+      var clave = String(ej.libro_id);
+      (ejemplaresPorLibro[clave] = ejemplaresPorLibro[clave] || []).push({ id: ej.id, estado: ej.estado });
     });
   }).catch(function (err) {
     // GET /ejemplares ya es accesible para cualquier usuario autenticado
@@ -503,11 +832,7 @@ function pollActualizacionesApi() {
   // solo refrescamos el estado de los ejemplares y lo aplicamos a los ya cargados
   Promise.all([
     cargarEjemplaresApi().then(function () {
-      libros.forEach(function (l) {
-        var info = ejemplaresPorLibro[l.id];
-        l.estado = info ? (ESTADO_EJEMPLAR_LABEL[info.estado] || "Disponible") : "Disponible";
-        l.ejemplarId = info ? String(info.id) : null;
-      });
+      libros.forEach(aplicarCopias);
     }),
     cargarReservasApi(),
     cargarPrestamosApi(),
@@ -535,7 +860,7 @@ function pollActualizacionesApi() {
     }
   }).catch(function (err) {
     // fallo silencioso: un error de red pasajero durante el polling no
-    // debería interrumpir a quien esté trabajando con un alert()
+    // debería interrumpir a quien esté trabajando con un aviso
     console.error("Error actualizando datos en segundo plano:", err);
   }).then(function () {
     pollingEnCurso = false;
@@ -628,21 +953,17 @@ function buscarSocioApiPorNombre(nombre) {
   });
 }
 
-// busca un socio por nombre en la API; si no existe lo crea (por ejemplo,
-// cuando se reserva o presta un libro a nombre de alguien que todavía no está
-// en la lista). Requiere estar logueado como administrador o bibliotecario.
-function buscarOCrearSocio(nombre, tipo) {
+// busca un socio registrado por nombre (al reservar, prestar o multar a
+// nombre de alguien). Antes, si no existía, se creaba solo con el nombre;
+// ahora el correo es obligatorio, así que hay que registrarlo en "Socios".
+// Requiere estar logueado como administrador o bibliotecario.
+function buscarSocioRegistrado(nombre) {
   nombre = nombre.trim();
-  var tipoApi = tipo === "Centro educativo" ? "centro_educativo" : "particular";
-
+  var local = buscarSocioPorNombre(nombre);
+  if (local) return Promise.resolve({ id: local.id });
   return buscarSocioApiPorNombre(nombre).then(function (existente) {
     if (existente) return existente;
-    return apiFetch("/socios", { method: "POST", body: { nombre: nombre, tipo: tipoApi } });
-  }).then(function (socio) {
-    return cargarSociosApi().then(function () {
-      renderizarSocios();
-      return socio;
-    });
+    throw new Error("No hay ningún socio registrado como \"" + nombre + "\". Registralo primero en la pestaña Socios (el correo es obligatorio).");
   });
 }
 
@@ -665,7 +986,7 @@ function datosSocioHtml(socio) {
   if (socio.telefono) partes.push('<i class="fa-solid fa-phone me-1"></i>' + escapeHtml(socio.telefono));
   if (socio.email) partes.push('<i class="fa-solid fa-envelope me-1"></i>' + escapeHtml(socio.email));
   if (socio.direccion) partes.push('<i class="fa-solid fa-location-dot me-1"></i>' + escapeHtml(socio.direccion));
-  return partes.join(" &nbsp;·&nbsp; ");
+  return '<span class="datos-socio">' + partes.map(function (p) { return "<span>" + p + "</span>"; }).join("") + "</span>";
 }
 
 function renderizarSocios() {
@@ -694,7 +1015,7 @@ function renderizarSocios() {
     li.className = "reserva-item";
     li.innerHTML =
       '<div class="flex-grow-1"><h3>' + escapeHtml(socio.apellidos ? socio.apellidos.toUpperCase() + ", " + socio.nombres : socio.nombres) + "</h3>" +
-      '<p class="mb-1 small text-muted">' + datosSocioHtml(socio) + "</p>" +
+      '<div class="mb-2 small text-muted">' + datosSocioHtml(socio) + "</div>" +
       '<span class="etiqueta etiqueta-tipo me-2">' + escapeHtml(socio.tipo) + "</span>" +
       etiquetaVerificacionHtml +
       '<span class="etiqueta-estado ' + claseEstado + '">' + escapeHtml(socio.estado) + "</span></div>" +
@@ -709,6 +1030,7 @@ function renderizarSocios() {
 
 function limpiarFormSocio() {
   formSocio.reset();
+  fijarFecha("socio-valido-hasta", "");
   socioIdInput.value = "";
   socioGuardarBtn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Registrar socio';
   socioCancelarEdicionBtn.classList.add("d-none");
@@ -722,7 +1044,7 @@ function editarSocioEnFormulario(socio) {
   socioTelefonoInput.value = socio.telefono;
   socioEmailInput.value = socio.email;
   socioDireccionInput.value = socio.direccion;
-  socioValidoHastaInput.value = socio.validoHasta;
+  fijarFecha("socio-valido-hasta", socio.validoHasta);
   socioTipoInput.value = socio.tipo;
   socioGuardarBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>Guardar cambios';
   socioCancelarEdicionBtn.classList.remove("d-none");
@@ -738,14 +1060,20 @@ formSocio.addEventListener("submit", function (e) {
   var nombre = socioNombreInput.value.trim();
   var apellido = socioApellidoInput.value.trim();
   var cedula = socioCedulaInput.value.trim();
-  if (!nombre || !apellido || !cedula) {
-    alert("Completá nombres, apellidos y número de cédula.");
+  var emailSocio = socioEmailInput.value.trim();
+  if (!nombre || !apellido || !cedula || !emailSocio) {
+    avisarError("Completá nombres, apellidos, cédula y correo electrónico.");
+    return;
+  }
+  if (!correoValido(emailSocio)) {
+    avisarError("El correo electrónico no es válido.");
+    socioEmailInput.focus();
     return;
   }
   var nombreCompleto = nombre + " " + apellido;
   var existente = buscarSocioPorNombre(nombreCompleto);
   if (existente && existente.id !== editandoId) {
-    alert("Ya existe un socio registrado con ese nombre.");
+    avisarError("Ya existe un socio registrado con ese nombre.");
     return;
   }
 
@@ -754,7 +1082,7 @@ formSocio.addEventListener("submit", function (e) {
     apellido: apellido,
     cedula: cedula,
     telefono: socioTelefonoInput.value.trim() || null,
-    email: socioEmailInput.value.trim() || null,
+    email: emailSocio,
     direccion: socioDireccionInput.value.trim() || null,
     tipo: socioTipoInput.value === "Centro educativo" ? "centro_educativo" : "particular"
   };
@@ -764,7 +1092,7 @@ formSocio.addEventListener("submit", function (e) {
     ? apiFetch("/socios/" + editandoId, { method: "PUT", body: body })
     : apiFetch("/socios", { method: "POST", body: body });
 
-  peticion
+  conCarga(socioGuardarBtn, peticion
     .then(function () {
       registrarHistorial((editandoId ? "Se actualizaron los datos del socio " : "Se registró al socio ") + nombreCompleto + ".", "socios", nombreCompleto);
       return cargarSociosApi();
@@ -773,7 +1101,7 @@ formSocio.addEventListener("submit", function (e) {
       renderizarSocios();
       limpiarFormSocio();
       socioNombreInput.focus();
-    })
+    }))
     .catch(mostrarErrorApi);
 });
 
@@ -795,19 +1123,20 @@ listaSocios.addEventListener("click", function (e) {
     editarSocioEnFormulario(socio);
   } else if (boton.dataset.accion === "toggle-estado-socio") {
     var nuevoEstado = socio.estado === "Suspendido" ? "activo" : "suspendido";
-    apiFetch("/socios/" + socio.id + "/estado", { method: "PATCH", body: { estado: nuevoEstado } })
+    conCarga(boton, apiFetch("/socios/" + socio.id + "/estado", { method: "PATCH", body: { estado: nuevoEstado } })
       .then(function () {
         registrarHistorial("El socio " + socio.nombre + " cambió de estado.", "socios", socio.nombre);
         return cargarSociosApi();
-      })
+      }))
       .then(renderizarSocios)
       .catch(mostrarErrorApi);
   } else if (boton.dataset.accion === "eliminar-socio") {
-    if (!confirm("¿Eliminar a este socio?")) return;
-    apiFetch("/socios/" + socio.id, { method: "DELETE" })
-      .then(function () { return cargarSociosApi(); })
-      .then(renderizarSocios)
-      .catch(mostrarErrorApi);
+    confirmar("¿Eliminar a " + socio.nombre + " de la lista de socios?", "Eliminar", true).then(function (ok) {
+      if (!ok) return;
+      return conCarga(boton, apiFetch("/socios/" + socio.id, { method: "DELETE" })
+        .then(function () { return cargarSociosApi(); }))
+        .then(renderizarSocios);
+    }).catch(mostrarErrorApi);
   } else if (boton.dataset.accion === "cambiar-tipo-socio") {
     if (!permisos.esAdmin) return; // el backend igual lo rechazaría (403), esto es solo defensa en el cliente
     var esCentroEducativoActual = socio.tipo === "Centro educativo";
@@ -815,28 +1144,29 @@ listaSocios.addEventListener("click", function (e) {
     var mensajeConfirmacion = esCentroEducativoActual
       ? "¿Cambiar a " + socio.nombre + " de centro educativo a particular?"
       : "¿Cambiar a " + socio.nombre + " a centro educativo?";
-    if (!confirm(mensajeConfirmacion)) return;
-    apiFetch("/socios/" + socio.id, { method: "PUT", body: { tipo: nuevoTipoApi } })
-      .then(function () {
-        registrarHistorial(
-          "Se cambió el tipo de socio de " + socio.nombre + " a " +
-          (nuevoTipoApi === "centro_educativo" ? "centro educativo" : "particular") + ".",
-          "socios", socio.nombre
-        );
-        return cargarSociosApi();
-      })
-      .then(renderizarSocios)
-      .catch(mostrarErrorApi);
+    confirmar(mensajeConfirmacion, "Cambiar tipo").then(function (ok) {
+      if (!ok) return;
+      return conCarga(boton, apiFetch("/socios/" + socio.id, { method: "PUT", body: { tipo: nuevoTipoApi } })
+        .then(function () {
+          registrarHistorial(
+            "Se cambió el tipo de socio de " + socio.nombre + " a " +
+            (nuevoTipoApi === "centro_educativo" ? "centro educativo" : "particular") + ".",
+            "socios", socio.nombre
+          );
+          return cargarSociosApi();
+        }))
+        .then(renderizarSocios);
+    }).catch(mostrarErrorApi);
   } else if (boton.dataset.accion === "verificar-educativo") {
     var nuevoValorVerificado = !socio.verificado;
-    apiFetch("/socios/" + socio.id + "/verificar-educativo", { method: "PATCH", body: { verificado: nuevoValorVerificado } })
+    conCarga(boton, apiFetch("/socios/" + socio.id + "/verificar-educativo", { method: "PATCH", body: { verificado: nuevoValorVerificado } })
       .then(function () {
         registrarHistorial(
           (nuevoValorVerificado ? "Se verificó" : "Se quitó la verificación de") + " a " + socio.nombre + " como centro educativo.",
           "socios", socio.nombre
         );
         return cargarSociosApi();
-      })
+      }))
       .then(renderizarSocios)
       .catch(mostrarErrorApi);
   }
@@ -855,16 +1185,56 @@ function buscarMultaLocalPorId(id) {
 
 var busquedaMultas = "";
 var filtroCategoriaMultas = "";
+var filtroEstadoMultas = "";
+var filtroMetodoMultas = "";
+var resumenMultasEl = document.getElementById("resumen-multas");
+var modalPagarMulta = new bootstrap.Modal(document.getElementById("modal-pagar-multa"));
+var formPagarMulta = document.getElementById("form-pagar-multa");
 
+// Buscador de multas por usuario: busca por nombre, apellido, cédula o
+// n.º de socio; se combina con los filtros de estado, método de pago y motivo
 function multasFiltradas() {
-  var q = normalizarBusqueda(busquedaMultas);
-  if (!q && !filtroCategoriaMultas) return multas;
+  var palabras = normalizarBusqueda(busquedaMultas).split(/\s+/).filter(Boolean);
   return multas.filter(function (m) {
     if (filtroCategoriaMultas && m.motivo !== filtroCategoriaMultas) return false;
-    if (!q) return true;
-    var texto = [m.socio, m.motivo, m.monto, m.pagada ? "pagada" : "pendiente", m.fecha].join(" ");
-    return normalizarBusqueda(texto).indexOf(q) !== -1;
+    if (filtroEstadoMultas === "pagada" && !m.pagada) return false;
+    if (filtroEstadoMultas === "pendiente" && m.pagada) return false;
+    if (filtroMetodoMultas && m.metodoPago !== filtroMetodoMultas) return false;
+    if (!palabras.length) return true;
+    var texto = normalizarBusqueda([m.socio, m.socioCedula, m.socioNumero].join(" "));
+    return palabras.every(function (p) { return texto.indexOf(p) !== -1; });
   });
+}
+
+function hayFiltrosMultas() {
+  return !!(busquedaMultas.trim() || filtroCategoriaMultas || filtroEstadoMultas || filtroMetodoMultas);
+}
+
+function renderizarResumenMultas(visibles) {
+  if (!resumenMultasEl) return;
+  if (!hayFiltrosMultas() || !visibles.length) {
+    resumenMultasEl.classList.add("d-none");
+    resumenMultasEl.innerHTML = "";
+    return;
+  }
+  var pendiente = 0;
+  var pagado = 0;
+  var personas = {};
+  visibles.forEach(function (m) {
+    if (m.pagada) pagado += Number(m.monto) || 0; else pendiente += Number(m.monto) || 0;
+    personas[m.socioId || m.socio] = m.socio;
+  });
+  var nombres = Object.keys(personas).map(function (k) { return personas[k]; });
+  var titulo = nombres.length === 1
+    ? "Multas de " + nombres[0]
+    : visibles.length + " multas de " + nombres.length + " socios";
+  resumenMultasEl.innerHTML =
+    '<p class="resumen-multas-titulo">' + escapeHtml(titulo) + "</p>" +
+    '<div class="resumen-multas-cifras">' +
+      '<div><span class="resumen-cifra pendiente">' + formatearMonto(pendiente) + '</span><span class="resumen-etiqueta">a cobrar</span></div>' +
+      '<div><span class="resumen-cifra pagado">' + formatearMonto(pagado) + '</span><span class="resumen-etiqueta">ya pagado</span></div>' +
+    "</div>";
+  resumenMultasEl.classList.remove("d-none");
 }
 
 function renderizarMultas() {
@@ -872,19 +1242,27 @@ function renderizarMultas() {
   var visibles = multasFiltradas();
   estadoVacioMultas.classList.toggle("d-none", visibles.length > 0);
   var textoVacio = estadoVacioMultas.querySelector("p");
-  if (textoVacio) textoVacio.textContent = multas.length && !visibles.length ? "Ninguna multa coincide con la búsqueda o el filtro." : "No hay multas registradas.";
+  if (textoVacio) textoVacio.textContent = multas.length && !visibles.length ? "Ninguna multa coincide con la búsqueda. Probá con otro nombre o quitá algún filtro." : "No hay multas registradas.";
+  renderizarResumenMultas(visibles);
 
   for (var i = 0; i < visibles.length; i++) {
     var multa = visibles[i];
     var claseEstado = multa.pagada ? "estado-disponible" : "estado-prestado";
     var textoEstado = multa.pagada ? "Pagada" : "Pendiente";
+    var detallePago = "";
+    if (multa.pagada) {
+      detallePago = '<p class="mb-0 small detalle-pago"><i class="fa-solid fa-receipt me-1" aria-hidden="true"></i>' +
+        (multa.fechaPago ? "Pagada el " + multa.fechaPago : "Pagada") +
+        (multa.metodoPagoTexto ? ". Método: " + escapeHtml(multa.metodoPagoTexto) : " (sin método registrado)") + "</p>";
+    }
     var li = document.createElement("li");
     li.className = "reserva-item";
     li.innerHTML =
-      '<div class="flex-grow-1"><h3>' + escapeHtml(multa.socio) + "</h3>" +
-      '<p class="mb-1">' + escapeHtml(multa.motivo) + " · $" + escapeHtml(String(multa.monto)) + '<span class="etiqueta-estado ' + claseEstado + ' ms-2">' + textoEstado + "</span></p>" +
-      '<p class="mb-0 text-muted small">Registrada el ' + multa.fecha + "</p></div>" +
-      (multa.pagada ? "" : '<button class="btn-accion-libro" title="Marcar como pagada" data-accion="pagar-multa" data-id="' + multa.id + '"><i class="fa-solid fa-check"></i></button>') +
+      '<div class="flex-grow-1"><h3>' + escapeHtml(multa.socio) +
+      (multa.socioCedula ? ' <span class="cedula-multa">C.I. ' + escapeHtml(multa.socioCedula) + "</span>" : "") + "</h3>" +
+      '<p class="mb-1">' + escapeHtml(multa.motivo) + ' <strong class="monto-multa">' + formatearMonto(multa.monto) + '</strong><span class="etiqueta-estado ' + claseEstado + ' ms-2">' + textoEstado + "</span></p>" +
+      '<p class="mb-0 text-muted small">Registrada el ' + multa.fecha + "</p>" + detallePago + "</div>" +
+      (multa.pagada ? "" : '<button class="btn-accion-libro" title="Registrar pago" data-accion="pagar-multa" data-id="' + multa.id + '"><i class="fa-solid fa-cash-register"></i></button>') +
       '<button class="btn-accion-libro" title="Eliminar multa" data-accion="eliminar-multa" data-id="' + multa.id + '"><i class="fa-solid fa-trash"></i></button>';
     listaMultas.appendChild(li);
   }
@@ -896,19 +1274,56 @@ formMulta.addEventListener("submit", function (e) {
   var monto = Number(multaMontoInput.value);
   var motivoDisplay = multaMotivoInput.value;
   var motivoApi = MOTIVO_MULTA_VALOR[motivoDisplay] || "atraso";
-  if (!nombreSocio || !monto) return;
+  if (!nombreSocio || !monto) {
+    avisarError("Indicá el socio y un monto mayor a 0.");
+    return;
+  }
 
-  buscarOCrearSocio(nombreSocio, "Particular")
+  conCarga(botonEnviar(formMulta), buscarSocioRegistrado(nombreSocio)
     .then(function (socio) {
       return apiFetch("/multas", { method: "POST", body: { socio_id: socio.id, motivo: motivoApi, monto: monto } });
     })
     .then(function () {
-      registrarHistorial("Se registró una multa de $" + monto + " a " + nombreSocio + " (" + motivoDisplay + ").", "facturas", nombreSocio);
+      registrarHistorial("Se registró una multa de " + formatearMonto(monto) + " a " + nombreSocio + " (" + motivoDisplay + ").", "facturas", nombreSocio);
       return cargarMultasApi();
-    })
+    }))
     .then(function () {
       renderizarMultas();
       formMulta.reset();
+      avisarOk("Multa registrada.");
+    })
+    .catch(mostrarErrorApi);
+});
+
+function abrirModalPagarMulta(multa) {
+  document.getElementById("pagar-multa-id").value = multa.id;
+  document.getElementById("pagar-multa-metodo").value = "";
+  document.getElementById("pagar-multa-detalle").innerHTML =
+    "<div><dt>Socio</dt><dd>" + escapeHtml(multa.socio) + "</dd></div>" +
+    "<div><dt>Motivo</dt><dd>" + escapeHtml(multa.motivo) + "</dd></div>" +
+    "<div><dt>Monto</dt><dd>" + formatearMonto(multa.monto) + "</dd></div>";
+  modalPagarMulta.show();
+}
+
+formPagarMulta.addEventListener("submit", function (e) {
+  e.preventDefault();
+  var multa = buscarMultaLocalPorId(document.getElementById("pagar-multa-id").value);
+  var metodo = document.getElementById("pagar-multa-metodo").value;
+  if (!multa) return;
+  if (!metodo) {
+    avisarError("Elegí el método de pago.");
+    document.getElementById("pagar-multa-metodo").focus();
+    return;
+  }
+  conCarga(botonEnviar(formPagarMulta), apiFetch("/multas/" + multa.id, { method: "PUT", body: { estado: "pagada", metodo_pago: metodo } })
+    .then(function () {
+      registrarHistorial("Se registró el pago de la multa de " + multa.socio + " (" + METODO_PAGO_LABEL[metodo] + ").", "facturas", multa.socio);
+      return cargarMultasApi();
+    }))
+    .then(function () {
+      renderizarMultas();
+      modalPagarMulta.hide();
+      avisarOk("Pago registrado.");
     })
     .catch(mostrarErrorApi);
 });
@@ -920,22 +1335,17 @@ listaMultas.addEventListener("click", function (e) {
   if (!multa) return;
 
   if (boton.dataset.accion === "pagar-multa") {
-    apiFetch("/multas/" + multa.id, { method: "PUT", body: { estado: "pagada" } })
-      .then(function () {
-        registrarHistorial("Se registró el pago de la multa de " + multa.socio + ".", "facturas", multa.socio);
-        return cargarMultasApi();
-      })
-      .then(renderizarMultas)
-      .catch(mostrarErrorApi);
+    abrirModalPagarMulta(multa);
   } else if (boton.dataset.accion === "eliminar-multa") {
-    if (!confirm("¿Eliminar esta multa?")) return;
-    apiFetch("/multas/" + multa.id, { method: "DELETE" })
-      .then(function () {
-        registrarHistorial("Se eliminó la multa de " + multa.socio + ".", "facturas", multa.socio);
-        return cargarMultasApi();
-      })
-      .then(renderizarMultas)
-      .catch(mostrarErrorApi);
+    confirmar("¿Eliminar la multa de " + multa.socio + " por " + formatearMonto(multa.monto) + "?", "Eliminar", true).then(function (ok) {
+      if (!ok) return;
+      return conCarga(boton, apiFetch("/multas/" + multa.id, { method: "DELETE" })
+        .then(function () {
+          registrarHistorial("Se eliminó la multa de " + multa.socio + ".", "facturas", multa.socio);
+          return cargarMultasApi();
+        }))
+        .then(renderizarMultas);
+    }).catch(mostrarErrorApi);
   }
 });
 
@@ -1093,16 +1503,14 @@ function renderizarTopLibros() {
 }
 
 function renderizarReportes() {
-  var disponibles = libros.filter(function (l) { return l.estado === "Disponible"; }).length;
-  var prestadosAhora = libros.filter(function (l) { return l.estado === "Prestado"; }).length;
-  var reservadosAhora = libros.filter(function (l) { return l.estado === "Reservado"; }).length;
+  function sumar(campo) { return libros.reduce(function (t, l) { return t + (l[campo] || 0); }, 0); }
   var atrasados = prestamosVencidos().length;
 
   var stats = [
-    { numero: libros.length, etiqueta: "Libros en catálogo" },
-    { numero: disponibles, etiqueta: "Disponibles" },
-    { numero: prestadosAhora, etiqueta: "Prestados" },
-    { numero: reservadosAhora, etiqueta: "Reservados" },
+    { numero: libros.length, etiqueta: "Títulos en catálogo (" + sumar("copias") + " copias)" },
+    { numero: sumar("disponibles"), etiqueta: "Copias disponibles" },
+    { numero: sumar("prestadas"), etiqueta: "Copias prestadas" },
+    { numero: sumar("reservadas"), etiqueta: "Copias reservadas" },
     { numero: atrasados, etiqueta: "Préstamos atrasados" }
   ];
 
@@ -1114,6 +1522,16 @@ function renderizarReportes() {
   renderizarNotificaciones();
   renderizarHistorial();
 }
+
+// elegir una sección del menú lateral lo cierra (los botones tienen
+// data-bs-toggle="pill" y data-bs-dismiss juntos, y Bootstrap solo atiende
+// uno de los dos: el menú quedaba abierto tapando la sección elegida)
+Array.prototype.forEach.call(document.querySelectorAll('#menu-nav-tabs [data-bs-toggle="pill"]'), function (boton) {
+  boton.addEventListener("click", function () {
+    var menu = bootstrap.Offcanvas.getInstance(document.getElementById("menu-offcanvas"));
+    if (menu) menu.hide();
+  });
+});
 
 var tabBtnReportes = document.getElementById("menu-tab-btn-reportes");
 if (tabBtnReportes) tabBtnReportes.addEventListener("shown.bs.tab", renderizarReportes);
@@ -1169,9 +1587,12 @@ function actualizarSelectsCategoria() {
     { select: filtroCategoria, incluirTodas: true, incluirOtro: false }
   ].forEach(function (conf) {
     var valorActual = conf.select.value;
+    // si antes no había categorías cargadas, "Otro" quedaba elegido por
+    // descarte: en ese caso no lo mantenemos y se elige la primera real
+    var habiaCategorias = conf.select.options.length > (conf.incluirOtro ? 1 : 0) + (conf.incluirTodas ? 1 : 0);
     conf.select.innerHTML = construirOpcionesCategoria(conf.incluirTodas, conf.incluirOtro);
     var existeValor = Array.prototype.some.call(conf.select.options, function (o) { return o.value === valorActual; });
-    if (existeValor) conf.select.value = valorActual;
+    if (existeValor && (valorActual !== "Otro" || habiaCategorias)) conf.select.value = valorActual;
   });
 
   // si "Otro" quedó seleccionado (por ejemplo, porque todavía no hay ninguna
@@ -1273,17 +1694,17 @@ btnBuscarIsbn.addEventListener("click", function () {
 
 function dispararBusquedaIsbn() {
   var isbn = inputCodigoBarras.value.trim();
-  if (!isbn) return;
-  buscarLibroPorIsbn(isbn);
+  if (!isbn || btnBuscarIsbn.disabled) return;
+  conCarga(btnBuscarIsbn, buscarLibroPorIsbn(isbn));
 }
 function buscarLibroPorIsbn(isbn) {
-  var url = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn;
+  var url = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + encodeURIComponent(isbn);
 
-  fetch(url)
+  return fetch(url)
     .then(function (r) { return r.json(); })
     .then(function (datos) {
       if (!datos.items || datos.items.length === 0) {
-        alert("No se encontró ningún libro con ese código de barras.");
+        avisarError("No se encontró ningún libro con ese código de barras.");
         return;
       }
 
@@ -1311,7 +1732,7 @@ function buscarLibroPorIsbn(isbn) {
       }
     })
     .catch(function () {
-      alert("Hubo un error buscando el libro. Probá de nuevo.");
+      avisarError("No se pudo consultar el código de barras. Revisá la conexión y probá de nuevo.");
     });
 }
 
@@ -1407,66 +1828,72 @@ function renderizarLibros() {
     }
     var portadaHtml = '<div class="libro-portada-wrap">' + portadaContenidoHtml + menuAdminHtml + "</div>";
 
-    var claseEstado = libro.estado === "Prestado" ? "estado-prestado" : (libro.estado === "Reservado" ? "estado-reservado" : "estado-disponible");
+    var claseEstado = libro.estado === "Disponible" ? "estado-disponible" : (libro.estado === "Reservado" ? "estado-reservado" : "estado-prestado");
     var estadoHtml = '<span class="etiqueta-estado ' + claseEstado + '">' + escapeHtml(libro.estado) + "</span>";
     var codigoBarrasHtml = libro.codigoBarras
       ? '<p class="mb-1 texto-codigo-barras"><i class="fa-solid fa-barcode me-1"></i>' + escapeHtml(libro.codigoBarras) + "</p>"
       : "";
 
+    // con más de una copia se muestra cuántas quedan libres
+    var copiasHtml = libro.copias > 1
+      ? '<p class="texto-copias">' + libro.disponibles + " de " + libro.copias + " copias libres</p>"
+      : "";
+
+    var reservasLibro = reservasDeLibro(libro.id);
+    var prestamosLibro = prestamosActivosDeLibro(libro.id);
+    var socioPropio = miSocioId();
+    var miReserva = socioPropio ? reservasLibro.filter(function (r) { return r.socioId === socioPropio; })[0] : null;
+
     var extraInfoHtml = "";
     var accionesEstadoHtml = "";
 
-    if (libro.estado === "Reservado") {
-      var reserva = buscarReservaPorLibro(libro.id);
-      if (reserva) {
-        var esMiReserva = !permisos.esGestion && sesionActual && sesionActual.socioId && reserva.socioId === String(sesionActual.socioId);
-        extraInfoHtml = esMiReserva
-          ? '<p class="mb-0 texto-reserva">🔖 Reservado por vos el ' + escapeHtml(reserva.fecha) + "</p>"
-          : '<p class="mb-0 texto-reserva">Reservado por: ' + escapeHtml(reserva.nombre) + " (" + escapeHtml(reserva.tipo) + ")</p>";
-      }
-      // "Prestar" requiere rol administrador o bibliotecario (ver routes/api.php, POST /prestamos).
-      // "Cancelar reserva" solo se muestra si es una reserva propia del socio
-      // (la API ya solo devuelve las suyas) o si es personal de gestión,
-      // que puede cancelar cualquiera.
-      // Se marcan "grande" cuando las ve alguien de gestión, ya que en ese
-      // caso son las únicas acciones de la fila (sin Editar/Eliminar de por medio).
-      accionesEstadoHtml =
-        (permisos.esGestion ? '<button class="btn-accion-libro btn-accion-libro-grande" title="Prestar" data-accion="prestar" data-id="' + libro.id + '"><i class="fa-solid fa-right-from-bracket"></i></button>' : "") +
-        (permisos.esGestion || reserva ? '<button class="btn-accion-libro' + (permisos.esGestion ? " btn-accion-libro-grande" : "") + '" title="Cancelar reserva" data-accion="cancelar-reserva" data-id="' + libro.id + '"><i class="fa-solid fa-ban"></i></button>' : "");
-    } else if (libro.estado === "Prestado") {
-      var prestamo = buscarPrestamoActivoPorLibro(libro.id);
-      if (prestamo) {
-        var esMiPrestamo = !permisos.esGestion && sesionActual && sesionActual.socioId && prestamo.socioId === String(sesionActual.socioId);
-        // si es el propio socio quien lo tiene, no repetimos esa info acá:
-        // ahora se ve en el popup "Mis libros prestados" (ícono de libro
-        // del header), no suelta en cada tarjeta del catálogo
-        if (!esMiPrestamo) {
-          extraInfoHtml = '<p class="mb-0 texto-reserva">Prestado a: ' + escapeHtml(prestamo.nombre) + " · vence el " + prestamo.fechaVencimiento + "</p>";
+    if (miReserva) {
+      // el socio ya tiene este libro reservado: lo único que puede hacer es cancelar
+      extraInfoHtml = '<p class="mb-0 texto-reserva">' +
+        (miReserva.estado === "pendiente" ? "Estás en espera de una copia (reservaste el " + escapeHtml(miReserva.fecha) + ")" : "Lo reservaste el " + escapeHtml(miReserva.fecha)) + "</p>";
+      accionesEstadoHtml = '<button class="btn-accion-libro btn-accion-libro-full" title="Cancelar reserva" data-accion="cancelar-reserva" data-id="' + libro.id + '" data-reserva-id="' + miReserva.id + '"><i class="fa-solid fa-ban"></i> Cancelar reserva</button>';
+    } else {
+      if (permisos.esGestion) {
+        if (libro.copias === 1 && reservasLibro.length === 1) {
+          extraInfoHtml = '<p class="mb-0 texto-reserva">Reservado por: ' + escapeHtml(reservasLibro[0].nombre) + "</p>";
+        } else if (libro.copias === 1 && prestamosLibro.length === 1) {
+          extraInfoHtml = '<p class="mb-0 texto-reserva">Prestado a: ' + escapeHtml(prestamosLibro[0].nombre) + ", vence el " + prestamosLibro[0].fechaVencimiento + "</p>";
+        } else if (libro.copias > 1 && (libro.prestadas || libro.reservadas)) {
+          var partes = [];
+          if (libro.prestadas) partes.push(libro.prestadas + (libro.prestadas === 1 ? " prestada" : " prestadas"));
+          if (libro.reservadas) partes.push(libro.reservadas + (libro.reservadas === 1 ? " reservada" : " reservadas"));
+          extraInfoHtml = '<p class="mb-0 texto-reserva">' + partes.join(" y ") + "</p>";
         }
       }
-      // "Devolver" requiere rol administrador o bibliotecario (ver routes/api.php, PATCH /prestamos/{id}/devolver)
-      // como queda solo en la fila, se estira a todo el ancho
-      accionesEstadoHtml = permisos.esGestion
-        ? '<button class="btn-accion-libro btn-accion-libro-full" title="Devolver" data-accion="devolver" data-id="' + libro.id + '"><i class="fa-solid fa-rotate-left"></i> Devolver</button>'
-        : "";
-    } else {
-      // si nadie con permisos de gestión mira la tarjeta, "Reservar" es el
-      // único botón posible: lo estiramos a todo el ancho y le agregamos
-      // el texto en vez de dejarlo como ícono solo. Si es gestión, en
-      // cambio, tiene a "Prestar" al lado: ambos quedan grandes, mitad y
-      // mitad, en vez del ícono chiquito de antes.
-      // libro disponible: "Agregar" lo suma al carrito (se reserva desde
-      // ahí); la gestión además puede prestarlo directamente
-      accionesEstadoHtml =
-        htmlBotonAgregar(libro) +
-        (permisos.esGestion ? '<button class="btn-accion-libro btn-accion-libro-grande btn-prestar-rapido" title="Prestar" data-accion="prestar" data-id="' + libro.id + '"><i class="fa-solid fa-right-from-bracket"></i></button>' : "");
+
+      if (libro.disponibles > 0) {
+        // quedan copias libres: se puede sumar al carrito; la gestión además
+        // puede prestar una directamente
+        accionesEstadoHtml =
+          htmlBotonAgregar(libro) +
+          (permisos.esGestion ? '<button class="btn-accion-libro btn-accion-libro-grande btn-prestar-rapido" title="Prestar una copia" data-accion="prestar" data-id="' + libro.id + '"><i class="fa-solid fa-right-from-bracket"></i></button>' : "");
+      } else if (permisos.esGestion && libro.copias === 1 && reservasLibro.length === 1 && !prestamosLibro.length) {
+        // única copia reservada: entregarla o cancelar la reserva
+        accionesEstadoHtml =
+          '<button class="btn-accion-libro btn-accion-libro-grande" title="Prestar a quien lo reservó" data-accion="prestar" data-id="' + libro.id + '" data-reserva-id="' + reservasLibro[0].id + '"><i class="fa-solid fa-right-from-bracket"></i></button>' +
+          '<button class="btn-accion-libro btn-accion-libro-grande" title="Cancelar reserva" data-accion="cancelar-reserva" data-id="' + libro.id + '" data-reserva-id="' + reservasLibro[0].id + '"><i class="fa-solid fa-ban"></i></button>';
+      }
+
+      // devolver: si hay copias prestadas (con varias, se elige cuál)
+      if (permisos.esGestion && prestamosLibro.length) {
+        accionesEstadoHtml += accionesEstadoHtml
+          ? '<button class="btn-accion-libro" title="Registrar devolución" data-accion="devolver" data-id="' + libro.id + '"><i class="fa-solid fa-rotate-left"></i></button>'
+          : '<button class="btn-accion-libro btn-accion-libro-full" title="Registrar devolución" data-accion="devolver" data-id="' + libro.id + '"><i class="fa-solid fa-rotate-left"></i> Devolver</button>';
+      }
     }
 
     // si el libro está prestado (o cualquier otro estado) y la persona no
     // tiene ningún botón disponible, no mostramos la barra de acciones:
     // así evitamos la línea/separador vacío al pie de la tarjeta
     // (Editar/Eliminar ya no van acá, se movieron al menú sobre la portada)
-    var accionesLibroHtml = accionesEstadoHtml ? '<div class="acciones-libro">' + accionesEstadoHtml + "</div>" : "";
+    // con 3 botones (agregar, prestar y devolver) no entra el texto: quedan solo íconos
+    var compactas = (accionesEstadoHtml.match(/<button/g) || []).length >= 3;
+    var accionesLibroHtml = accionesEstadoHtml ? '<div class="acciones-libro' + (compactas ? " acciones-compactas" : "") + '">' + accionesEstadoHtml + "</div>" : "";
 
     tarjetas.push({
       libro: libro,
@@ -1479,7 +1906,7 @@ function renderizarLibros() {
       '<p class="libro-autor">' + escapeHtml(libro.autor) + "</p>" +
       codigoBarrasHtml +
       '<span class="etiqueta">' + escapeHtml(libro.categoria) + "</span> " + estadoHtml +
-      extraInfoHtml + "</div>" +
+      copiasHtml + extraInfoHtml + "</div>" +
       accionesLibroHtml
     });
   }
@@ -1574,12 +2001,19 @@ function alternarCarrito(id) {
 
 function htmlBotonAgregar(libro) {
   if (enCarrito(libro.id)) {
-    return '<button type="button" class="btn-agregar-carrito en-carrito" data-id="' + libro.id + '" title="Quitar del carrito"><i class="fa-solid fa-check"></i> En el carrito</button>';
+    return '<button type="button" class="btn-agregar-carrito en-carrito" data-id="' + libro.id + '" title="Quitar del carrito"><i class="fa-solid fa-check"></i> <span class="texto-boton">En el carrito</span></button>';
   }
-  return '<button type="button" class="btn-agregar-carrito" data-id="' + libro.id + '"><i class="fa-solid fa-bag-shopping"></i> Agregar</button>';
+  return '<button type="button" class="btn-agregar-carrito" data-id="' + libro.id + '" title="Agregar al carrito"><i class="fa-solid fa-bag-shopping"></i> <span class="texto-boton">Agregar</span></button>';
 }
 
 function mostrarMensajeCarrito(html, tipo) {
+  // los errores y advertencias van al aviso rojo de abajo a la derecha
+  if (tipo !== "success") {
+    var tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    avisarError(tmp.textContent);
+    return;
+  }
   var el = document.getElementById("carrito-mensaje");
   if (!el) return;
   el.className = "alert py-2 small alert-" + tipo;
@@ -1639,7 +2073,8 @@ function renderizarCarrito() {
   var boton = document.getElementById("carrito-confirmar");
   var textoBoton = disponibles === 1 ? "Reservar 1 libro" : "Reservar " + disponibles + " libros";
   if (boton.textContent !== textoBoton) boton.textContent = textoBoton;
-  boton.disabled = disponibles === 0;
+  // si está reservando (indicador de carga), no lo habilitamos a mitad de camino
+  boton.disabled = disponibles === 0 || boton.classList.contains("cargando");
 }
 
 function confirmarCarrito() {
@@ -1671,7 +2106,7 @@ function confirmarCarrito() {
       mostrarMensajeCarrito("Escribí el nombre de quien reserva.", "warning");
       return;
     }
-    obtenerSocio = buscarOCrearSocio(nombrePersona, document.getElementById("carrito-tipo").value);
+    obtenerSocio = buscarSocioRegistrado(nombrePersona);
   } else {
     if (!sesionActual.socioId) {
       mostrarMensajeCarrito("Tu cuenta no tiene un socio asociado; no podés reservar. Contactá a un bibliotecario.", "danger");
@@ -1682,11 +2117,10 @@ function confirmarCarrito() {
   }
 
   var boton = document.getElementById("carrito-confirmar");
-  boton.disabled = true;
   var reservados = [];
   var fallidos = [];
 
-  obtenerSocio.then(function (socio) {
+  conCarga(boton, obtenerSocio.then(function (socio) {
     // de a uno: el servidor valida el límite de reservas en cada pedido
     return ids.reduce(function (cadena, id) {
       return cadena.then(function () {
@@ -1708,14 +2142,14 @@ function confirmarCarrito() {
     renderizarLibros();
     renderizarReservas();
 
-    var partes = [];
-    if (reservados.length) partes.push("Reservaste " + reservados.length + (reservados.length === 1 ? " libro." : " libros."));
+    if (reservados.length) {
+      mostrarMensajeCarrito("Reservaste " + reservados.length + (reservados.length === 1 ? " libro." : " libros."), "success");
+    }
     fallidos.forEach(function (f) {
       var l = buscarLibroPorId(f.id);
-      partes.push("No se pudo reservar «" + escapeHtml(l ? l.titulo : "un libro") + "»: " + escapeHtml(f.mensaje));
+      avisarError("No se pudo reservar «" + (l ? l.titulo : "un libro") + "»: " + f.mensaje);
     });
-    mostrarMensajeCarrito(partes.join("<br>"), fallidos.length ? (reservados.length ? "warning" : "danger") : "success");
-  }).catch(mostrarErrorApi).then(function () {
+  })).catch(mostrarErrorApi).then(function () {
     renderizarCarrito();
   });
 }
@@ -1740,10 +2174,9 @@ document.getElementById("carrito-vaciar").addEventListener("click", function () 
 });
 
 document.getElementById("carrito-offcanvas").addEventListener("show.bs.offcanvas", function () {
-  var hoyISO = new Date().toISOString().slice(0, 10);
-  var campo = document.getElementById("carrito-fecha");
-  campo.min = hoyISO;
-  if (!campo.value || campo.value < hoyISO) campo.value = hoyISO;
+  var hoy = hoyIso();
+  var actual = document.getElementById("carrito-fecha").value;
+  fijarFecha("carrito-fecha", actual && actual >= hoy ? actual : hoy, hoy);
   renderizarCarrito();
 });
 
@@ -1848,18 +2281,34 @@ function renderizarNovedades() {
   arrancar();
 })();
 
-function buscarReservaPorLibro(libroId) {
+function reservasDeLibro(libroId) {
+  return reservas.filter(function (r) { return r.libroId === libroId; });
+}
+
+function buscarReservaPorId(id) {
   for (var i = 0; i < reservas.length; i++) {
-    if (reservas[i].libroId === libroId) return reservas[i];
+    if (reservas[i].id === String(id)) return reservas[i];
   }
   return null;
 }
 
-function buscarPrestamoActivoPorLibro(libroId) {
+function prestamoEstaActivo(p) {
+  return !p.fechaDevolucion && (p.estado === "activo" || p.estado === "vencido" || !p.estado);
+}
+
+function prestamosActivosDeLibro(libroId) {
+  return prestamos.filter(function (p) { return p.libroId === libroId && prestamoEstaActivo(p); });
+}
+
+function buscarPrestamoPorId(id) {
   for (var i = 0; i < prestamos.length; i++) {
-    if (prestamos[i].libroId === libroId && !prestamos[i].fechaDevolucion) return prestamos[i];
+    if (prestamos[i].id === String(id)) return prestamos[i];
   }
   return null;
+}
+
+function miSocioId() {
+  return !permisos.esGestion && sesionActual && sesionActual.socioId ? String(sesionActual.socioId) : null;
 }
 
 function escapeHtml(texto) {
@@ -1868,37 +2317,40 @@ function escapeHtml(texto) {
   return div.innerHTML;
 }
 
-function generarCodigoInterno() {
-  return "EJ-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-}
-
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   var titulo = document.getElementById("titulo").value.trim();
   var autor = document.getElementById("autor").value.trim();
   var codigoBarras = inputCodigoBarras.value.trim() || null;
-  if (!titulo || !autor) return;
+  if (!titulo || !autor) {
+    avisarError("Completá título y autor.");
+    return;
+  }
 
   if (inputCategoria.value === "Otro" && !inputNuevaCategoria.value.trim()) {
+    avisarError("Escribí el nombre de la nueva categoría.");
     inputNuevaCategoria.focus();
     return;
   }
 
-  resolverCategoriaId(inputCategoria, inputNuevaCategoria).then(function (categoriaId) {
+  var cantidadCopias = parseInt(document.getElementById("cantidad-copias").value, 10);
+  if (!(cantidadCopias >= 1 && cantidadCopias <= 200)) {
+    avisarError("La cantidad de copias tiene que ser un número entre 1 y 200.");
+    document.getElementById("cantidad-copias").focus();
+    return;
+  }
+
+  // el backend crea un ejemplar (copia física) por cada copia indicada
+  conCarga(botonEnviar(form), resolverCategoriaId(inputCategoria, inputNuevaCategoria).then(function (categoriaId) {
     return apiFetch("/libros", {
       method: "POST",
-      body: { titulo: titulo, autor: autor, isbn: codigoBarras, categoria_id: categoriaId, foto_portada: portadaEncontrada }
-    });
-  }).then(function (nuevoLibro) {
-    // creamos un único ejemplar (copia física) para que el libro se pueda prestar/reservar
-    return apiFetch("/ejemplares", {
-      method: "POST",
-      body: { codigo_interno: generarCodigoInterno(), libro_id: nuevoLibro.id }
+      body: { titulo: titulo, autor: autor, isbn: codigoBarras, categoria_id: categoriaId, foto_portada: portadaEncontrada, cantidad: cantidadCopias }
     });
   }).then(function () {
-    registrarHistorial("Se agregó el libro \"" + titulo + "\".", "libros");
+    registrarHistorial("Se agregó el libro \"" + titulo + "\" (" + cantidadCopias + (cantidadCopias === 1 ? " copia" : " copias") + ").", "libros");
     return cargarLibrosApi();
-  }).then(function () {
+  })).then(function () {
+    avisarOk("Libro agregado al catálogo.");
     form.reset();
     var modalAgregarEl = document.getElementById("modal-agregar-libro");
     var modalAgregar = modalAgregarEl && bootstrap.Modal.getInstance(modalAgregarEl);
@@ -1924,14 +2376,16 @@ lista.addEventListener("click", function (e) {
   var botonEliminar = e.target.closest(".btn-eliminar");
   if (botonEliminar) {
     var id = botonEliminar.dataset.id;
-    if (!confirm("¿Eliminar este libro del catálogo?")) return;
-    apiFetch("/libros/" + id, { method: "DELETE" })
-      .then(function () { return Promise.all([cargarLibrosApi(), cargarReservasApi()]); })
-      .then(function () {
-        renderizarLibros();
-        renderizarReservas();
-      })
-      .catch(mostrarErrorApi);
+    var libroAEliminar = buscarLibroPorId(id);
+    confirmar("¿Eliminar \"" + (libroAEliminar ? libroAEliminar.titulo : "este libro") + "\" del catálogo?", "Eliminar", true).then(function (ok) {
+      if (!ok) return;
+      return apiFetch("/libros/" + id, { method: "DELETE" })
+        .then(function () { return Promise.all([cargarLibrosApi(), cargarReservasApi()]); })
+        .then(function () {
+          renderizarLibros();
+          renderizarReservas();
+        });
+    }).catch(mostrarErrorApi);
     return;
   }
 
@@ -1948,9 +2402,9 @@ lista.addEventListener("click", function (e) {
   var libroId = botonAccion.dataset.id;
 
   if (accion === "reservar") abrirModalReservar(libroId);
-  else if (accion === "prestar") abrirModalPrestar(libroId);
-  else if (accion === "devolver") devolverLibro(libroId);
-  else if (accion === "cancelar-reserva") cancelarReserva(libroId);
+  else if (accion === "prestar") abrirModalPrestar(libroId, botonAccion.dataset.reservaId);
+  else if (accion === "devolver") devolverLibro(libroId, botonAccion);
+  else if (accion === "cancelar-reserva") cancelarReserva(botonAccion.dataset.reservaId, botonAccion);
 });
 
 filtroCategoria.addEventListener("change", renderizarLibros);
@@ -1973,6 +2427,11 @@ function abrirModalEditar(id) {
   editarCategoria.value = libro.categoria;
   actualizarVisibilidadNuevaCategoria(editarCategoria, grupoEditarNuevaCategoria, inputEditarNuevaCategoria);
   editarCodigoBarras.value = libro.codigoBarras || "";
+  editarCopias.value = libro.copias || 1;
+  editarCopias.dataset.original = String(libro.copias || 0);
+  document.getElementById("editar-copias-ayuda").textContent = libro.copias
+    ? "Ahora: " + libro.disponibles + " en la biblioteca, " + (libro.prestadas + libro.reservadas) + " prestadas o reservadas. Solo se pueden quitar copias que estén en la biblioteca."
+    : "Este libro no tiene copias cargadas.";
   editarImagenLocal.value = "";
   portadaEditando = libro.portada;
   portadaEditandoEsManual = false;
@@ -2017,15 +2476,26 @@ formEditar.addEventListener("submit", function (e) {
   e.preventDefault();
   var titulo = editarTitulo.value.trim();
   var autor = editarAutor.value.trim();
-  if (!titulo || !autor) return;
+  if (!titulo || !autor) {
+    avisarError("Completá título y autor.");
+    return;
+  }
 
   var id = editarId.value;
+  var copiasNuevas = parseInt(editarCopias.value, 10);
+  if (!(copiasNuevas >= 1 && copiasNuevas <= 200)) {
+    avisarError("La cantidad de copias tiene que ser un número entre 1 y 200.");
+    editarCopias.focus();
+    return;
+  }
+  var cambiaCantidad = String(copiasNuevas) !== editarCopias.dataset.original;
   if (editarCategoria.value === "Otro" && !inputEditarNuevaCategoria.value.trim()) {
+    avisarError("Escribí el nombre de la nueva categoría.");
     inputEditarNuevaCategoria.focus();
     return;
   }
 
-  resolverCategoriaId(editarCategoria, inputEditarNuevaCategoria).then(function (categoriaId) {
+  conCarga(botonEnviar(formEditar), resolverCategoriaId(editarCategoria, inputEditarNuevaCategoria).then(function (categoriaId) {
     return apiFetch("/libros/" + id, {
       method: "PUT",
       body: {
@@ -2037,11 +2507,21 @@ formEditar.addEventListener("submit", function (e) {
       }
     });
   }).then(function () {
-    return cargarLibrosApi();
+    if (!cambiaCantidad) return null;
+    return apiFetch("/libros/" + id + "/cantidad", { method: "PUT", body: { cantidad: copiasNuevas } }).then(function () {
+      registrarHistorial("Se cambió la cantidad de copias de \"" + titulo + "\" a " + copiasNuevas + ".", "libros");
+    });
   }).then(function () {
+    return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
+  })).then(function () {
     renderizarLibros();
+    renderizarReservas();
     modalEditar.hide();
-  }).catch(mostrarErrorApi);
+  }).catch(function (err) {
+    // si falló solo el cambio de copias, igual refrescamos lo demás
+    mostrarErrorApi(err);
+    cargarLibrosApi().then(renderizarLibros).catch(function () {});
+  });
 });
 
 // ------------------------------
@@ -2056,9 +2536,8 @@ function abrirModalReservar(libroId) {
   reservarNombre.value = "";
   reservarTipo.value = "Particular";
 
-  var hoyISO = new Date().toISOString().slice(0, 10);
-  reservarFecha.min = hoyISO;
-  reservarFecha.value = hoyISO;
+  var hoy = hoyIso();
+  fijarFecha("reservar-fecha", hoy, hoy);
 
   // un socio autenticado (autoservicio) reserva con su propia cuenta:
   // no puede buscar/crear socios (GET/POST /socios requiere rol
@@ -2066,7 +2545,8 @@ function abrirModalReservar(libroId) {
   // nombre/tipo y usamos directamente su socioId
   var esAutoservicio = !permisos.esGestion;
   grupoReservarNombre.classList.toggle("d-none", esAutoservicio);
-  grupoReservarTipo.classList.toggle("d-none", esAutoservicio);
+  // el tipo de usuario ya viene del socio registrado: no se pide
+  grupoReservarTipo.classList.add("d-none");
   reservarComoSocioInfo.classList.toggle("d-none", !esAutoservicio);
 
   modalReservar.show();
@@ -2089,21 +2569,25 @@ formReservar.addEventListener("submit", function (e) {
   e.preventDefault();
   var libroId = reservarLibroId.value;
   var fechaDeseada = reservarFecha.value;
-  if (!fechaDeseada) return;
+  if (!fechaDeseada) {
+    avisarError("Elegí para cuándo lo querés retirar.");
+    return;
+  }
+  var botonReservar = botonEnviar(formReservar);
 
   // autoservicio: el propio socio reserva con su cuenta, sin pasar por /socios
   if (!permisos.esGestion) {
     var socioIdPropio = sesionActual && sesionActual.socioId ? String(sesionActual.socioId) : null;
     if (!socioIdPropio) {
-      alert("Tu cuenta no tiene un socio asociado; no podés reservar. Contactá a un bibliotecario.");
+      avisarError("Tu cuenta no tiene un socio asociado; no podés reservar. Contactá a un bibliotecario.");
       return;
     }
     var libroReservadoAuto = buscarLibroPorId(libroId);
-    apiFetch("/reservas", { method: "POST", body: { socio_id: socioIdPropio, libro_id: libroId, fecha_deseada: fechaDeseada } })
+    conCarga(botonReservar, apiFetch("/reservas", { method: "POST", body: { socio_id: socioIdPropio, libro_id: libroId, fecha_deseada: fechaDeseada } })
       .then(function () {
         registrarHistorial("Se reservó \"" + (libroReservadoAuto ? libroReservadoAuto.titulo : "un libro") + "\" a nombre de " + (sesionActual.nombre || "un socio") + ".", "reservas", sesionActual.nombre);
         return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
-      }).then(function () {
+      })).then(function () {
         renderizarLibros();
         renderizarReservas();
         modalReservar.hide();
@@ -2114,43 +2598,46 @@ formReservar.addEventListener("submit", function (e) {
   // administrador/bibliotecario: reservan a nombre de un socio, buscándolo
   // o creándolo por nombre (ver buscarOCrearSocio)
   var nombre = reservarNombre.value.trim();
-  var tipo = reservarTipo.value;
-  if (!nombre) return;
+  if (!nombre) {
+    avisarError("Escribí el nombre del socio que reserva.");
+    return;
+  }
 
   var socioExistente = buscarSocioPorNombre(nombre);
   if (socioExistente && socioTieneReservaActivaBloqueante(socioExistente)) {
-    alert("Este socio ya tiene una reserva activa. Solo puede tener más de una si está verificado como centro educativo (ver pestaña Socios).");
+    avisarError("Este socio ya tiene una reserva activa. Solo puede tener más de una si está verificado como centro educativo (ver pestaña Socios).");
     return;
   }
 
   var libroReservado = buscarLibroPorId(libroId);
-  buscarOCrearSocio(nombre, tipo).then(function (socio) {
+  conCarga(botonReservar, buscarSocioRegistrado(nombre).then(function (socio) {
     return apiFetch("/reservas", { method: "POST", body: { socio_id: socio.id, libro_id: libroId, fecha_deseada: fechaDeseada } });
   }).then(function () {
     registrarHistorial("Se reservó \"" + (libroReservado ? libroReservado.titulo : "un libro") + "\" a nombre de " + nombre + ".", "reservas", nombre);
     return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
-  }).then(function () {
+  })).then(function () {
     renderizarLibros();
     renderizarReservas();
     modalReservar.hide();
   }).catch(mostrarErrorApi);
 });
 
-function cancelarReserva(libroId) {
-  if (!confirm("¿Cancelar la reserva de este libro?")) return;
-  var reserva = buscarReservaPorLibro(libroId);
+function cancelarReserva(reservaId, boton) {
+  var reserva = buscarReservaPorId(reservaId);
   if (!reserva) return;
+  var libroCancelado = buscarLibroPorId(reserva.libroId);
 
-  var libroCancelado = buscarLibroPorId(libroId);
-  apiFetch("/reservas/" + reserva.id + "/cancelar", { method: "PATCH" })
-    .then(function () {
-      registrarHistorial("Se canceló la reserva de \"" + (libroCancelado ? libroCancelado.titulo : "un libro") + "\" de " + (reserva.nombre || "un socio") + ".", "reservas", reserva.nombre);
-      return Promise.all([cargarLibrosApi(), cargarReservasApi()]); })
-    .then(function () {
-      renderizarLibros();
-      renderizarReservas();
-    })
-    .catch(mostrarErrorApi);
+  confirmar("¿Cancelar la reserva de \"" + (libroCancelado ? libroCancelado.titulo : "este libro") + "\"?", "Cancelar reserva", true).then(function (ok) {
+    if (!ok) return;
+    return conCarga(boton, apiFetch("/reservas/" + reserva.id + "/cancelar", { method: "PATCH" })
+      .then(function () {
+        registrarHistorial("Se canceló la reserva de \"" + (libroCancelado ? libroCancelado.titulo : "un libro") + "\" de " + (reserva.nombre || "un socio") + ".", "reservas", reserva.nombre);
+        return Promise.all([cargarLibrosApi(), cargarReservasApi()]); }))
+      .then(function () {
+        renderizarLibros();
+        renderizarReservas();
+      });
+  }).catch(mostrarErrorApi);
 }
 
 // Agrupa las reservas activas por socio: si la misma persona reservó
@@ -2195,10 +2682,11 @@ function renderizarReservas() {
         '<li class="reserva-grupo-libro">' +
           '<div class="flex-grow-1">' +
             '<p class="reserva-grupo-libro-titulo">' + escapeHtml(item.libro.titulo) + "</p>" +
-            '<p class="mb-0 text-muted small">Reservado el ' + item.reserva.fecha + "</p>" +
+            '<p class="mb-0 text-muted small">Reservado el ' + item.reserva.fecha +
+              (item.reserva.estado === "pendiente" ? ' <span class="texto-en-espera">En espera de una copia</span>' : "") + "</p>" +
           "</div>" +
-          '<button class="btn-accion-libro" title="Prestar" data-accion="prestar" data-id="' + item.libro.id + '"><i class="fa-solid fa-right-from-bracket"></i></button>' +
-          '<button class="btn-accion-libro" title="Cancelar reserva" data-accion="cancelar-reserva" data-id="' + item.libro.id + '"><i class="fa-solid fa-ban"></i></button>' +
+          (item.reserva.estado === "pendiente" ? "" : '<button class="btn-accion-libro" title="Prestar" data-accion="prestar" data-id="' + item.libro.id + '" data-reserva-id="' + item.reserva.id + '"><i class="fa-solid fa-right-from-bracket"></i></button>') +
+          '<button class="btn-accion-libro" title="Cancelar reserva" data-accion="cancelar-reserva" data-id="' + item.libro.id + '" data-reserva-id="' + item.reserva.id + '"><i class="fa-solid fa-ban"></i></button>' +
         "</li>";
     }
 
@@ -2309,15 +2797,15 @@ function renderizarMisReservas() {
     var reserva = misReservas[j];
     var libro = buscarLibroPorId(reserva.libroId);
     var tituloLibro = libro ? libro.titulo : "Libro";
-    var estadoTexto = libro && libro.estado === "Reservado" ? "Listo para retirar" : "En espera";
+    var estadoTexto = reserva.estado === "pendiente" ? "En espera de una copia" : "Listo para retirar";
 
     var li = document.createElement("li");
     li.className = "mis-reservas-item";
     li.innerHTML =
       '<div class="mis-reservas-info">' +
       "<h4>" + escapeHtml(tituloLibro) + "</h4>" +
-      "<p>" + estadoTexto + " · Reservado el " + reserva.fecha + "</p></div>" +
-      '<button type="button" class="btn-cancelar-mi-reserva" title="Cancelar reserva" data-libro-id="' + reserva.libroId + '"><i class="fa-solid fa-ban"></i></button>';
+      "<p>" + estadoTexto + ". Reservado el " + reserva.fecha + "</p></div>" +
+      '<button type="button" class="btn-cancelar-mi-reserva" title="Cancelar reserva" data-reserva-id="' + reserva.id + '"><i class="fa-solid fa-ban"></i></button>';
     listaMisReservasDropdown.appendChild(li);
   }
 }
@@ -2362,8 +2850,8 @@ if (listaMisReservasDropdown) {
   listaMisReservasDropdown.addEventListener("click", function (e) {
     var boton = e.target.closest(".btn-cancelar-mi-reserva");
     if (!boton) return;
-    e.stopPropagation(); // no cerrar el dropdown antes del confirm()
-    cancelarReserva(boton.dataset.libroId);
+    e.stopPropagation(); // no cerrar el dropdown antes de confirmar
+    cancelarReserva(boton.dataset.reservaId, boton);
   });
 }
 
@@ -2372,9 +2860,9 @@ listaReservas.addEventListener("click", function (e) {
   if (!boton) return;
   var accion = boton.dataset.accion;
   var libroId = boton.dataset.id;
-  if (accion === "prestar") abrirModalPrestar(libroId);
-  else if (accion === "cancelar-reserva") cancelarReserva(libroId);
-  else if (accion === "prestar-todas") prestarTodasReservasDelGrupo(boton.dataset.grupoIndex);
+  if (accion === "prestar") abrirModalPrestar(libroId, boton.dataset.reservaId);
+  else if (accion === "cancelar-reserva") cancelarReserva(boton.dataset.reservaId, boton);
+  else if (accion === "prestar-todas") prestarTodasReservasDelGrupo(boton.dataset.grupoIndex, boton);
 });
 
 // Presta de una sola vez todos los libros que un mismo socio tiene
@@ -2382,31 +2870,36 @@ listaReservas.addEventListener("click", function (e) {
 // ya tiene ejemplar propio asignado por la reserva, así que no hace
 // falta abrir el modal por cada uno: se manda un POST /prestamos por
 // libro y se refresca todo al final.
-function prestarTodasReservasDelGrupo(indiceGrupo) {
+function prestarTodasReservasDelGrupo(indiceGrupo, boton) {
   var grupo = ultimosGruposReservas[indiceGrupo];
   if (!grupo || !grupo.items.length) return;
 
-  var itemsPrestables = grupo.items.filter(function (item) { return !!item.libro.ejemplarId; });
+  // solo las reservas que ya tienen una copia apartada (las "en espera" no)
+  var itemsPrestables = grupo.items.filter(function (item) { return !!item.reserva.ejemplarId; });
 
   if (!itemsPrestables.length) {
-    alert("Ninguno de estos libros tiene un ejemplar cargado, no se pueden prestar.");
+    avisarError("Ninguna de estas reservas tiene una copia apartada todavía (están en espera).");
     return;
   }
 
-  if (!confirm("¿Prestar los " + itemsPrestables.length + " libro(s) reservados por " + grupo.nombre + "?")) return;
+  confirmar("¿Prestar los " + itemsPrestables.length + " libros reservados por " + grupo.nombre + "?", "Prestar todos").then(function (ok) {
+    if (ok) conCarga(boton, prestarItemsDelGrupo(grupo, itemsPrestables));
+  });
+}
 
+function prestarItemsDelGrupo(grupo, itemsPrestables) {
   var socioId = grupo.socioId;
 
   var cadenaDePromesas = itemsPrestables.reduce(function (promesaPrevia, item) {
     return promesaPrevia.then(function () {
-      return apiFetch("/prestamos", { method: "POST", body: { socio_id: socioId, ejemplar_id: item.libro.ejemplarId } })
+      return apiFetch("/prestamos", { method: "POST", body: { socio_id: socioId, ejemplar_id: item.reserva.ejemplarId } })
         .then(function () {
           registrarHistorial("Se prestó \"" + item.libro.titulo + "\" a " + grupo.nombre + ".", "prestamos", grupo.nombre);
         });
     });
   }, Promise.resolve());
 
-  cadenaDePromesas
+  return cadenaDePromesas
     .catch(function (err) {
       // Si un préstamo falla a mitad de camino (p. ej. otro bibliotecario
       // ya prestó ese ejemplar), igual refrescamos las listas para reflejar
@@ -2426,14 +2919,26 @@ function prestarTodasReservasDelGrupo(indiceGrupo) {
 // Préstamos y devoluciones
 // ------------------------------
 
-function abrirModalPrestar(libroId) {
+// sin reservaId: se presta una copia libre a quien se escriba en el modal;
+// con reservaId: se entrega la copia apartada para esa reserva
+function abrirModalPrestar(libroId, reservaId) {
   var libro = buscarLibroPorId(libroId);
   if (!libro) return;
+  var reserva = reservaId ? buscarReservaPorId(reservaId) : null;
+  if (reserva && !reserva.ejemplarId) {
+    avisarError("Esta reserva está en espera: todavía no hay una copia libre para entregar.");
+    return;
+  }
+  if (!reserva && !libro.ejemplarId) {
+    avisarError("No quedan copias libres de este libro.");
+    return;
+  }
   prestarLibroId.value = libro.id;
   prestarLibroTitulo.textContent = libro.titulo;
-  var reserva = buscarReservaPorLibro(libroId);
+  prestarEjemplarId.value = reserva ? reserva.ejemplarId : libro.ejemplarId;
   prestarSocioId.value = reserva && reserva.socioId ? String(reserva.socioId) : "";
   prestarNombre.value = reserva ? reserva.nombre : "";
+  prestarNombre.readOnly = !!reserva;
   prestarFechaHoy.textContent = fechaHoy();
   modalPrestar.show();
 }
@@ -2442,12 +2947,16 @@ formPrestar.addEventListener("submit", function (e) {
   e.preventDefault();
   var libroId = prestarLibroId.value;
   var nombre = prestarNombre.value.trim();
-  if (!nombre) return;
+  if (!nombre) {
+    avisarError("Escribí el nombre de quien retira el libro.");
+    return;
+  }
 
   var libro = buscarLibroPorId(libroId);
   if (!libro) return;
-  if (!libro.ejemplarId) {
-    alert("Este libro no tiene un ejemplar cargado, no se puede prestar.");
+  var ejemplarId = prestarEjemplarId.value;
+  if (!ejemplarId) {
+    avisarError("No quedan copias libres de este libro.");
     return;
   }
 
@@ -2457,15 +2966,15 @@ formPrestar.addEventListener("submit", function (e) {
     // No volvemos a buscar/crear otro socio por nombre.
     socioPromise = Promise.resolve({ id: prestarSocioId.value });
   } else {
-    socioPromise = buscarOCrearSocio(nombre, "Particular");
+    socioPromise = buscarSocioRegistrado(nombre);
   }
 
-  socioPromise.then(function (socio) {
-    return apiFetch("/prestamos", { method: "POST", body: { socio_id: socio.id, ejemplar_id: libro.ejemplarId } });
+  conCarga(botonEnviar(formPrestar), socioPromise.then(function (socio) {
+    return apiFetch("/prestamos", { method: "POST", body: { socio_id: socio.id, ejemplar_id: ejemplarId } });
   }).then(function () {
     registrarHistorial("Se prestó \"" + libro.titulo + "\" a " + nombre + ".", "prestamos", nombre);
     return Promise.all([cargarLibrosApi(), cargarReservasApi(), cargarPrestamosApi()]);
-  }).then(function () {
+  })).then(function () {
     renderizarLibros();
     renderizarReservas();
     renderizarPrestamos();
@@ -2473,23 +2982,58 @@ formPrestar.addEventListener("submit", function (e) {
   }).catch(mostrarErrorApi);
 });
 
-function devolverLibro(libroId) {
-  if (!confirm("¿Registrar la devolución de este libro?")) return;
-  var prestamo = buscarPrestamoActivoPorLibro(libroId);
-  if (!prestamo) return;
+// con una sola copia prestada se pide confirmación; con varias se abre un
+// listado para elegir de quién es la copia que vuelve
+var modalDevolver = new bootstrap.Modal(document.getElementById("modal-devolver"));
+var listaDevolver = document.getElementById("lista-devolver");
 
-  var libroDevuelto = buscarLibroPorId(libroId);
-  apiFetch("/prestamos/" + prestamo.id + "/devolver", { method: "PATCH" })
-    .then(function () {
-      registrarHistorial("Se registró la devolución de \"" + (libroDevuelto ? libroDevuelto.titulo : "un libro") + "\" de " + (prestamo.nombre || "un socio") + ".", "prestamos", prestamo.nombre);
-      return Promise.all([cargarLibrosApi(), cargarReservasApi(), cargarPrestamosApi()]); })
-    .then(function () {
-      renderizarLibros();
-      renderizarReservas();
-      renderizarPrestamos();
-    })
-    .catch(mostrarErrorApi);
+function devolverLibro(libroId, boton) {
+  var activos = prestamosActivosDeLibro(libroId);
+  if (!activos.length) return;
+  if (activos.length === 1) {
+    devolverPrestamo(activos[0], boton, true);
+    return;
+  }
+  var libro = buscarLibroPorId(libroId);
+  document.getElementById("devolver-libro-titulo").textContent = libro ? libro.titulo : "";
+  listaDevolver.innerHTML = activos.map(function (p) {
+    var vencido = p.fechaVencimiento && fechaVencida(p.fechaVencimiento);
+    return '<li class="reserva-item">' +
+      '<div class="flex-grow-1"><h3>' + escapeHtml(p.nombre) + "</h3>" +
+      '<p class="mb-0 small ' + (vencido ? "text-danger" : "text-muted") + '">Prestado el ' + p.fechaPrestamo + (p.fechaVencimiento ? ", vence el " + p.fechaVencimiento : "") + "</p></div>" +
+      '<button type="button" class="btn btn-brand btn-sm" data-prestamo-id="' + p.id + '">Devolver</button></li>';
+  }).join("");
+  modalDevolver.show();
+}
 
+listaDevolver.addEventListener("click", function (e) {
+  var boton = e.target.closest("[data-prestamo-id]");
+  if (!boton) return;
+  var prestamo = buscarPrestamoPorId(boton.dataset.prestamoId);
+  if (prestamo) devolverPrestamo(prestamo, boton, false).then(function (ok) { if (ok) modalDevolver.hide(); });
+});
+
+function devolverPrestamo(prestamo, boton, pedirConfirmacion) {
+  var libroDevuelto = buscarLibroPorId(prestamo.libroId);
+  var titulo = libroDevuelto ? libroDevuelto.titulo : "un libro";
+  var confirmacion = pedirConfirmacion
+    ? confirmar("¿Registrar la devolución de \"" + titulo + "\" de " + (prestamo.nombre || "un socio") + "?", "Registrar devolución")
+    : Promise.resolve(true);
+
+  return confirmacion.then(function (ok) {
+    if (!ok) return false;
+    return conCarga(boton, apiFetch("/prestamos/" + prestamo.id + "/devolver", { method: "PATCH" })
+      .then(function () {
+        registrarHistorial("Se registró la devolución de \"" + titulo + "\" de " + (prestamo.nombre || "un socio") + ".", "prestamos", prestamo.nombre);
+        return Promise.all([cargarLibrosApi(), cargarReservasApi(), cargarPrestamosApi()]); }))
+      .then(function () {
+        renderizarLibros();
+        renderizarReservas();
+        renderizarPrestamos();
+        avisarOk("Devolución registrada.");
+        return true;
+      });
+  }).catch(function (err) { mostrarErrorApi(err); return false; });
 }
 
 function prestamosFiltrados() {
@@ -2523,7 +3067,8 @@ function renderizarPrestamos() {
       '<div class="flex-grow-1"><h3>' + escapeHtml(tituloLibro) + "</h3>" +
       "<p class=\"mb-1\">Prestatario: " + escapeHtml(prestamo.nombre) + "</p>" +
       '<p class="mb-0 text-muted small">Prestado el ' + prestamo.fechaPrestamo + "</p></div>" +
-      '<span class="etiqueta-estado ' + claseEstado + '">' + estadoTexto + "</span>";
+      '<span class="etiqueta-estado ' + claseEstado + '">' + estadoTexto + "</span>" +
+      (prestamoEstaActivo(prestamo) ? '<button class="btn-accion-libro" title="Registrar devolución" data-accion="devolver-prestamo" data-prestamo-id="' + prestamo.id + '"><i class="fa-solid fa-rotate-left"></i></button>' : "");
     listaPrestamos.appendChild(li);
   }
 
@@ -2536,6 +3081,13 @@ function renderizarPrestamos() {
 }
 
 filtroPrestamos.addEventListener("change", renderizarPrestamos);
+
+listaPrestamos.addEventListener("click", function (e) {
+  var boton = e.target.closest('[data-accion="devolver-prestamo"]');
+  if (!boton) return;
+  var prestamo = buscarPrestamoPorId(boton.dataset.prestamoId);
+  if (prestamo) devolverPrestamo(prestamo, boton, true);
+});
 
 // ------------------------------
 // Autenticación: registro, inicio de sesión y sesión activa
@@ -2555,25 +3107,23 @@ function guardarSesion() {
 }
 
 function mostrarErrorLogin(mensaje) {
-  loginError.textContent = mensaje;
-  loginError.classList.remove("d-none");
+  avisarError(mensaje);
 }
 
 function mostrarErrorRegistro(mensaje) {
-  registroError.textContent = mensaje;
-  registroError.classList.remove("d-none");
+  avisarError(mensaje);
 }
 
 function abrirModalLogin() {
   formLogin.reset();
-  loginError.classList.add("d-none");
+  reiniciarCamposPassword(formLogin);
   modalRegistro.hide();
   modalLogin.show();
 }
 
 function abrirModalRegistro() {
   formRegistro.reset();
-  registroError.classList.add("d-none");
+  reiniciarCamposPassword(formRegistro);
   modalLogin.hide();
   modalRegistro.show();
 }
@@ -2666,8 +3216,6 @@ function mapearUsuarioSesion(usuario) {
 // ------------------------------
 var modalMiCuenta = new bootstrap.Modal(document.getElementById("modal-mi-cuenta"));
 var formMiCuenta = document.getElementById("form-mi-cuenta");
-var miCuentaError = document.getElementById("mi-cuenta-error");
-var miCuentaOk = document.getElementById("mi-cuenta-ok");
 var miCuentaAvatar = document.getElementById("mi-cuenta-avatar");
 var miCuentaFotoInput = document.getElementById("mi-cuenta-foto");
 var miCuentaQuitarFoto = document.getElementById("mi-cuenta-quitar-foto");
@@ -2732,15 +3280,14 @@ function redimensionarImagen(archivo, lado) {
 }
 
 function mostrarMensajeMiCuenta(mensaje, esError) {
-  miCuentaError.classList.toggle("d-none", !(esError && mensaje));
-  if (esError) miCuentaError.textContent = mensaje;
-  miCuentaOk.classList.toggle("d-none", esError || !mensaje);
+  if (!mensaje) return;
+  if (esError) avisarError(mensaje); else avisarOk(mensaje);
 }
 
 function abrirMiCuenta() {
-  mostrarMensajeMiCuenta("", true);
   miCuentaFotoPendiente = undefined;
   formMiCuenta.reset();
+  reiniciarCamposPassword(formMiCuenta);
   pintarAvatar(miCuentaAvatar);
   miCuentaQuitarFoto.classList.toggle("d-none", !obtenerFotoLocal());
 
@@ -2792,12 +3339,12 @@ miCuentaQuitarFoto.addEventListener("click", function () {
 
 formMiCuenta.addEventListener("submit", function (e) {
   e.preventDefault();
-  mostrarMensajeMiCuenta("", true);
   var esSocio = !!sesionActual.socioId;
   var c = miCuentaCampos;
 
   var body = { nombre: c.nombre.value.trim(), email: c.email.value.trim() };
   if (!body.nombre || !body.email) { mostrarMensajeMiCuenta("Completá nombre y correo.", true); return; }
+  if (!correoValido(body.email)) { mostrarMensajeMiCuenta("El correo electrónico no es válido.", true); return; }
   if (esSocio) {
     body.apellido = c.apellido.value.trim();
     body.cedula = c.cedula.value.trim();
@@ -2806,19 +3353,21 @@ formMiCuenta.addEventListener("submit", function (e) {
     if (!body.apellido || !body.cedula) { mostrarMensajeMiCuenta("Completá apellidos y cédula.", true); return; }
   }
   if (c.password.value) {
-    if (c.password.value.length < 6) { mostrarMensajeMiCuenta("La nueva contraseña debe tener al menos 6 caracteres.", true); return; }
+    if (!passwordValida(c.password.value)) { mostrarMensajeMiCuenta("A la nueva contraseña le falta: " + requisitosFaltantes(c.password.value).join(", ") + ".", true); return; }
     if (!c.passwordActual.value) { mostrarMensajeMiCuenta("Ingresá tu contraseña actual para cambiarla.", true); return; }
     body.password = c.password.value;
     body.password_actual = c.passwordActual.value;
   }
 
-  apiFetch("/auth/perfil", { method: "PUT", body: body }).then(function (usuario) {
+  conCarga(botonEnviar(formMiCuenta), apiFetch("/auth/perfil", { method: "PUT", body: body })).then(function (usuario) {
     // foto: solo local
+    var fotoFallo = false;
     if (miCuentaFotoPendiente !== undefined) {
       try {
         if (miCuentaFotoPendiente) localStorage.setItem(claveFoto(), miCuentaFotoPendiente);
         else localStorage.removeItem(claveFoto());
       } catch (err) {
+        fotoFallo = true;
         mostrarMensajeMiCuenta("Los datos se guardaron, pero no se pudo guardar la foto en este navegador.", true);
       }
       miCuentaFotoPendiente = undefined;
@@ -2828,7 +3377,8 @@ formMiCuenta.addEventListener("submit", function (e) {
     actualizarUIAuth();
     c.password.value = "";
     c.passwordActual.value = "";
-    if (miCuentaError.classList.contains("d-none")) mostrarMensajeMiCuenta("Datos actualizados.", false);
+    reiniciarCamposPassword(formMiCuenta);
+    if (!fotoFallo) mostrarMensajeMiCuenta("Datos actualizados.", false);
     return cargarSociosApi().then(renderizarSocios).catch(function () {});
   }).catch(function (err) {
     mostrarMensajeMiCuenta(err.message || "No se pudieron guardar los cambios.", true);
@@ -2837,7 +3387,6 @@ formMiCuenta.addEventListener("submit", function (e) {
 
 formRegistro.addEventListener("submit", function (e) {
   e.preventDefault();
-  registroError.classList.add("d-none");
 
   var nombre = registroNombre.value.trim();
   var apellido = registroApellido.value.trim();
@@ -2847,10 +3396,20 @@ formRegistro.addEventListener("submit", function (e) {
   var password = registroPassword.value;
   var passwordConfirmar = registroPasswordConfirmar.value;
 
-  if (!nombre || !apellido || !cedula || !email || !password) return;
+  if (!nombre || !apellido || !cedula || !email || !password) {
+    mostrarErrorRegistro("Completá nombres, apellidos, cédula, correo y contraseña.");
+    return;
+  }
 
-  if (password.length < 6) {
-    mostrarErrorRegistro("La contraseña debe tener al menos 6 caracteres.");
+  if (!correoValido(email)) {
+    mostrarErrorRegistro("El correo electrónico no es válido.");
+    registroEmail.focus();
+    return;
+  }
+
+  if (!passwordValida(password)) {
+    mostrarErrorRegistro("A la contraseña le falta: " + requisitosFaltantes(password).join(", ") + ".");
+    registroPassword.focus();
     return;
   }
 
@@ -2862,7 +3421,7 @@ formRegistro.addEventListener("submit", function (e) {
   // el registro público siempre crea una cuenta con rol "socio" (ver AuthController::registro);
   // declarar "centro educativo" acá no lo verifica: un bibliotecario tiene
   // que confirmarlo a mano desde la pestaña de socios
-  apiFetch("/auth/registro", { method: "POST", body: { nombre: nombre, apellido: apellido, cedula: cedula, telefono: telefono || null, email: email, password: password } })
+  conCarga(botonEnviar(formRegistro), apiFetch("/auth/registro", { method: "POST", body: { nombre: nombre, apellido: apellido, cedula: cedula, telefono: telefono || null, email: email, password: password } }))
     .then(function (resp) {
       guardarToken(resp.token);
       sesionActual = mapearUsuarioSesion(resp.usuario);
@@ -2882,13 +3441,15 @@ formRegistro.addEventListener("submit", function (e) {
 
 formLogin.addEventListener("submit", function (e) {
   e.preventDefault();
-  loginError.classList.add("d-none");
 
   var email = loginEmail.value.trim();
   var password = loginPassword.value;
-  if (!email || !password) return;
+  if (!email || !password) {
+    mostrarErrorLogin("Escribí tu correo y tu contraseña.");
+    return;
+  }
 
-  apiFetch("/auth/login", { method: "POST", body: { email: email, password: password } })
+  conCarga(botonEnviar(formLogin), apiFetch("/auth/login", { method: "POST", body: { email: email, password: password } }))
     .then(function (resp) {
       guardarToken(resp.token);
       sesionActual = mapearUsuarioSesion(resp.usuario);
@@ -3001,6 +3562,9 @@ function cargarCatalogoPublico() {
 // Arranque de la app
 // ------------------------------
 
+instalarCamposPassword();
+instalarCalendarios();
+
 actualizarSelectsCategoria();
 renderizarLibros();
 renderizarReservas();
@@ -3048,6 +3612,32 @@ var filtroCategoriaMultasEl = document.getElementById("filtro-categoria-multas")
 if (filtroCategoriaMultasEl) {
   filtroCategoriaMultasEl.addEventListener("change", function () {
     filtroCategoriaMultas = filtroCategoriaMultasEl.value;
+    renderizarMultas();
+  });
+}
+
+var filtroEstadoMultasEl = document.getElementById("filtro-estado-multas");
+if (filtroEstadoMultasEl) {
+  filtroEstadoMultasEl.addEventListener("change", function () {
+    filtroEstadoMultas = filtroEstadoMultasEl.value;
+    // si se piden solo pendientes, el método de pago no aplica
+    if (filtroEstadoMultas === "pendiente") {
+      filtroMetodoMultas = "";
+      document.getElementById("filtro-metodo-multas").value = "";
+    }
+    renderizarMultas();
+  });
+}
+
+var filtroMetodoMultasEl = document.getElementById("filtro-metodo-multas");
+if (filtroMetodoMultasEl) {
+  filtroMetodoMultasEl.addEventListener("change", function () {
+    filtroMetodoMultas = filtroMetodoMultasEl.value;
+    // elegir un método implica ver multas pagadas
+    if (filtroMetodoMultas && filtroEstadoMultas === "pendiente") {
+      filtroEstadoMultas = "";
+      filtroEstadoMultasEl.value = "";
+    }
     renderizarMultas();
   });
 }
