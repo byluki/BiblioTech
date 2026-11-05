@@ -137,6 +137,10 @@ docker compose up -d --build
 # instalar las dependencias de PHP (solo si falta la carpeta backend/vendor)
 docker run --rm -u "$(id -u):$(id -g)" -v "$PWD/backend":/app -w /app composer:2 install --no-dev --optimize-autoloader
 
+# dar permisos de escritura a Laravel (evita el error "Permission denied", ver sección 10)
+sudo chown -R "$(id -u):$(id -g)" backend
+chmod -R 775 backend/storage backend/bootstrap/cache
+
 # clave de la aplicación (solo la primera vez)
 docker compose exec app php artisan key:generate
 
@@ -311,6 +315,30 @@ Nunca uses `docker compose down -v`: el `-v` borra la base de datos.
 docker compose exec -u root app chown -R www-data:www-data storage bootstrap/cache
 docker compose exec -u root app chmod -R 775 storage bootstrap/cache
 ```
+
+**`key:generate` falla con "Failed to open stream: Permission denied" (`storage/logs/laravel.log` o `/var/www/.env`).**
+Pasa cuando los archivos de `backend` quedaron con dueño `root` (por ejemplo, por correr `composer` como root) y el usuario del contenedor `app` no puede escribir en ellos.
+
+1. Averiguá con qué usuario corre el contenedor:
+
+   ```bash
+   docker compose exec app id
+   ```
+
+2. Dale la propiedad de `backend` a ese usuario (usá el `uid`/`gid` que mostró el comando; suele ser 1000, o 82 si es `www-data` en Alpine):
+
+   ```bash
+   sudo chown -R 1000:1000 backend
+   chmod -R 775 backend/storage backend/bootstrap/cache
+   ```
+
+3. Repetí los pasos que fallaron:
+
+   ```bash
+   docker compose exec app php artisan key:generate
+   docker compose exec app php artisan migrate --seed --force
+   docker compose exec app php artisan optimize
+   ```
 
 **El contenedor `db` no arranca o se reinicia.** Mirá `docker compose logs db`. Si cambiaste las contraseñas del `.env` después de la primera vez, MySQL sigue usando las viejas: cambiá el `.env` a las originales o, si la base está vacía, borrá el volumen con `docker volume rm bibliotech_db_data` (esto borra todos los datos).
 
