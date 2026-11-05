@@ -2,8 +2,6 @@
 
 <img src="frontend/images/logo.png" alt="Logo BiblioTech" width="90" height="90">
 
-📖 [Guia de instalacion en Ubuntu Server](GUIA_INSTALACION_UBUNTU.md)
-
 # BiblioTech
 
 Sistema web de la Biblioteca Central de San José: catálogo, reservas, préstamos, multas y reportes.
@@ -52,15 +50,7 @@ BiblioTech/
 └── GUIA_INSTALACION_UBUNTU.md
 ```
 
-## Puesta en marcha rápida (Docker)
-
-```bash
-cp .env.example .env
-cp -n backend/.env.example backend/.env
-docker compose up -d --build
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate --seed
-```
+📖[Guia de instalacion en Ubuntu Server](GUIA_INSTALACION_UBUNTU.md)
 
 - Web: http://localhost:3000
 - API: http://localhost:8000/api
