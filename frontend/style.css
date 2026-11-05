@@ -1261,6 +1261,26 @@ a:hover {
 
 .carrito-item-aviso { color: var(--ladrillo); font-weight: 600; }
 
+.carrito-cantidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.btn-cantidad-carrito {
+  border: 1px solid var(--linea-suave);
+  background: transparent;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radio);
+  line-height: 1;
+}
+
+.btn-cantidad-carrito:disabled { opacity: 0.4; }
+
+.carrito-cantidad-valor { font-size: 0.9rem; font-weight: 600; }
+
 .btn-quitar-carrito {
   border: 0;
   background: transparent;

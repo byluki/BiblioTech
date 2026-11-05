@@ -32,6 +32,7 @@ var busquedaHistorial = "";
 var historial = cargarHistorial();
 var sesionActual = cargarSesion();
 var carrito = cargarCarritoGuardado(); // ids (string) de libros agregados al carrito
+var cantidadesCarrito = cargarCantidadesGuardadas(); // id -> ejemplares a reservar (solo centros educativos verificados)
 var portadaEncontrada = null;
 var portadaEditando = null;
 var tituloOriginalEditando = "";
@@ -1213,7 +1214,7 @@ listaSocios.addEventListener("click", function (e) {
     var nuevoValorVerificado = !socio.verificado;
     var pedirConfirmacion = nuevoValorVerificado
       ? confirmarVerificacionEscolar(socio)
-      : confirmar("¿Quitar la verificación de centro educativo a " + socio.nombre + "? Va a poder tener una sola reserva activa.", "Quitar verificación", true);
+      : confirmar("¿Quitar la verificación de centro educativo a " + socio.nombre + "? Ya no va a poder reservar más de un ejemplar del mismo libro.", "Quitar verificación", true);
     pedirConfirmacion.then(function (ok) {
       if (!ok) return;
       return conCarga(boton, apiFetch("/socios/" + socio.id + "/verificar-educativo", { method: "PATCH", body: { verificado: nuevoValorVerificado } })
@@ -1965,6 +1966,10 @@ function renderizarLibros() {
       extraInfoHtml = '<p class="mb-0 texto-reserva">' +
         (miReserva.estado === "pendiente" ? "Estás en espera de una copia (reservaste el " + escapeHtml(miReserva.fecha) + ")" : "Lo reservaste el " + escapeHtml(miReserva.fecha)) + "</p>";
       accionesEstadoHtml = '<button class="btn-accion-libro btn-accion-libro-full" title="Cancelar reserva" data-accion="cancelar-reserva" data-id="' + libro.id + '" data-reserva-id="' + miReserva.id + '"><i class="fa-solid fa-ban"></i> Cancelar reserva</button>';
+      // un centro educativo verificado puede sumar más ejemplares del mismo libro
+      if (puedeVariosEjemplares() && libro.disponibles > 0) {
+        accionesEstadoHtml = htmlBotonAgregar(libro) + accionesEstadoHtml.replace(" btn-accion-libro-full", "");
+      }
     } else {
       if (permisos.esGestion) {
         if (libro.copias === 1 && reservasLibro.length === 1) {
@@ -2072,6 +2077,7 @@ function htmlPortadaLibro(libro) {
 // ===== Carrito =====
 
 var STORAGE_KEY_CARRITO = "biblioteca-carrito";
+var STORAGE_KEY_CANTIDADES = "biblioteca-carrito-cantidades";
 
 function cargarCarritoGuardado() {
   try {
@@ -2082,8 +2088,43 @@ function cargarCarritoGuardado() {
   }
 }
 
+function cargarCantidadesGuardadas() {
+  try {
+    var g = JSON.parse(localStorage.getItem("biblioteca-carrito-cantidades") || "{}");
+    return g && typeof g === "object" && !Array.isArray(g) ? g : {};
+  } catch (e) {
+    return {};
+  }
+}
+
 function guardarCarrito() {
-  try { localStorage.setItem(STORAGE_KEY_CARRITO, JSON.stringify(carrito)); } catch (e) { /* sin storage: el carrito dura mientras la página */ }
+  try {
+    localStorage.setItem(STORAGE_KEY_CARRITO, JSON.stringify(carrito));
+    localStorage.setItem(STORAGE_KEY_CANTIDADES, JSON.stringify(cantidadesCarrito));
+  } catch (e) { /* sin storage: el carrito dura mientras la página */ }
+}
+
+// Centro educativo verificado (o gestión, que reserva a nombre de un socio):
+// puede reservar varios ejemplares del mismo libro. El servidor lo valida.
+function puedeVariosEjemplares() {
+  return permisos.esGestion || !!(sesionActual && sesionActual.centroVerificado);
+}
+
+// cuántos ejemplares de este libro se van a reservar (1 si no puede varios)
+function cantidadEnCarrito(id) {
+  if (!puedeVariosEjemplares()) return 1;
+  var libro = buscarLibroPorId(id);
+  var maximo = libro ? Math.max(1, libro.disponibles) : 1;
+  var n = parseInt(cantidadesCarrito[String(id)], 10) || 1;
+  return Math.max(1, Math.min(n, maximo));
+}
+
+function cambiarCantidadCarrito(id, delta) {
+  id = String(id);
+  cantidadesCarrito[id] = cantidadEnCarrito(id) + delta;
+  cantidadesCarrito[id] = cantidadEnCarrito(id);
+  guardarCarrito();
+  renderizarCarrito();
 }
 
 function enCarrito(id) {
@@ -2094,6 +2135,7 @@ function alternarCarrito(id) {
   id = String(id);
   var pos = carrito.indexOf(id);
   if (pos === -1) carrito.push(id); else carrito.splice(pos, 1);
+  delete cantidadesCarrito[id];
   guardarCarrito();
   limpiarMensajeCarrito();
   renderizarLibros(); // también actualiza novedades, contadores y el panel del carrito
@@ -2144,7 +2186,15 @@ function renderizarCarrito() {
     var libro = buscarLibroPorId(id);
     if (!libro) return;
     var ok = libro.estado === "Disponible";
-    if (ok) disponibles++;
+    var cantidad = cantidadEnCarrito(id);
+    if (ok) disponibles += cantidad;
+    var selectorCantidadHtml = ok && puedeVariosEjemplares()
+      ? '<div class="carrito-cantidad" role="group" aria-label="Ejemplares a reservar">' +
+        '<button type="button" class="btn-cantidad-carrito" data-id="' + libro.id + '" data-delta="-1" aria-label="Menos ejemplares"' + (cantidad <= 1 ? " disabled" : "") + '><i class="fa-solid fa-minus"></i></button>' +
+        '<span class="carrito-cantidad-valor">' + cantidad + (libro.copias > 1 ? " de " + libro.disponibles + " libres" : "") + "</span>" +
+        '<button type="button" class="btn-cantidad-carrito" data-id="' + libro.id + '" data-delta="1" aria-label="Más ejemplares"' + (cantidad >= libro.disponibles ? " disabled" : "") + '><i class="fa-solid fa-plus"></i></button>' +
+        "</div>"
+      : "";
     items.push(
       '<li class="carrito-item" data-id="' + libro.id + '">' +
       (libro.portada
@@ -2152,7 +2202,7 @@ function renderizarCarrito() {
         : '<div class="carrito-miniatura tono-' + ((parseInt(libro.id, 10) || 0) % 5) + '"></div>') +
       '<div class="carrito-datos"><p class="carrito-item-titulo">' + escapeHtml(libro.titulo) + "</p>" +
       '<p class="carrito-item-autor">' + escapeHtml(libro.autor) + "</p>" +
-      (ok ? "" : '<p class="carrito-item-aviso">Ya no está disponible</p>') + "</div>" +
+      (ok ? "" : '<p class="carrito-item-aviso">Ya no está disponible</p>') + selectorCantidadHtml + "</div>" +
       '<button type="button" class="btn-quitar-carrito" data-id="' + libro.id + '" aria-label="Quitar ' + escapeHtml(libro.titulo) + ' del carrito"><i class="fa-solid fa-xmark"></i></button>' +
       "</li>"
     );
@@ -2224,8 +2274,13 @@ function confirmarCarrito() {
   var respuestasReservas = [];
 
   conCarga(boton, obtenerSocio.then(function (socio) {
-    // de a uno: el servidor valida el límite de reservas en cada pedido
-    return ids.reduce(function (cadena, id) {
+    // de a uno (un pedido por ejemplar): el servidor valida las reglas en cada pedido
+    var pedidos = [];
+    ids.forEach(function (id) {
+      var n = cantidadEnCarrito(id);
+      for (var k = 0; k < n; k++) pedidos.push(id);
+    });
+    return pedidos.reduce(function (cadena, id) {
       return cadena.then(function () {
         return apiFetch("/reservas", { method: "POST", body: { socio_id: socio.id, libro_id: id, fecha_deseada: fecha } })
           .then(function (r) { reservados.push(id); if (r) respuestasReservas.push(r); })
@@ -2236,8 +2291,17 @@ function confirmarCarrito() {
     reservados.forEach(function (id) {
       var l = buscarLibroPorId(id);
       registrarHistorial("Se reservó \"" + (l ? l.titulo : "un libro") + "\" a nombre de " + nombrePersona + ".", "reservas", nombrePersona);
+    });
+    // sale del carrito lo que se reservó completo; si falló algún ejemplar, queda lo que falta
+    ids.forEach(function (id) {
+      var fallaron = fallidos.filter(function (f) { return f.id === id; }).length;
       var pos = carrito.indexOf(id);
-      if (pos !== -1) carrito.splice(pos, 1);
+      if (fallaron === 0) {
+        if (pos !== -1) carrito.splice(pos, 1);
+        delete cantidadesCarrito[id];
+      } else {
+        cantidadesCarrito[id] = fallaron;
+      }
     });
     guardarCarrito();
     return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
@@ -2264,7 +2328,9 @@ document.addEventListener("click", function (e) {
   var agregar = e.target.closest(".btn-agregar-carrito");
   if (agregar) { alternarCarrito(agregar.dataset.id); return; }
   var quitar = e.target.closest(".btn-quitar-carrito");
-  if (quitar) { alternarCarrito(quitar.dataset.id); }
+  if (quitar) { alternarCarrito(quitar.dataset.id); return; }
+  var cantidad = e.target.closest(".btn-cantidad-carrito");
+  if (cantidad) { cambiarCantidadCarrito(cantidad.dataset.id, parseInt(cantidad.dataset.delta, 10) || 0); }
 });
 
 document.getElementById("carrito-form").addEventListener("submit", function (e) {
@@ -2274,6 +2340,7 @@ document.getElementById("carrito-form").addEventListener("submit", function (e) 
 
 document.getElementById("carrito-vaciar").addEventListener("click", function () {
   carrito = [];
+  cantidadesCarrito = {};
   guardarCarrito();
   limpiarMensajeCarrito();
   renderizarLibros();
@@ -2935,12 +3002,12 @@ function abrirModalReservar(libroId) {
   modalReservar.show();
 }
 
-// particular o centro educativo sin verificar: 1 reserva activa (lo valida el backend)
-function socioTieneReservaActivaBloqueante(socio) {
+// particular o centro educativo sin verificar: no puede reservar dos veces el mismo libro (lo valida el backend)
+function socioTieneReservaActivaBloqueante(socio, libroId) {
   if (!socio) return false;
   if (socio.tipo === "Centro educativo" && socio.verificado) return false;
   for (var i = 0; i < reservas.length; i++) {
-    if (reservas[i].socioId === socio.id) return true;
+    if (reservas[i].socioId === socio.id && String(reservas[i].libroId) === String(libroId)) return true;
   }
   return false;
 }
@@ -2986,8 +3053,8 @@ formReservar.addEventListener("submit", function (e) {
   }
 
   var socioExistente = buscarSocioPorNombre(nombre);
-  if (socioExistente && socioTieneReservaActivaBloqueante(socioExistente)) {
-    avisarError("Este socio ya tiene una reserva activa. Solo puede tener más de una si está verificado como centro educativo (ver pestaña Socios).");
+  if (socioExistente && socioTieneReservaActivaBloqueante(socioExistente, libroId)) {
+    avisarError("Este socio ya tiene una reserva activa de este libro. Solo puede reservar más de un ejemplar del mismo libro si está verificado como centro educativo (ver pestaña Socios).");
     return;
   }
 
@@ -3685,7 +3752,8 @@ function mapearUsuarioSesion(usuario) {
     nombre: usuario.nombre,
     email: usuario.email,
     rol: usuario.rol,
-    socioId: usuario.socio_id
+    socioId: usuario.socio_id,
+    centroVerificado: usuario.centro_educativo_verificado === true
   };
 }
 
@@ -4096,7 +4164,8 @@ if (sesionActual && getToken()) {
       nombre: usuario.nombre,
       email: usuario.email,
       rol: usuario.rol ? usuario.rol.nombre : null,
-      socioId: usuario.socio ? usuario.socio.id : null
+      socioId: usuario.socio ? usuario.socio.id : null,
+      centroVerificado: !!(usuario.socio && usuario.socio.tipo === "centro_educativo" && usuario.socio.verificado_centro_educativo)
     };
     guardarSesion();
     actualizarUIAuth();

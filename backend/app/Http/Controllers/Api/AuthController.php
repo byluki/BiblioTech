@@ -56,6 +56,7 @@ class AuthController extends Controller
                 'email' => $usuario->email,
                 'rol' => $usuario->rol?->nombre,
                 'socio_id' => $usuario->socio?->id,
+                'centro_educativo_verificado' => $usuario->socio?->esCentroEducativoVerificado() ?? false,
             ],
         ]);
     }
@@ -186,6 +187,7 @@ class AuthController extends Controller
             'email' => $usuario->email,
             'rol' => $usuario->rol?->nombre,
             'socio_id' => $socio?->id,
+            'centro_educativo_verificado' => $socio?->esCentroEducativoVerificado() ?? false,
         ]);
     }
 
