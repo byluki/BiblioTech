@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class PrestamoController extends Controller
 {
-    // Reglas simples de negocio configurables (podrían moverse a una tabla "configuracion")
+    // plazos del préstamo
     private const PLAZO_PRESTAMO_DIAS = 14;
     private const MAX_RENOVACIONES = 2;
 
@@ -53,9 +53,7 @@ class PrestamoController extends Controller
                 return response()->json(['message' => 'El socio no está activo y no puede retirar préstamos.'], 422);
             }
 
-            // Si el ejemplar está "reservado", solo puede prestarse si hay una
-            // reserva pendiente de retiro para ese mismo ejemplar y socio
-            // (es decir, el socio viene a retirar lo que tenía apartado).
+            // una copia reservada solo se le presta al socio que la reservó
             $reservaPendienteRetiro = null;
 
             if ($ejemplar->estado === 'reservado') {
@@ -108,22 +106,28 @@ class PrestamoController extends Controller
     // PATCH /prestamos/{id}/devolver
     public function devolver(Request $request, Prestamo $prestamo)
     {
+        $data = $request->validate([
+            'observaciones' => ['nullable', 'string', 'max:500'],
+        ], [
+            'observaciones.max' => 'La observación puede tener hasta 500 caracteres.',
+        ]);
+
         if ($prestamo->estado !== 'activo') {
             return response()->json(['message' => 'El préstamo no está activo.'], 422);
         }
 
-        return DB::transaction(function () use ($request, $prestamo) {
+        return DB::transaction(function () use ($request, $prestamo, $data) {
             $vencido = $prestamo->fecha_vencimiento->isPast();
 
             $prestamo->update([
                 'estado' => 'devuelto',
                 'fecha_devolucion' => now()->toDateString(),
+                'observaciones' => isset($data['observaciones']) ? trim($data['observaciones']) ?: null : null,
             ]);
 
             $ejemplar = $prestamo->ejemplar;
 
-            // Si hay una reserva pendiente sobre el libro, el ejemplar pasa a "reservado"
-            // y se marca la reserva más antigua como pendiente de retiro.
+            // si alguien esperaba el libro, la copia queda reservada para esa persona
             $reserva = Reserva::where('libro_id', $ejemplar->libro_id)
                 ->where('estado', 'pendiente')
                 ->oldest('fecha_reserva')

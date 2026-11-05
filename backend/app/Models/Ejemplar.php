@@ -6,9 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Ejemplar extends Model
 {
-    // Sin esto, Eloquent adivina "ejemplars" a partir de la clase (regla en
-    // inglés), pero la migración creó la tabla como "ejemplares"
-    // (create_ejemplares_table).
+    // la tabla es "ejemplares"
     protected $table = 'ejemplares';
 
     protected $fillable = ['codigo_interno', 'libro_id', 'estado', 'ubicacion_fisica', 'observaciones'];

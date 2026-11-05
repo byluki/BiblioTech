@@ -22,15 +22,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/registro', [AuthController::class, 'registro']);
 
-// Catálogo: se puede consultar sin haber iniciado sesión (así funciona el
-// modo "invitado" del frontend). Antes estas rutas vivían dentro del
-// grupo auth:sanctum de abajo, así que si nadie tenía la sesión iniciada
-// en el dispositivo (por ejemplo, se cerró sesión o venció el token en
-// una terminal pública de la biblioteca), el catálogo entero desaparecía
-// para cualquiera que mirara la pantalla, como si se hubieran borrado los
-// libros. Consultar el catálogo no expone nada sensible (solo título,
-// autor, categoría, disponibilidad); dar de alta/editar/eliminar libros y
-// categorías sigue requiriendo rol administrador (ver más abajo).
+// Catálogo: se puede consultar sin iniciar sesión (modo invitado).
 Route::get('/libros', [LibroController::class, 'index']);
 Route::get('/libros/{libro}', [LibroController::class, 'show']);
 Route::get('/categorias', [CategoriaController::class, 'index']);
@@ -47,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::put('/auth/perfil', [AuthController::class, 'actualizarPerfil']);
+    Route::get('/mis-multas', [MultaController::class, 'misMultas']);
 
     // --- Reservas: un socio puede reservar/cancelar su propia reserva ---
     Route::get('/reservas', [ReservaController::class, 'index']);
@@ -114,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/multas', [MultaController::class, 'store']);
         Route::get('/multas/{multa}', [MultaController::class, 'show']);
         Route::put('/multas/{multa}', [MultaController::class, 'update']);
+        Route::post('/multas/{multa}/pago', [MultaController::class, 'pagar']);
         Route::delete('/multas/{multa}', [MultaController::class, 'destroy']);
 
         Route::get('/prestamos', [PrestamoController::class, 'index']);

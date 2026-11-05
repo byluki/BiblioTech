@@ -8,7 +8,7 @@ class Prestamo extends Model
 {
     protected $fillable = [
         'socio_id', 'ejemplar_id', 'usuario_id', 'fecha_prestamo',
-        'fecha_vencimiento', 'fecha_devolucion', 'cantidad_renovaciones', 'estado',
+        'fecha_vencimiento', 'fecha_devolucion', 'cantidad_renovaciones', 'estado', 'observaciones',
     ];
 
     protected $casts = [

@@ -4,10 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// Tabla estándar de Laravel Sanctum, donde se guardan los tokens que se
-// generan en AuthController::login() / registro() con createToken().
-// No se creó sola porque el proyecto nunca corrió "php artisan install:api"
-// (el paso que normalmente la publica); la agregamos a mano acá.
+// Tabla de Laravel Sanctum para los tokens de acceso.
 return new class extends Migration
 {
     public function up(): void

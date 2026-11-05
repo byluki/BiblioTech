@@ -14,8 +14,7 @@ use Illuminate\Support\Str;
 
 class LibroController extends Controller
 {
-    // Copias que cuentan como "en la biblioteca" (las extraviadas o fuera de
-    // circulación no se pueden prestar ni reservar)
+    // copias que se pueden prestar o reservar
     private const ESTADOS_EN_CIRCULACION = ['disponible', 'prestado', 'reservado'];
 
     private const MAX_COPIAS = 200;
@@ -53,7 +52,7 @@ class LibroController extends Controller
             'anio_edicion' => ['nullable', 'digits:4'],
             'isbn' => ['nullable', 'string'],
             'categoria_id' => ['nullable', 'exists:categorias,id'],
-            'descripcion' => ['nullable', 'string'],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
             'foto_portada' => ['nullable', 'string'],
             // cantidad de copias físicas: se crea un ejemplar por cada una
             'cantidad' => ['sometimes', 'integer', 'min:1', 'max:'.self::MAX_COPIAS],
@@ -95,7 +94,7 @@ class LibroController extends Controller
             'anio_edicion' => ['nullable', 'digits:4'],
             'isbn' => ['nullable', 'string'],
             'categoria_id' => ['nullable', 'exists:categorias,id'],
-            'descripcion' => ['nullable', 'string'],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
             'foto_portada' => ['nullable', 'string'],
         ]);
 
@@ -107,12 +106,9 @@ class LibroController extends Controller
     }
 
     // PUT /libros/{id}/cantidad   { "cantidad": N }
-    // Ajusta cuántas copias físicas tiene el libro.
-    //  - Si sube: se crean los ejemplares que faltan y, si había socios en
-    //    espera (reservas "pendiente"), las copias nuevas se les asignan.
-    //  - Si baja: solo se pueden quitar copias que estén en la biblioteca
-    //    (disponibles). Las que tienen historial de préstamos no se borran:
-    //    pasan a "fuera de circulación" para conservar ese historial.
+    // Sube o baja la cantidad de copias. Al subir, las copias nuevas se
+    // asignan a las reservas en espera. Al bajar, solo se quitan copias
+    // disponibles; las que tienen préstamos pasan a fuera de circulación.
     public function cambiarCantidad(Request $request, Libro $libro)
     {
         $data = $request->validate([
@@ -190,8 +186,7 @@ class LibroController extends Controller
         }
     }
 
-    // Las copias libres se asignan, por orden de llegada, a quienes estaban
-    // esperando el libro (misma lógica que al devolver un préstamo).
+    // copias libres para los que estaban esperando (por orden de llegada)
     private function asignarCopiasAReservasEnEspera(Libro $libro): void
     {
         $enEspera = Reserva::where('libro_id', $libro->id)
@@ -215,13 +210,8 @@ class LibroController extends Controller
     }
 
     // DELETE /libros/{id}
-    // Si el libro tiene ejemplares con préstamos activos (todavía no
-    // devueltos) no se puede dar de baja: primero hay que resolver esos
-    // préstamos. Si solo tiene historial de préstamos ya cerrados, se
-    // hace una baja lógica (soft delete): el libro deja de verse en el
-    // catálogo pero sus ejemplares y el historial de préstamos se
-    // conservan intactos (la FK de `prestamos` hacia `ejemplares` no
-    // permite borrarlos físicamente, ver migración de ejemplares).
+    // No se puede borrar si tiene copias prestadas. Si tiene historial,
+    // es una baja lógica (soft delete).
     public function destroy(Request $request, Libro $libro)
     {
         $ejemplarIds = $libro->ejemplares()->pluck('id');

@@ -13,11 +13,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-  <!-- solo el núcleo y los íconos "solid" (antes se cargaba el paquete completo) -->
+  <!-- Font Awesome: núcleo e íconos "solid" -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-  <!-- calendario web (mismo aspecto en todos los navegadores y en el celular) -->
+  <!-- calendario (flatpickr) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
@@ -31,7 +31,7 @@
 
   <!-- header principal: logo a la izquierda, acciones a la derecha -->
   <header class="site-header">
-    <div class="container py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="container-fluid contenedor-ancho py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
       <div class="brand-logo">
         <div class="brand-logo-icon"><img src="/images/logo.png" alt="Logo de la Biblioteca" width="44" height="44" fetchpriority="high"></div>
         <div>
@@ -54,11 +54,11 @@
         </button>
       </div>
       <div class="header-actions d-none" id="header-auth-sesion">
-        <button type="button" class="header-icon-btn btn-abrir-carrito" data-bs-toggle="offcanvas" data-bs-target="#carrito-offcanvas" aria-controls="carrito-offcanvas" title="Carrito">
+        <button type="button" class="header-icon-btn btn-abrir-carrito" data-requiere-rol="socio" data-bs-toggle="offcanvas" data-bs-target="#carrito-offcanvas" aria-controls="carrito-offcanvas" title="Carrito">
           <i class="fa-solid fa-bag-shopping"></i>
           <span class="header-icon-badge contador-carrito d-none">0</span>
         </button>
-        <button type="button" class="header-icon-btn" id="header-btn-catalogo-sesion" title="Libros en catálogo">
+        <button type="button" class="header-icon-btn" id="header-btn-catalogo-sesion" data-requiere-rol="gestion" title="Ir al catálogo">
           <i class="fa-solid fa-book"></i>
           <span class="header-icon-badge" id="contador-libros-header-sesion">0</span>
         </button>
@@ -72,16 +72,27 @@
             <li id="mis-reservas-vacio" class="text-muted small px-2 py-2">No tenés reservas ni préstamos activos.</li>
           </ul>
         </div>
-        <button type="button" class="header-icon-btn header-btn-menu-toggle" id="header-btn-menu-sesion" data-bs-toggle="offcanvas" data-bs-target="#menu-offcanvas" aria-controls="menu-offcanvas" title="Menú">
+        <button type="button" class="header-icon-btn header-btn-menu-toggle" id="header-btn-menu-sesion" data-requiere-rol="gestion" data-bs-toggle="offcanvas" data-bs-target="#menu-offcanvas" aria-controls="menu-offcanvas" title="Menú">
           <i class="fa-solid fa-bars"></i>
         </button>
+        <!-- socio: botón de usuario con su foto, en lugar del menú -->
+        <div class="dropdown" id="menu-usuario" data-requiere-rol="socio">
+          <button type="button" class="btn-usuario" id="btn-usuario" data-bs-toggle="dropdown" aria-expanded="false" title="Mi cuenta">
+            <span class="avatar-usuario" id="header-avatar"></span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end menu-usuario-lista">
+            <li class="menu-usuario-cabecera"><span class="menu-usuario-nombre-socio" id="menu-usuario-nombre"></span><span class="menu-usuario-email" id="menu-usuario-email"></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button type="button" class="dropdown-item" id="menu-usuario-cuenta"><i class="fa-solid fa-user me-2"></i>Mi cuenta</button></li>
+            <li><button type="button" class="dropdown-item" id="menu-usuario-prestamos"><i class="fa-solid fa-book me-2"></i>Mis libros prestados</button></li>
+            <li><button type="button" class="dropdown-item" id="menu-usuario-salir"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar sesión</button></li>
+          </ul>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- (la barra de categorías de escritorio se quitó: el menú de 3 barritas ya cubre esa navegación en todos los tamaños) -->
-
-  <!-- menú de 3 barritas: agrupa cuenta (iniciar sesión / cerrar sesión) y secciones, estilo Epic Games Store -->
+  <!-- menú lateral: cuenta y secciones -->
   <div class="offcanvas offcanvas-end menu-offcanvas" tabindex="-1" id="menu-offcanvas" aria-labelledby="menu-offcanvas-label">
     <div class="offcanvas-header">
       <span class="menu-offcanvas-brand"><i class="fa-solid fa-book-open me-2"></i>Biblioteca Central</span>
@@ -154,7 +165,7 @@
       <ul class="list-unstyled carrito-lista" id="carrito-lista"></ul>
 
       <form id="carrito-form" class="carrito-form d-none" novalidate>
-        <div class="mb-3 carrito-solo-gestion d-none">
+        <div class="mb-3 d-none">
           <label for="carrito-nombre" class="form-label">Nombre del solicitante</label>
           <input type="text" id="carrito-nombre" class="form-control" list="datalist-socios" autocomplete="off">
         </div>
@@ -180,41 +191,52 @@
     <div class="tab-content">
     <div class="tab-pane fade show active" id="tab-catalogo" role="tabpanel">
 
-    <!-- banner -->
-    <section class="banner" id="banner" aria-roledescription="carrusel" aria-label="Avisos de la biblioteca">
-      <div class="banner-pistas" id="banner-pistas">
-        <article class="banner-slide banner-claro">
-          <div class="banner-texto">
-            <h2>Biblioteca Central de San José</h2>
-            <p>Reservá desde acá y retirá el libro en el mostrador.</p>
+    <!-- inicio: buscador -->
+    <!-- administrador y bibliotecario: reservas para entregar -->
+    <section class="card panel panel-reservas-inicio d-none" id="panel-reservas-inicio" data-requiere-rol="gestion" aria-labelledby="titulo-reservas-inicio">
+      <div class="card-body p-4">
+        <div class="reservas-inicio-cabecera">
+          <h2 class="panel-title mb-0" id="titulo-reservas-inicio">Reservas<span class="contador" id="contador-reservas-inicio"></span></h2>
+          <p class="reservas-inicio-resumen mb-0" id="resumen-reservas-inicio"></p>
+        </div>
+        <div class="tabla-reservas" role="table" aria-labelledby="titulo-reservas-inicio">
+          <div class="tabla-reservas-fila tabla-reservas-encabezado" role="row">
+            <span role="columnheader">Socio</span>
+            <span role="columnheader">Libro</span>
+            <span role="columnheader">Reservado</span>
+            <span role="columnheader">Retirar hasta</span>
+            <span role="columnheader">Estado</span>
+            <span role="columnheader"><span class="visually-hidden">Acciones</span></span>
           </div>
-          <img class="banner-logo" src="/images/logo.png" alt="" width="120" height="120" loading="lazy">
-        </article>
-        <article class="banner-slide banner-naranja">
-          <div class="banner-texto">
-            <h2>Reservá varios libros a la vez</h2>
-            <p>Sumalos al carrito. Las cuentas particulares pueden tener una reserva activa por vez.</p>
-          </div>
-        </article>
-        <article class="banner-slide banner-oscuro">
-          <div class="banner-texto">
-            <h2>Llegaron libros nuevos</h2>
-            <p>Están en Novedades, más abajo.</p>
-          </div>
-        </article>
+          <div id="lista-reservas-inicio" role="rowgroup"></div>
+        </div>
+        <p class="text-muted text-center py-4 mb-0 d-none" id="vacio-reservas-inicio">No hay reservas pendientes.</p>
       </div>
-      <button type="button" class="banner-flecha banner-prev" id="banner-prev" aria-label="Aviso anterior"><i class="fa-solid fa-chevron-left"></i></button>
-      <button type="button" class="banner-flecha banner-next" id="banner-next" aria-label="Aviso siguiente"><i class="fa-solid fa-chevron-right"></i></button>
     </section>
-    <div class="banner-puntos" id="banner-puntos" role="tablist" aria-label="Elegir aviso"></div>
+
+    <section class="inicio" data-requiere-rol="socio" aria-labelledby="titulo-inicio">
+      <h2 class="inicio-titulo" id="titulo-inicio">¿Qué querés leer hoy?</h2>
+      <p class="inicio-texto">Buscá en el catálogo de la Biblioteca Central, reservá desde acá y retirá el libro en el mostrador.</p>
+      <form class="inicio-buscador" id="form-buscar-inicio" role="search">
+        <label class="visually-hidden" for="buscar-inicio">Buscar por título o autor</label>
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" id="buscar-inicio" placeholder="Título o autor" autocomplete="off">
+        <button type="submit" class="btn btn-brand">Buscar</button>
+      </form>
+      <div class="inicio-categorias" id="inicio-categorias" role="group" aria-label="Ver libros por categoría"></div>
+    </section>
 
     <!-- novedades -->
     <section class="novedades d-none" id="seccion-novedades" aria-labelledby="titulo-novedades">
-      <h2 class="novedades-titulo" id="titulo-novedades">Novedades</h2>
-      <div class="novedades-carrusel">
-        <button type="button" class="carrusel-flecha carrusel-prev" id="novedades-prev" aria-label="Novedades anteriores"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="novedades-cabecera">
+        <h2 class="novedades-titulo" id="titulo-novedades">Llegaron hace poco</h2>
+        <div class="novedades-flechas">
+          <button type="button" class="carrusel-flecha carrusel-prev" id="novedades-prev" aria-label="Ver libros anteriores"><i class="fa-solid fa-chevron-left"></i></button>
+          <button type="button" class="carrusel-flecha carrusel-next" id="novedades-next" aria-label="Ver más libros"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="estante">
         <ul class="list-unstyled lista-novedades" id="lista-novedades"></ul>
-        <button type="button" class="carrusel-flecha carrusel-next" id="novedades-next" aria-label="Novedades siguientes"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </section>
 
@@ -226,9 +248,9 @@
           <div class="card-body p-4">
 
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-              <h2 class="panel-title mb-0">Libros disponibles<span id="contador-libros" class="contador" aria-live="off"></span></h2>
+              <h2 class="panel-title mb-0">Catálogo<span id="contador-libros" class="contador" aria-live="off"></span></h2>
               <div class="d-flex align-items-center gap-2">
-                <!-- Agregar libro: solo administrador (ver routes/api.php, POST /libros) -->
+                <!-- solo administrador -->
                 <button type="button" class="btn btn-brand btn-agregar-libro" id="btn-abrir-agregar-libro" data-requiere-rol="administrador" data-bs-toggle="modal" data-bs-target="#modal-agregar-libro" title="Agregar un libro">
                   <i class="fa-solid fa-plus"></i><span class="d-none d-sm-inline ms-2">Agregar libro</span>
                 </button>
@@ -255,6 +277,7 @@
             </div>
 
             <ul class="list-unstyled lista-libros" id="lista-libros"></ul>
+            <nav class="paginador" id="paginador-libros" aria-label="Páginas del catálogo"></nav>
 
             <div id="estado-vacio" class="text-center text-muted py-5 d-none">
               <i class="fa-solid fa-book-open fa-2x mb-3"></i>
@@ -327,7 +350,7 @@
                 <div class="row g-3 mb-3">
                   <div class="col-sm-6">
                     <label for="socio-telefono" class="form-label">Teléfono</label>
-                    <input type="tel" id="socio-telefono" class="form-control" placeholder="Opcional">
+                    <input type="tel" id="socio-telefono" class="form-control campo-telefono" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="Ej: 099 123 456">
                   </div>
                   <div class="col-sm-6">
                     <label for="socio-email" class="form-label">Correo electrónico</label>
@@ -364,10 +387,15 @@
           <section class="card panel h-100">
             <div class="card-body p-4">
               <h2 class="panel-title mb-3"><i class="fa-solid fa-users me-2"></i>Socios registrados</h2>
+              <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="search" class="form-control" id="buscador-socios" placeholder="Buscar por cédula o nombre" autocomplete="off" aria-label="Buscar socio por cédula o nombre">
+              </div>
               <ul class="list-unstyled lista-reservas" id="lista-socios"></ul>
+              <nav class="paginador" id="paginador-socios" aria-label="Páginas de socios"></nav>
               <div id="estado-vacio-socios" class="text-center text-muted py-5 d-none">
                 <i class="fa-solid fa-users fa-2x mb-3"></i>
-                <p class="mb-0">Todavía no hay socios registrados.</p>
+                <p class="mb-0" id="texto-vacio-socios">Todavía no hay socios registrados.</p>
               </div>
             </div>
           </section>
@@ -401,7 +429,8 @@
                 </div>
                 <div class="mb-4">
                   <label for="multa-monto" class="form-label">Monto ($)</label>
-                  <input type="number" id="multa-monto" class="form-control" min="0" step="1" placeholder="0" required>
+                  <input type="number" id="multa-monto" class="form-control" min="1" max="10000" step="1" placeholder="0" required>
+                  <div class="form-text">Hasta $ 10.000.</div>
                 </div>
                 <button type="submit" class="btn btn-brand w-100">
                   <i class="fa-solid fa-circle-dollar-to-slot me-2"></i>Registrar multa
@@ -415,39 +444,9 @@
           <section class="card panel h-100">
             <div class="card-body p-4">
               <h2 class="panel-title mb-3"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Multas registradas</h2>
-              <div class="row g-2 mb-3">
-                <div class="col-12">
-                  <label for="buscador-multas" class="form-label">Buscar por socio</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="search" class="form-control" id="buscador-multas" list="datalist-socios" placeholder="Nombre, apellido o cédula" autocomplete="off">
-                  </div>
-                </div>
-                <div class="col-sm-4">
-                  <select id="filtro-estado-multas" class="form-select" aria-label="Filtrar por estado">
-                    <option value="">Pendientes y pagadas</option>
-                    <option value="pendiente">Solo pendientes</option>
-                    <option value="pagada">Solo pagadas</option>
-                  </select>
-                </div>
-                <div class="col-sm-4">
-                  <select id="filtro-metodo-multas" class="form-select" aria-label="Filtrar por método de pago">
-                    <option value="">Cualquier método</option>
-                    <option value="efectivo">Efectivo</option>
-                    <option value="debito">Tarjeta de débito</option>
-                    <option value="credito">Tarjeta de crédito</option>
-                    <option value="transferencia">Transferencia</option>
-                    <option value="mercado_pago">Mercado Pago</option>
-                  </select>
-                </div>
-                <div class="col-sm-4">
-                  <select id="filtro-categoria-multas" class="form-select" aria-label="Filtrar por motivo">
-                    <option value="">Cualquier motivo</option>
-                    <option value="Atraso en devolución">Atraso en devolución</option>
-                    <option value="Libro perdido">Libro perdido</option>
-                    <option value="Libro deteriorado">Libro deteriorado</option>
-                  </select>
-                </div>
+              <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="search" class="form-control" id="buscador-multas" placeholder="Buscar por socio (nombre o cédula)" autocomplete="off" aria-label="Buscar multas por socio">
               </div>
               <div id="resumen-multas" class="resumen-multas d-none" aria-live="polite"></div>
               <ul class="list-unstyled lista-reservas" id="lista-multas"></ul>
@@ -574,6 +573,14 @@
               <input type="text" id="editar-nueva-categoria" class="form-control" placeholder="Ej: Ensayo">
               <div class="form-text">Si ya existe una categoría con ese nombre, se usa la existente en vez de crear una nueva.</div>
             </div>
+            <div class="mt-3 mb-2">
+              <div class="d-flex justify-content-between align-items-end gap-2 mb-1">
+                <label for="editar-descripcion" class="form-label mb-0">Descripción <span class="text-muted small fw-normal">(opcional)</span></label>
+                <button type="button" class="btn btn-link btn-sm p-0 btn-traer-descripcion" data-para="editar-descripcion"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Traer de internet</button>
+              </div>
+              <textarea id="editar-descripcion" class="form-control campo-descripcion" rows="5" maxlength="2000" placeholder="De qué trata el libro, en pocas líneas. Se muestra en la ficha del libro."></textarea>
+              <div class="form-text d-flex justify-content-between gap-2"><span>Si la dejás vacía, la ficha busca una en Google Books u Open Library.</span><span class="contador-descripcion" data-para="editar-descripcion">0 / 2000</span></div>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -627,7 +634,7 @@
     </div>
   </div>
 
-  <!-- Modal: mis libros prestados (se abre desde el ícono de libro del header) -->
+  <!-- Modal: mis libros prestados -->
   <div class="modal fade" id="modal-mis-prestamos" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -663,8 +670,9 @@
             <input type="hidden" id="prestar-ejemplar-id">
             <p class="mb-3">Libro: <strong id="prestar-libro-titulo"></strong></p>
             <div class="mb-2">
-              <label for="prestar-nombre" class="form-label">Nombre de quien retira</label>
-              <input type="text" id="prestar-nombre" class="form-control" list="datalist-socios" autocomplete="off" placeholder="Socio registrado" required>
+              <label for="prestar-cedula" class="form-label">Cédula de quien retira</label>
+              <input type="text" id="prestar-cedula" class="form-control" inputmode="numeric" maxlength="15" autocomplete="off" placeholder="Ej: 4123456-7" required>
+              <div class="socio-encontrado" id="prestar-socio-encontrado" aria-live="polite"></div>
             </div>
             <p class="text-muted small mb-0">Fecha de préstamo: <span id="prestar-fecha-hoy"></span></p>
           </div>
@@ -737,7 +745,7 @@
             </div>
             <div class="mb-3">
               <label for="registro-telefono" class="form-label">Teléfono <span class="text-muted small">(opcional)</span></label>
-              <input type="tel" id="registro-telefono" class="form-control">
+              <input type="tel" id="registro-telefono" class="form-control campo-telefono" inputmode="tel" maxlength="20" autocomplete="tel">
             </div>
             <div class="mb-3">
               <label for="registro-email" class="form-label">Correo electrónico</label>
@@ -750,6 +758,12 @@
             <div class="mb-2">
               <label for="registro-password-confirmar" class="form-label">Confirmar contraseña</label>
               <input type="password" id="registro-password-confirmar" class="form-control" placeholder="Repetí la contraseña" minlength="8" autocomplete="new-password" required data-verificar="igual:registro-password">
+            </div>
+            <div class="form-check mb-3 mt-1">
+              <input class="form-check-input" type="checkbox" id="registro-terminos" required>
+              <label class="form-check-label small" for="registro-terminos">
+                Leí y acepto los <a href="#" id="link-terminos">Términos y Condiciones y la Política de Privacidad</a>.
+              </label>
             </div>
             <p class="mb-0 small text-muted">
               Tu cuenta se crea como usuario particular (1 reserva activa a la vez). Si pertenecés a un
@@ -835,6 +849,14 @@
                 <input type="text" id="nueva-categoria" class="form-control" placeholder="Ej: Ensayo">
                 <div class="form-text">Si ya existe una categoría con ese nombre, se usa la existente en vez de crear una nueva.</div>
               </div>
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-end gap-2 mb-1">
+                <label for="descripcion" class="form-label mb-0">Descripción <span class="text-muted small fw-normal">(opcional)</span></label>
+                <button type="button" class="btn btn-link btn-sm p-0 btn-traer-descripcion" data-para="descripcion"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Traer de internet</button>
+              </div>
+              <textarea id="descripcion" class="form-control campo-descripcion" rows="5" maxlength="2000" placeholder="De qué trata el libro, en pocas líneas. Se muestra en la ficha del libro."></textarea>
+              <div class="form-text d-flex justify-content-between gap-2"><span>Si la dejás vacía, la ficha busca una en Google Books u Open Library.</span><span class="contador-descripcion" data-para="descripcion">0 / 2000</span></div>
+            </div>
               <button type="submit" class="btn btn-brand w-100" id="btn-guardar-libro">
                 <i class="fa-solid fa-book-medical me-2"></i>Agregar libro
               </button>
@@ -883,7 +905,7 @@
                 </div>
                 <div class="col-sm-6">
                   <label for="mi-cuenta-telefono" class="form-label">Teléfono</label>
-                  <input type="tel" id="mi-cuenta-telefono" class="form-control">
+                  <input type="tel" id="mi-cuenta-telefono" class="form-control campo-telefono" inputmode="tel" maxlength="20" autocomplete="tel">
                 </div>
               </div>
               <div class="mb-3">
@@ -930,6 +952,12 @@
           <div class="modal-body">
             <input type="hidden" id="pagar-multa-id">
             <dl class="ficha-multa" id="pagar-multa-detalle"></dl>
+            <label for="pagar-multa-monto" class="form-label">Monto que paga</label>
+            <div class="input-group mb-1">
+              <span class="input-group-text">$</span>
+              <input type="number" id="pagar-multa-monto" class="form-control" min="1" step="1" required>
+            </div>
+            <div class="form-text mb-3" id="pagar-multa-ayuda"></div>
             <label for="pagar-multa-metodo" class="form-label">Método de pago</label>
             <select id="pagar-multa-metodo" class="form-select" required>
               <option value="">Elegí cómo pagó</option>
@@ -945,6 +973,26 @@
             <button type="submit" class="btn btn-brand">Registrar pago</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ficha del libro (portada, datos y descripción breve) -->
+  <div class="modal fade" id="modal-detalle-libro" tabindex="-1" aria-hidden="true" aria-labelledby="detalle-titulo">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-body detalle-libro">
+          <button type="button" class="btn-close detalle-cerrar" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          <div class="detalle-portada" id="detalle-portada"></div>
+          <div class="detalle-info">
+            <h2 class="detalle-titulo" id="detalle-titulo"></h2>
+            <p class="detalle-autor" id="detalle-autor"></p>
+            <div class="detalle-datos" id="detalle-datos"></div>
+            <div class="detalle-descripcion" id="detalle-descripcion" aria-live="polite"></div>
+            <p class="detalle-fuente" id="detalle-fuente"></p>
+            <div class="detalle-acciones" id="detalle-acciones"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -965,7 +1013,192 @@
     </div>
   </div>
 
-  <!-- Modal de confirmación (reemplaza al confirm() del navegador) -->
+  <!-- Modal registrar devolución (con observación) -->
+  <div class="modal fade" id="modal-devolucion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-devolucion" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title">Registrar devolución</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="devolucion-prestamo-id">
+            <dl class="ficha-multa ficha-devolucion" id="devolucion-detalle"></dl>
+            <label for="devolucion-observacion" class="form-label">Observación <span class="text-muted small fw-normal">(opcional)</span></label>
+            <textarea id="devolucion-observacion" class="form-control" rows="3" maxlength="500" placeholder="Ej: tapa doblada, páginas subrayadas, llegó en buen estado"></textarea>
+            <div class="form-text">Queda registrada en el historial del préstamo.</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">Registrar devolución</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal verificar centro educativo -->
+  <div class="modal fade" id="modal-verificar-escolar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Pasar a cuenta de centro educativo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Vas a verificar a <strong id="verificar-escolar-nombre"></strong> como centro educativo.</p>
+          <ul class="lista-verificacion">
+            <li>Podrá tener <strong>varias reservas activas</strong> a la vez (una cuenta particular tiene una sola).</li>
+            <li>Antes de confirmar, pedí la credencial o constancia del centro educativo y revisá que el nombre coincida.</li>
+          </ul>
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" id="verificar-escolar-check">
+            <label class="form-check-label" for="verificar-escolar-check">Vi la credencial del centro educativo y los datos coinciden.</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-brand" id="verificar-escolar-confirmar" disabled>Verificar cuenta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de aviso (pagar o retirar en el local) -->
+  <div class="modal fade" id="modal-aviso-local" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body aviso-local">
+          <span class="aviso-local-icono" id="aviso-local-icono" aria-hidden="true"></span>
+          <h5 class="modal-title" id="aviso-local-titulo"></h5>
+          <div id="aviso-local-texto"></div>
+          <button type="button" class="btn btn-brand mt-3" data-bs-dismiss="modal">Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Términos y Condiciones / Política de Privacidad -->
+  <div class="modal fade" id="modal-terminos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Términos y Condiciones y Política de Privacidad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body texto-legal">
+        <h6>MARCO LEGAL</h6>
+
+        <h6>Términos y Condiciones</h6>
+
+        <h6>Objeto</h6>
+        <p>Los presentes Términos y Condiciones establecen las normas para el uso de los servicios de la biblioteca, incluyendo el registro de socios, préstamos, devoluciones, renovaciones y reservas de ejemplares.</p>
+        <p>Al registrarse como socio y utilizar los servicios de la biblioteca, el usuario acepta cumplir con estas condiciones y con las normas establecidas por la institución.</p>
+
+        <h6>Registro de socios</h6>
+        <p>Para utilizar los servicios de préstamo y reserva, el usuario deberá estar registrado como socio de la biblioteca y proporcionar los datos necesarios para su identificación y gestión de los servicios.</p>
+        <p>Cada socio es responsable de mantener actualizados sus datos y de utilizar correctamente su cuenta.</p>
+
+        <h6>Préstamos</h6>
+        <p>Los préstamos permiten a los socios retirar ejemplares de la biblioteca durante un período determinado.</p>
+        <p>Se establecen las siguientes reglas:</p>
+        <p>- Un socio suspendido no puede solicitar ni realizar préstamos mientras dure la suspensión.</p>
+        <p>- Un ejemplar solo puede tener un préstamo activo a la vez.</p>
+        <p>- El socio deberá devolver el ejemplar dentro del plazo establecido.</p>
+        <p>- El socio es responsable de los ejemplares que tenga registrados a su nombre durante el período del préstamo.</p>
+        <p>- La biblioteca podrá establecer límites sobre la cantidad de ejemplares que un socio puede tener prestados simultáneamente.</p>
+
+        <h6>Renovaciones</h6>
+        <p>Los préstamos podrán renovarse cuando las condiciones de la biblioteca lo permitan.</p>
+        <p>No será posible renovar un préstamo cuando:</p>
+        <p>- El ejemplar tenga una reserva pendiente realizada por otro socio.</p>
+        <p>- El socio se encuentre suspendido.</p>
+        <p>- Se haya alcanzado el límite de renovaciones establecido por la biblioteca.</p>
+        <p>La renovación estará sujeta a la disponibilidad del ejemplar y a las condiciones vigentes.</p>
+
+        <h6>Reservas</h6>
+        <p>Los socios podrán realizar reservas sobre ejemplares que se encuentren disponibles para este servicio.</p>
+        <p>Se establecen las siguientes condiciones:</p>
+        <p>- Un socio no puede reservar el mismo libro más de una vez simultáneamente.</p>
+        <p>- Una reserva será válida durante el período establecido por la biblioteca.</p>
+        <p>- Una vez que el ejemplar sea asignado al socio que realizó la reserva, este deberá retirarlo dentro del plazo establecido.</p>
+        <p>- La biblioteca podrá cancelar una reserva cuando haya vencido el plazo para retirarla o cuando se detecte una reserva duplicada.</p>
+
+        <h6>Suspensiones</h6>
+        <p>La biblioteca podrá suspender temporalmente a un socio cuando incumpla las normas establecidas, por ejemplo, por retrasos reiterados en las devoluciones o por otras situaciones previstas en el reglamento interno.</p>
+        <p>Mientras dure la suspensión, el socio no podrá realizar nuevos préstamos.</p>
+        <p>La suspensión no implica necesariamente la eliminación de la cuenta ni de los datos del socio.</p>
+
+        <h6>Responsabilidades del usuario</h6>
+        <p>El usuario se compromete a:</p>
+        <p>- Proporcionar información correcta al registrarse.</p>
+        <p>- Respetar los plazos de devolución.</p>
+        <p>- Cuidar los ejemplares prestados.</p>
+        <p>- No utilizar la cuenta de otro socio.</p>
+        <p>- Respetar las normas de préstamos, renovaciones y reservas.</p>
+        <p>- Informar a la biblioteca sobre cualquier inconveniente relacionado con su cuenta o con los ejemplares recibidos.</p>
+
+        <h6>Modificaciones</h6>
+        <p>La biblioteca podrá modificar estos Términos y Condiciones cuando sea necesario para actualizar sus servicios, procedimientos o normas internas.</p>
+        <p>Los cambios serán comunicados a los usuarios cuando corresponda.</p>
+
+        <h6>Política de Privacidad</h6>
+
+        <h6>Finalidad</h6>
+        <p>La biblioteca se compromete a proteger la privacidad de sus socios y a utilizar sus datos personales únicamente para fines relacionados con la prestación y gestión de sus servicios.</p>
+
+        <h6>Datos recopilados</h6>
+        <p>Para gestionar el funcionamiento de la biblioteca podrán recopilarse datos como:</p>
+        <p>- Nombre y apellido.</p>
+        <p>- Datos de contacto.</p>
+        <p>- Información necesaria para identificar al socio.</p>
+        <p>- Historial de préstamos.</p>
+        <p>- Reservas realizadas.</p>
+        <p>- Renovaciones.</p>
+        <p>- Estado de la cuenta, incluyendo posibles suspensiones.</p>
+        <p>La información recopilada deberá limitarse a los datos necesarios para el funcionamiento del servicio.</p>
+
+        <h6>Uso de los datos</h6>
+        <p>Los datos personales podrán utilizarse para:</p>
+        <p>- Registrar y administrar socios.</p>
+        <p>- Gestionar préstamos y devoluciones.</p>
+        <p>- Gestionar reservas y renovaciones.</p>
+        <p>- Informar sobre vencimientos o disponibilidad de ejemplares.</p>
+        <p>- Controlar el estado de las cuentas.</p>
+        <p>- Aplicar las normas de la biblioteca.</p>
+        <p>- Mejorar la organización y funcionamiento del servicio.</p>
+        <p>Los datos no deberán utilizarse para fines ajenos a los servicios de la biblioteca sin la correspondiente autorización o base legal.</p>
+
+        <h6>Protección de la información</h6>
+        <p>La biblioteca deberá adoptar medidas razonables para proteger los datos personales frente al acceso, modificación, pérdida o divulgación no autorizada.</p>
+        <p>El acceso a la información de los socios estará limitado a las personas que necesiten utilizarla para cumplir funciones relacionadas con la administración de la biblioteca.</p>
+
+        <h6>Confidencialidad</h6>
+        <p>La información relacionada con los préstamos, reservas y actividad de los socios será tratada de forma confidencial.</p>
+        <p>La biblioteca no deberá divulgar información personal de sus socios a terceros, salvo que exista una obligación legal, una autorización válida o una situación que lo permita conforme a la normativa aplicable.</p>
+
+        <h6>Conservación de los datos</h6>
+        <p>Los datos personales serán conservados durante el tiempo necesario para cumplir con las finalidades para las cuales fueron recopilados y con las obligaciones legales correspondientes.</p>
+        <p>Cuando los datos ya no sean necesarios, podrán ser eliminados o tratados de acuerdo con las normas aplicables.</p>
+
+        <h6>Derechos de los usuarios</h6>
+        <p>Los socios podrán solicitar información sobre los datos personales que la biblioteca mantiene sobre ellos y, cuando corresponda, solicitar su actualización, corrección o eliminación conforme a la normativa vigente.</p>
+
+        <h6>Aceptación</h6>
+        <p>Al registrarse y utilizar los servicios de la biblioteca, el usuario declara conocer y aceptar los presentes Términos y Condiciones y la Política de Privacidad, sin perjuicio de los derechos que le correspondan conforme a la legislación vigente.</p>
+
+        <h6>Legislación aplicable</h6>
+        <p class="mb-0">El tratamiento de los datos personales y el funcionamiento de la biblioteca deberán ajustarse a la normativa vigente aplicable, incluyendo las disposiciones uruguayas relativas a la protección de datos personales y privacidad.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-brand" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación -->
   <div class="modal fade" id="modal-confirmar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content">

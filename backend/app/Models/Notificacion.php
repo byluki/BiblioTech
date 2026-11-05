@@ -6,9 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notificacion extends Model
 {
-    // Sin esto, Eloquent adivina "notificacions" a partir de la clase
-    // (regla en inglés), pero la migración creó la tabla como
-    // "notificaciones" (create_notificaciones_table).
+    // la tabla es "notificaciones"
     protected $table = 'notificaciones';
 
     protected $fillable = ['socio_id', 'titulo', 'mensaje', 'tipo', 'leida', 'fecha_leida'];

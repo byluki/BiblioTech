@@ -63,8 +63,7 @@ class EjemplarController extends Controller
         return response()->json($ejemplar);
     }
 
-    // PATCH /ejemplares/{id}/estado
-    // Usado por bibliotecario/admin para marcar: deteriorado, extraviado, fuera de circulación, disponible...
+    // PATCH /ejemplares/{id}/estado  (extraviado, fuera de circulación, etc.)
     public function cambiarEstado(Request $request, Ejemplar $ejemplar)
     {
         $data = $request->validate([

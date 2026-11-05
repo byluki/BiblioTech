@@ -9,13 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('socios', function (Blueprint $table) {
-            // Un socio puede declararse "centro_educativo" (campo `tipo`, ya
-            // existente) al registrarse solo, pero eso es lo que él dice de
-            // sí mismo. Este campo es la confirmación real, hecha a mano por
-            // un bibliotecario/administrador desde la pestaña de socios
-            // (ver SocioController::verificarCentroEducativo). Mientras
-            // valga false, el socio reserva como un particular (1 reserva
-            // activa como máximo), sin importar lo que haya declarado.
+            // confirmación del bibliotecario de que el socio es un centro educativo
             $table->boolean('verificado_centro_educativo')->default(false)->after('tipo');
         });
 

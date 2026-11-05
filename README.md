@@ -2,141 +2,81 @@
 
 <img src="frontend/images/logo.png" alt="Logo BiblioTech" width="90" height="90">
 
-# 📚 BiblioTech
+# BiblioTech
 
-**Sistema de gestión para bibliotecas barriales**  
-Catálogo, préstamos, reservas, multas y reportes — todo en un solo lugar.
-
-![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=for-the-badge&logo=php&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Sanctum](https://img.shields.io/badge/Auth-Sanctum-3178C6?style=for-the-badge)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+Sistema web de la Biblioteca Central de San José: catálogo, reservas, préstamos, multas y reportes.
 
 </div>
 
----
-
-## 📖 Sobre el proyecto
-
-**BiblioTech** es una API REST construida con **Laravel 12** para administrar una biblioteca barrial, con un frontend liviano en HTML/CSS/JS (Bootstrap 5) que consume esa API. Contempla tres roles de usuario (**administrador**, **bibliotecario** y **socio**) y cubre todo el ciclo de vida de una biblioteca: alta de libros y ejemplares, préstamos, devoluciones, reservas, multas por atraso y reportes de uso.
-
-## ✨ Funcionalidades principales
+## Qué hace
 
 | Módulo | Descripción |
 |---|---|
-| 📕 **Catálogo** | Alta, edición y baja de libros y categorías, con portada e ISBN. Consultable sin necesidad de iniciar sesión. |
-| 🔖 **Ejemplares** | Cada libro puede tener varios ejemplares físicos, con estado propio (disponible, prestado, etc.). |
-| 🔄 **Préstamos** | Registro, devolución, renovación y anulación de préstamos. |
-| ⏰ **Reservas** | Un socio reserva un ejemplar y el bibliotecario confirma la entrega. |
-| 💸 **Multas** | Gestión de sanciones por atrasos en la devolución. |
-| 🔔 **Notificaciones** | Avisos a los socios sobre el estado de sus préstamos/reservas. |
-| 🧑‍🤝‍🧑 **Socios y personal** | Administración de socios, bibliotecarios y usuarios del sistema, con verificación de centro educativo. |
-| 📊 **Reportes** | Préstamos por período, libros más prestados, socios con atrasos y disponibilidad del catálogo. |
+| Catálogo | Libros con portada, ISBN, descripción y cantidad de copias. Se puede consultar sin iniciar sesión. |
+| Reservas | El socio reserva desde el carrito y retira el libro en el local. Cada copia la puede reservar una persona distinta. |
+| Préstamos | Préstamo, devolución con observación, renovación y anulación. |
+| Socios | Alta, edición, búsqueda por cédula, verificación de centro educativo. |
+| Multas | Registro (hasta $ 10.000), pagos totales o parciales con método de pago. |
+| Reportes | Copias disponibles, libros más prestados, préstamos atrasados, historial. |
 
-## 🔐 Roles y permisos
+## Roles
 
-| Rol | Puede... |
+| Rol | Puede |
 |---|---|
-| **Invitado** | Consultar el catálogo (libros, categorías, ejemplares) sin iniciar sesión. |
-| **Socio** | Además de lo anterior: reservar/cancelar sus propias reservas y ver sus notificaciones. |
-| **Bibliotecario** | Gestionar socios, ejemplares, préstamos, multas, confirmar reservas y ver reportes. |
-| **Administrador** | Todo lo anterior + gestión del catálogo (libros/categorías) y de cuentas de usuario/bibliotecarios. |
+| Invitado | Ver el catálogo. |
+| Socio | Reservar, cancelar sus reservas, ver sus préstamos y sus multas. |
+| Bibliotecario | Socios, préstamos, devoluciones, multas, reservas y reportes. |
+| Administrador | Todo lo anterior y el catálogo (libros, copias y categorías). |
 
-## 🛠️ Stack técnico
+## Tecnologías
 
-- **Backend:** Laravel 12 · PHP 8.2+ · Laravel Sanctum (autenticación por token)
-- **Base de datos:** MySQL 8.0
-- **Frontend:** HTML + CSS + JavaScript (vanilla) · Bootstrap 5 · Font Awesome
-- **Infraestructura:** Docker Compose (app + Nginx + MySQL + phpMyAdmin)
+- Backend: Laravel 12, PHP 8.4, Laravel Sanctum (tokens)
+- Base de datos: MySQL 8
+- Frontend: HTML, CSS y JavaScript, Bootstrap 5
+- Infraestructura: Docker Compose
 
-## 📂 Estructura del proyecto
+## Estructura
 
 ```
 BiblioTech/
-├── backend/                    # API REST (Laravel 12)
-│   ├── app/                    # Controladores (Http/Controllers/Api), Middleware, Models
-│   ├── database/               # Migraciones y seeders
-│   ├── routes/api.php          # Rutas públicas, de socio y de gestión
-│   ├── docker/nginx/           # Nginx del backend
-│   ├── Dockerfile
-│   └── .env.example
-├── frontend/                   # Cliente estático (HTML + CSS + JS, Bootstrap 5)
-│   ├── index.html · style.css · script.js
-│   ├── config.js               # URL de la API (APP_CONFIG.API_URL)
-│   ├── nginx.conf · Dockerfile
-│   └── images/
-├── Documentacion/
-└── docker-compose.yml          # frontend + api + app (PHP-FPM) + MySQL + phpMyAdmin
+├── backend/                 API REST (Laravel)
+│   ├── app/                 controladores, middleware y modelos
+│   ├── database/            migraciones y seeders
+│   ├── routes/api.php       rutas de la API
+│   └── docker/nginx/        configuración de Nginx de la API
+├── frontend/                página web (index.html, style.css, script.js)
+│   └── config.js            dirección de la API
+├── docker-compose.yml
+└── GUIA_INSTALACION_UBUNTU.md
 ```
 
-## 🚀 Puesta en marcha
-
-### Opción A — Con Docker (recomendada)
+## Puesta en marcha rápida (Docker)
 
 ```bash
-cp .env.example .env                              # UID/GID para permisos (opcional)
-cp backend/.env.docker.example backend/.env
+cp .env.example .env
+cp -n backend/.env.example backend/.env
 docker compose up -d --build
-docker compose exec app composer install
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --seed
 ```
 
-- 🖥️ Frontend: **http://localhost:3000**
-- 🔌 API: **http://localhost:8000/api**
-- 🗄️ phpMyAdmin: **http://localhost:8080**
+- Web: http://localhost:3000
+- API: http://localhost:8000/api
+- phpMyAdmin: http://localhost:8080
 
-### Opción B — Sin Docker
+Usuario administrador inicial: `admin@biblioteca.local` / `cambiar123`. Hay que cambiar la contraseña al entrar.
 
-Backend:
+La instalación en un servidor, el mantenimiento (copias de seguridad, actualizaciones) y el uso de cada parte de la web están en **[GUIA_INSTALACION_UBUNTU.md](GUIA_INSTALACION_UBUNTU.md)**.
 
-```bash
-cd backend
-composer install
-cp .env.example .env      # completar datos de conexión a tu MySQL local
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve         # http://localhost:8000
-```
+## API
 
-Frontend (cualquier servidor estático):
+Todas las rutas están bajo `/api`. La autenticación es con token: `POST /api/auth/login` devuelve un token que se manda en el encabezado `Authorization: Bearer <token>`.
 
-```bash
-cd frontend
-python3 -m http.server 3000   # http://localhost:3000
-```
-
-### 👤 Usuario administrador inicial
-
-El seeder crea automáticamente los tres roles y una cuenta de administrador:
-
-| Campo | Valor |
-|---|---|
-| Email | `admin@biblioteca.local` |
-| Contraseña | `cambiar123` |
-
-> ⚠️ Cambiá esta contraseña apenas tengas el sistema en marcha.
-
-## 🔌 API
-
-Las rutas viven bajo `/api`. Un resumen de los grupos principales:
-
-- **Públicas:** `POST /api/auth/login`, `POST /api/auth/registro`, `GET /api/libros`, `GET /api/categorias`, `GET /api/ejemplares`.
-- **Autenticadas (socio):** `/api/auth/me`, `/api/reservas`, `/api/notificaciones`.
-- **Gestión (bibliotecario/administrador):** `/api/socios`, `/api/prestamos`, `/api/multas`, `/api/ejemplares` (alta/edición), confirmación de reservas, `/api/reportes/*`.
-- **Solo administrador:** alta/edición/baja de `/api/libros`, `/api/categorias`, `/api/usuarios` y `/api/bibliotecarios`.
-
-La autenticación se maneja con **Laravel Sanctum** vía token: iniciá sesión en `/api/auth/login` y enviá el token recibido en el header `Authorization: Bearer <token>` en las siguientes peticiones.
-
-## 🖥️ Frontend
-
-El frontend en `frontend/` es una página estática independiente que consume la API. La URL del backend se define en `frontend/config.js` (`APP_CONFIG.API_URL`). Si se deja vacía, usa el mismo host desde el que se abrió la página con el puerto `8000`, así que funciona en `localhost` y desde otros dispositivos de la red sin tocar código. Para producción, por ejemplo: `API_URL: "https://api.miapp.com/api"`.
-
-En el backend, la variable `CORS_ALLOWED_ORIGINS` (en `backend/.env`) permite restringir qué origen(es) pueden llamar a la API.
+- Públicas: `POST /auth/login`, `POST /auth/registro`, `GET /libros`, `GET /categorias`, `GET /ejemplares`.
+- Socio: `/auth/me`, `/auth/perfil`, `/reservas`, `/mis-multas`, `/notificaciones`.
+- Gestión (bibliotecario o administrador): `/socios`, `/prestamos`, `/multas`, `/multas/{id}/pago`, `/reportes/*`.
+- Solo administrador: `/libros` (alta, edición, baja y `/libros/{id}/cantidad`), `/categorias`, `/usuarios`, `/bibliotecarios`.
 
 ---
 
-<div align="center">
-<sub>Proyecto académico — Biblioteca Barrial</sub>
-</div>
+<div align="center"><sub>Proyecto académico, Biblioteca Central de San José</sub></div>

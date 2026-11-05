@@ -1,10 +1,7 @@
-/* Biblioteca Central — estilos
-   Paleta original (naranja, dorado y crema) con una sola familia
-   tipográfica (Libre Franklin). Las portadas son el protagonista. */
+/* Biblioteca Central - estilos */
 
 :root {
-  /* paleta original de la web (naranja, dorado y crema); los nombres de
-     --marino* se mantienen por compatibilidad pero son el naranja */
+  /* paleta: naranja, dorado y crema (--marino es el naranja, el nombre quedó de antes) */
   --marino: #e2661d;
   --marino-hondo: #a3400f;
   --celeste: #f0955a;
@@ -44,7 +41,7 @@ body {
   line-height: 1.5;
 }
 
-/* el contenido ocupa el espacio sobrante: el footer queda siempre abajo */
+/* footer siempre abajo */
 main {
   flex: 1 0 auto;
 }
@@ -71,9 +68,7 @@ a:hover {
   outline-offset: 2px;
 }
 
-/* ==========================================================
-   ENCABEZADO
-   ========================================================== */
+/* ---------- Encabezado ---------- */
 
 .site-header {
   background-color: var(--marino);
@@ -240,9 +235,7 @@ a:hover {
   background-color: rgba(163, 74, 52, 0.12);
 }
 
-/* ==========================================================
-   PANELES Y FORMULARIOS
-   ========================================================== */
+/* ---------- Paneles y formularios ---------- */
 
 .panel {
   border: 1px solid var(--linea);
@@ -251,7 +244,7 @@ a:hover {
   box-shadow: none;
 }
 
-/* el catálogo no va en una caja: las portadas se apoyan sobre el papel */
+/* el catálogo va sin caja */
 .panel-plano {
   background: transparent;
   border: 0;
@@ -387,9 +380,7 @@ a:hover {
   background-color: var(--papel);
 }
 
-/* ==========================================================
-   CONTADOR (pegado al título "Libros disponibles")
-   ========================================================== */
+/* ---------- Contador ---------- */
 
 .contador {
   display: inline-block;
@@ -412,9 +403,7 @@ a:hover {
   display: none;
 }
 
-/* ==========================================================
-   CATÁLOGO: portadas como libros sobre el estante
-   ========================================================== */
+/* ---------- Catálogo ---------- */
 
 .lista-libros {
   display: grid;
@@ -428,15 +417,13 @@ a:hover {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* recuadro: ocupa exactamente el mismo lugar de la grilla que antes
-     (mismas columnas y mismo espacio entre filas) */
+  /* recuadro de la tarjeta */
   background-color: var(--ficha);
   border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 12px;
   transition: border-color 0.15s ease;
-  /* con cientos de libros, el navegador salta el trabajo de las tarjetas
-     que no están a la vista */
+  /* no dibuja las tarjetas fuera de pantalla */
   content-visibility: auto;
   contain-intrinsic-size: auto 400px;
 }
@@ -607,7 +594,7 @@ a:hover {
   color: #fff;
 }
 
-/* si es el único botón de la fila, ocupa todo el ancho y lleva texto */
+/* botón único de la fila: ancho completo */
 .acciones-libro .btn-accion-libro.btn-accion-libro-full {
   width: 100%;
   flex: 1 1 auto;
@@ -639,7 +626,7 @@ a:hover {
 .btn-editar { color: var(--marino-hondo); }
 .btn-eliminar { color: var(--ladrillo); }
 
-/* menú Editar / Eliminar (solo administrador), sobre la esquina de la portada */
+/* menú Editar / Eliminar sobre la portada */
 .btn-menu-libro {
   position: absolute;
   top: 8px;
@@ -688,9 +675,7 @@ a:hover {
   background-color: #f8e3de;
 }
 
-/* ==========================================================
-   MENÚ LATERAL (3 barritas)
-   ========================================================== */
+/* ---------- Menú lateral ---------- */
 
 .menu-offcanvas {
   width: 380px;
@@ -844,9 +829,7 @@ a:hover {
   width: 20px;
 }
 
-/* ==========================================================
-   PIE
-   ========================================================== */
+/* ---------- Pie ---------- */
 
 .site-footer {
   background-color: var(--marino-hondo);
@@ -855,9 +838,7 @@ a:hover {
   flex-shrink: 0;
 }
 
-/* ==========================================================
-   RESERVAS, PRÉSTAMOS Y OTRAS LISTAS (pestañas de gestión)
-   ========================================================== */
+/* ---------- Reservas, préstamos y otras listas ---------- */
 
 .lista-reservas,
 .lista-prestamos {
@@ -867,7 +848,7 @@ a:hover {
   padding: 0;
 }
 
-/* filas separadas por una línea, como un registro, sin cajas */
+/* filas separadas por una línea */
 .reserva-item {
   display: flex;
   justify-content: space-between;
@@ -960,9 +941,7 @@ a:hover {
   color: var(--marino-hondo);
 }
 
-/* ==========================================================
-   REPORTES
-   ========================================================== */
+/* ---------- Reportes ---------- */
 
 .stat-card {
   background-color: var(--ficha);
@@ -1038,9 +1017,7 @@ a:hover {
 
 .hist-persona { color: var(--marino-hondo); font-weight: 600; }
 
-/* ==========================================================
-   AVATAR Y ANCHO DE LA PÁGINA
-   ========================================================== */
+/* ---------- Avatar y ancho de la página ---------- */
 
 .avatar-usuario {
   display: inline-flex;
@@ -1084,9 +1061,7 @@ a:hover {
   padding-right: clamp(16px, 3vw, 56px);
 }
 
-/* ==========================================================
-   MODALES: entrada suave (responde a la acción de abrir)
-   ========================================================== */
+/* ---------- Modales ---------- */
 
 .modal.fade .modal-dialog {
   transform: translateY(10px);
@@ -1118,10 +1093,7 @@ a:hover {
   }
 }
 
-
-/* ==========================================================
-   BOTÓN "AGREGAR" (píldora naranja, como en una librería online)
-   ========================================================== */
+/* ---------- Botón "agregar" ---------- */
 
 .btn-agregar-carrito {
   display: inline-flex;
@@ -1161,108 +1133,7 @@ a:hover {
   border-color: var(--ladrillo);
 }
 
-/* ==========================================================
-   BANNER
-   ========================================================== */
-
-.banner {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radio-grande);
-}
-
-.banner-pistas {
-  display: flex;
-  transition: transform 0.5s ease;
-}
-
-.banner-slide {
-  flex: 0 0 100%;
-  min-height: clamp(150px, 20vw, 250px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: clamp(16px, 5vw, 72px);
-  padding: 28px clamp(52px, 8vw, 110px);
-}
-
-.banner-texto {
-  max-width: 620px;
-  text-align: left;
-}
-
-.banner-texto h2 {
-  font-size: clamp(1.35rem, 2.8vw, 2.25rem);
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
-  margin: 0 0 8px 0;
-  color: inherit;
-}
-
-.banner-texto p {
-  margin: 0;
-  font-size: clamp(0.92rem, 1.3vw, 1.1rem);
-  font-weight: 500;
-}
-
-.banner-logo {
-  width: clamp(72px, 10vw, 130px);
-  height: auto;
-}
-
-.banner-claro { background-color: #fbe2a6; color: var(--marino-hondo); }
-.banner-naranja { background-color: var(--marino); color: #fff; }
-.banner-oscuro { background-color: var(--marino-hondo); color: #fff; }
-
-.banner-flecha,
-.carrusel-flecha {
-  border: 0;
-  background: transparent;
-  color: var(--apagado);
-  font-size: 1.4rem;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.banner-flecha {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  color: currentColor;
-  opacity: 0.7;
-}
-
-.banner-flecha:hover { opacity: 1; }
-.banner-prev { left: 4px; }
-.banner-next { right: 4px; }
-
-.banner-puntos {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin: 16px 0 6px;
-}
-
-.banner-punto {
-  width: 10px;
-  height: 10px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background-color: #cfc6b8;
-  cursor: pointer;
-}
-
-.banner-punto.activo { background-color: var(--marino); }
-
-/* ==========================================================
-   NOVEDADES
-   ========================================================== */
+/* ---------- Novedades ---------- */
 
 .novedades {
   margin: 20px 0 44px;
@@ -1317,9 +1188,7 @@ a:hover {
 .novedad-item .btn-agregar-carrito { flex: 0 0 auto; align-self: flex-start; }
 .novedad-item .etiqueta-estado { align-self: flex-start; }
 
-/* ==========================================================
-   CARRITO
-   ========================================================== */
+/* ---------- Carrito ---------- */
 
 .carrito-offcanvas {
   width: 400px;
@@ -1413,14 +1282,10 @@ a:hover {
 }
 
 @media (max-width: 575.98px) {
-  .banner-slide { padding: 20px 44px; }
-  .banner-logo { display: none; }
   .novedades-carrusel .carrusel-flecha { display: none; }
 }
 
-/* ==========================================================
-   AVISOS (errores en recuadro rojo, abajo a la derecha)
-   ========================================================== */
+/* ---------- Avisos ---------- */
 
 .zona-avisos {
   position: fixed;
@@ -1483,9 +1348,7 @@ a:hover {
   .zona-avisos { right: 16px; bottom: 16px; }
 }
 
-/* ==========================================================
-   BOTONES OCUPADOS (deshabilitados mientras carga)
-   ========================================================== */
+/* ---------- Botones ocupados ---------- */
 
 .cargando {
   position: relative;
@@ -1533,9 +1396,7 @@ a:hover {
   border-color: #8e2c20;
 }
 
-/* ==========================================================
-   CONTRASEÑAS: ver / ocultar y verificador
-   ========================================================== */
+/* ---------- Contraseñas ---------- */
 
 .campo-password { position: relative; }
 .campo-password .form-control { padding-right: 46px; }
@@ -1605,9 +1466,7 @@ a:hover {
 .coincidencia-password.ok { color: var(--oliva); }
 .coincidencia-password.mal { color: var(--ladrillo); }
 
-/* ==========================================================
-   CALENDARIO (flatpickr)
-   ========================================================== */
+/* ---------- Calendario ---------- */
 
 .flatpickr-wrapper { display: block; width: 100%; }
 .flatpickr-input[readonly] { background-color: #fff; cursor: pointer; }
@@ -1639,9 +1498,7 @@ span.flatpickr-weekday { color: var(--apagado); font-weight: 600; }
 .flatpickr-day.flatpickr-disabled,
 .flatpickr-day.flatpickr-disabled:hover { color: #cbbfae; }
 
-/* ==========================================================
-   MULTAS: buscador por socio, resumen y pago
-   ========================================================== */
+/* ---------- Multas ---------- */
 
 .resumen-multas {
   background-color: var(--papel);
@@ -1687,11 +1544,10 @@ span.flatpickr-weekday { color: var(--apagado); font-weight: 600; }
   .ficha-multa { grid-template-columns: 1fr; }
 }
 
-/* datos del carnet de socio, sin separadores de punto medio */
+/* datos del carnet */
 .datos-socio { display: flex; flex-wrap: wrap; gap: 2px 16px; }
 
-/* el menú "⋮" del administrador va sobre la esquina de la portada
-   (el .dropdown de Bootstrap es position:relative y lo empujaba debajo) */
+/* menú ⋮ sobre la portada */
 .menu-libro-admin {
   position: absolute;
   top: 8px;
@@ -1713,9 +1569,7 @@ span.flatpickr-weekday { color: var(--apagado); font-weight: 600; }
   .header-icon-btn { width: 38px; height: 38px; font-size: 0.95rem; }
 }
 
-/* ==========================================================
-   COPIAS (varios ejemplares por libro)
-   ========================================================== */
+/* ---------- Copias ---------- */
 
 .texto-copias {
   font-size: 0.8rem;
@@ -1736,3 +1590,544 @@ span.flatpickr-weekday { color: var(--apagado); font-weight: 600; }
 .acciones-compactas .btn-agregar-carrito { flex: 1 1 auto; min-width: 0; padding: 7px 10px; }
 .acciones-compactas .btn-agregar-carrito .texto-boton { display: none; }
 .acciones-compactas .btn-accion-libro.btn-accion-libro-grande { flex: 0 0 36px; width: 36px; height: 36px; font-size: 0.9rem; }
+
+/* ---------- Inicio ---------- */
+
+.inicio {
+  max-width: 860px;
+  padding: clamp(8px, 3vw, 40px) 0 clamp(28px, 4vw, 56px);
+}
+
+.inicio-titulo {
+  font-size: clamp(2.3rem, 5.6vw, 4.1rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  margin: 0 0 14px;
+}
+
+.inicio-texto {
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  color: #6f604f;
+  max-width: 56ch;
+  margin: 0 0 26px;
+}
+
+.inicio-buscador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 2px solid var(--marino-hondo);
+  border-radius: 14px;
+  padding: 6px 6px 6px 20px;
+  transition: box-shadow 0.15s ease;
+}
+
+.inicio-buscador:focus-within { box-shadow: 0 0 0 4px rgba(226, 102, 29, 0.22); }
+.inicio-buscador > i { color: var(--marino-hondo); font-size: 1.1rem; }
+
+.inicio-buscador input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+  color: var(--tinta);
+  padding: 12px 0;
+}
+
+.inicio-buscador input::placeholder { color: #a8998a; }
+
+.inicio-buscador .btn-brand {
+  border-radius: 10px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+.inicio-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.inicio-categoria {
+  border: 1px solid var(--linea);
+  background: #fff;
+  color: var(--tinta);
+  border-radius: 999px;
+  padding: 6px 15px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.inicio-categoria:hover { border-color: var(--marino); color: var(--marino-hondo); }
+
+.inicio-categoria.activa {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+/* ---------- Novedades ---------- */
+
+.novedades { margin: 0 0 56px; }
+
+.novedades-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.novedades-titulo { text-align: left; margin: 0; font-size: 1.6rem; }
+
+.novedades-flechas { display: flex; gap: 6px; }
+
+.novedades-flechas .carrusel-flecha {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--linea);
+  background: #fff;
+  color: var(--marino-hondo);
+  font-size: 0.95rem;
+}
+
+.novedades-flechas .carrusel-flecha:hover { border-color: var(--marino); color: var(--marino); }
+
+.estante .lista-novedades {
+  gap: 0;
+  padding: 0 0 8px;
+}
+
+.estante .novedad-item {
+  flex: 0 0 clamp(158px, 15vw, 200px);
+  padding: 0 14px;
+}
+
+.estante .novedad-item .libro-portada-wrap {
+  margin: 0 -14px;
+  padding: 0 22px 18px;
+  width: auto;
+  background:
+    linear-gradient(to bottom,
+      transparent calc(100% - 18px),
+      #c47a3c calc(100% - 18px),
+      #c47a3c calc(100% - 14px),
+      #8f4a1b calc(100% - 14px));
+}
+
+/* sombra que proyecta la tabla */
+.estante .novedad-item .libro-portada-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 10px;
+  background: linear-gradient(rgba(90, 45, 15, 0.28), transparent);
+  pointer-events: none;
+}
+
+.estante .novedad-item .libro-portada {
+  box-shadow: 6px 0 10px -4px rgba(70, 35, 10, 0.45), 0 0 0 1px rgba(43, 32, 22, 0.08);
+}
+
+.estante .novedad-titulo { margin-top: 18px; }
+
+/* ---------- Portadas sin imagen ---------- */
+
+.libro-portada-vacia {
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: inset 8px 0 0 rgba(0, 0, 0, 0.16), inset 10px 0 0 rgba(255, 255, 255, 0.07);
+}
+
+.libro-portada-vacia::before { inset: 10px 10px 10px 18px; }
+.libro-portada-vacia span { font-weight: 700; }
+
+.libro-portada-vacia small {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- Botón "agregar" ---------- */
+
+.btn-agregar-carrito {
+  background-color: transparent;
+  color: var(--marino-hondo);
+  border: 1.5px solid var(--marino);
+}
+
+.btn-agregar-carrito:hover,
+.btn-agregar-carrito:focus-visible {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  color: #fff;
+}
+
+.btn-agregar-carrito.en-carrito {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+.btn-agregar-carrito.en-carrito:hover {
+  background-color: var(--ladrillo);
+  border-color: var(--ladrillo);
+  color: #fff;
+}
+
+.btn-agregar-carrito.cargando { --spinner: var(--marino); }
+
+@media (max-width: 575.98px) {
+  .inicio-buscador { padding-left: 14px; }
+  .inicio-buscador .btn-brand { padding: 0.7rem 1rem; }
+  .novedades-flechas { display: none; }
+}
+
+/* títulos largos en la tapa */
+.libro-portada-vacia span { overflow-wrap: normal; word-break: normal; hyphens: auto; -webkit-hyphens: auto; }
+main.contenedor-ancho { margin-top: 2rem !important; }
+
+/* fila de acciones: el botón de prestar queda fijo */
+.acciones-libro .btn-agregar-carrito { min-width: 0; padding-left: 8px; padding-right: 8px; gap: 5px; font-size: 0.8rem; }
+.acciones-libro .btn-accion-libro.btn-prestar-rapido { flex: 0 0 38px; width: 38px; }
+
+/* ---------- Ficha del libro ---------- */
+
+.libro-item .libro-portada,
+.novedad-item .libro-portada { cursor: pointer; }
+
+.titulo-libro-btn {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titulo-libro-btn:hover { color: var(--marino-hondo); text-decoration: underline; text-underline-offset: 3px; }
+.titulo-libro-btn:focus-visible { outline: 2px solid var(--marino); outline-offset: 2px; border-radius: 2px; }
+
+.detalle-libro {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr;
+  gap: 28px;
+  padding: 32px;
+}
+
+.detalle-cerrar { position: absolute; top: 14px; right: 14px; }
+
+.detalle-portada .libro-portada {
+  width: 100%;
+  border-radius: 2px;
+  box-shadow: 8px 8px 0 -2px rgba(163, 64, 15, 0.12), 0 0 0 1px rgba(43, 32, 22, 0.08);
+  cursor: default;
+}
+
+.detalle-portada .libro-portada-vacia { font-size: 1.15rem; }
+
+.detalle-info { min-width: 0; padding-right: 24px; }
+
+.detalle-titulo {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin: 0 0 6px;
+}
+
+.detalle-autor { font-size: 1.05rem; color: var(--apagado); margin: 0 0 14px; }
+
+.detalle-datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.detalle-datos .etiqueta,
+.detalle-datos .texto-copias { margin: 0 !important; }
+
+.detalle-descripcion p {
+  margin: 0;
+  line-height: 1.65;
+  max-width: 62ch;
+}
+
+.detalle-sin-descripcion { color: var(--apagado); }
+
+.btn-leer-mas {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 8px;
+  color: var(--marino-hondo);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* cargando descripción */
+.cargando-texto { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+
+.cargando-texto .linea {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--linea-suave) 25%, #f7efe2 50%, var(--linea-suave) 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s linear infinite;
+}
+
+.cargando-texto .linea.corta { width: 60%; }
+
+@keyframes brillo { to { background-position: -200% 0; } }
+
+.detalle-fuente { font-size: 0.8rem; color: var(--apagado); margin: 12px 0 0; min-height: 1em; }
+.detalle-fuente a { color: inherit; text-decoration: underline; }
+
+.detalle-acciones { margin-top: 20px; }
+.detalle-acciones .btn-agregar-carrito { flex: 0 0 auto; padding: 9px 22px; font-size: 0.9rem; }
+
+@media (max-width: 575.98px) {
+  .detalle-libro { grid-template-columns: 1fr; padding: 24px 20px; gap: 18px; }
+  .detalle-portada { width: 140px; }
+  .detalle-info { padding-right: 0; }
+}
+
+/* descripción manual en los formularios de libro */
+.campo-descripcion { resize: vertical; min-height: 110px; line-height: 1.5; }
+.contador-descripcion { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.btn-traer-descripcion { color: var(--marino-hondo); font-weight: 600; text-decoration: none; }
+.btn-traer-descripcion:hover { color: var(--marino); text-decoration: underline; }
+.btn-traer-descripcion.cargando { color: transparent !important; min-width: 120px; }
+.btn-editar-ficha { display: inline-block; margin-left: 10px; color: var(--marino-hondo); font-weight: 600; }
+
+/* ---------- Catálogo ---------- */
+
+.lista-libros {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 28px 24px;
+}
+
+.libro-item { padding: 16px; }
+.libro-info h3 { font-size: 1.05rem; }
+.libro-portada-vacia { font-size: 1.15rem; }
+
+@media (max-width: 1199.98px) { .lista-libros { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 991.98px) { .lista-libros { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 575.98px) { .lista-libros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 14px; } .libro-item { padding: 10px; } }
+
+/* paginador (catálogo y socios) */
+.paginador {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+}
+
+.paginador:empty { display: none; }
+
+.paginador-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--tinta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.paginador-btn:hover:not(:disabled) { border-color: var(--marino); color: var(--marino-hondo); }
+.paginador-btn.activo { background: var(--marino); border-color: var(--marino); color: #fff; }
+.paginador-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.paginador-puntos { color: var(--apagado); padding: 0 4px; }
+
+#paginador-socios { margin-top: 16px; }
+
+/* ---------- Llegaron hace poco ---------- */
+
+.estante .lista-novedades { overflow-x: auto; }
+
+.estante .novedad-item {
+  flex: 1 0 0;
+  min-width: 128px;
+  max-width: 200px;
+}
+
+.estante .novedad-item .libro-portada-vacia { font-size: 0.85rem; padding: 12px 10px 12px 16px; }
+
+@media (min-width: 1200px) {
+  .novedades-flechas { display: none; }
+}
+
+/* ---------- Botón de usuario ---------- */
+
+.btn-usuario {
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  line-height: 0;
+}
+
+.btn-usuario:hover,
+.btn-usuario:focus-visible { border-color: #fff; }
+
+.btn-usuario .avatar-usuario {
+  width: 40px;
+  height: 40px;
+  background-color: var(--marino-hondo);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.menu-usuario-lista { min-width: 240px; padding: 8px; margin-top: 10px !important; }
+
+.menu-usuario-cabecera {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px 2px;
+}
+
+.menu-usuario-nombre-socio { font-weight: 700; color: var(--marino-hondo); }
+.menu-usuario-email { font-size: 0.82rem; color: var(--apagado); overflow-wrap: anywhere; }
+.menu-usuario-lista .dropdown-item { padding: 8px 10px; }
+.menu-usuario-lista .dropdown-item i { color: var(--marino); width: 18px; }
+
+/* ---------- Aviso de pagar / retirar en el local ---------- */
+
+.aviso-local { text-align: center; padding: 32px 28px 26px; }
+
+.aviso-local-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--resalte);
+  color: var(--marino-hondo);
+  font-size: 1.6rem;
+  margin-bottom: 14px;
+}
+
+.aviso-local .modal-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 10px; }
+.aviso-local p { color: #5f5142; margin-bottom: 12px; }
+
+.aviso-local-lista {
+  list-style: none;
+  padding: 10px 14px;
+  margin: 0;
+  text-align: left;
+  background: var(--papel);
+  border-radius: var(--radio);
+  font-size: 0.92rem;
+}
+
+.aviso-local-lista li { padding: 4px 0; }
+.aviso-local-lista li + li { border-top: 1px solid var(--linea-suave); }
+
+/* ---------- Varios ---------- */
+
+.observacion-devolucion { color: #6f604f; margin-top: 2px; }
+.detalle-pago-parcial { color: #96721c; font-weight: 600; margin-top: 2px; }
+.lista-verificacion { padding-left: 1.1rem; margin-bottom: 0; color: #5f5142; }
+.lista-verificacion li { margin-bottom: 6px; }
+
+.texto-legal h6 { font-weight: 700; color: var(--marino-hondo); margin-top: 14px; }
+.texto-legal h6:first-child { margin-top: 0; }
+.texto-legal p { font-size: 0.92rem; color: #4b3f33; }
+
+/* ---------- Reservas en el inicio ---------- */
+
+.panel-reservas-inicio { margin-bottom: 40px; }
+
+.reservas-inicio-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-bottom: 14px;
+}
+
+.panel-reservas-inicio .panel-title { font-size: 1.5rem; font-weight: 800; }
+.reservas-inicio-resumen { color: var(--apagado); font-size: 0.92rem; }
+
+.tabla-reservas-fila {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.3fr) minmax(160px, 1.6fr) 110px 120px 140px 96px;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.tabla-reservas-encabezado {
+  padding-top: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--apagado);
+  border-bottom-color: var(--linea);
+}
+
+#lista-reservas-inicio .tabla-reservas-fila:hover { background: var(--papel); }
+#lista-reservas-inicio .tabla-reservas-fila:last-child { border-bottom: 0; }
+.tabla-reservas-fila.vencida { background: #fbeee9; }
+.tabla-reservas-fila.vencida:hover { background: #f8e3de !important; }
+
+.celda-socio, .celda-libro { min-width: 0; overflow-wrap: anywhere; }
+.celda-fecha { font-variant-numeric: tabular-nums; color: #5f5142; }
+.celda-acciones { display: flex; gap: 6px; justify-content: flex-end; }
+
+@media (max-width: 991.98px) {
+  .tabla-reservas-encabezado { display: none; }
+  .tabla-reservas-fila {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "socio acciones" "libro acciones" "fechas estado";
+    gap: 4px 12px;
+    padding: 12px 6px;
+  }
+  .celda-socio { grid-area: socio; }
+  .celda-libro { grid-area: libro; color: #5f5142; }
+  .celda-acciones { grid-area: acciones; }
+  .tabla-reservas-fila > span:nth-child(3) { display: none; }
+  .tabla-reservas-fila > span:nth-child(4) { grid-area: fechas; font-size: 0.85rem; }
+  .tabla-reservas-fila > span:nth-child(5) { grid-area: estado; justify-self: end; }
+  .celda-fecha::before { content: attr(data-etiqueta) ": "; color: var(--apagado); }
+}
+
+/* préstamo por cédula: socio encontrado */
+.socio-encontrado { margin-top: 8px; font-size: 0.9rem; min-height: 1.4em; }
+.socio-encontrado:empty { display: none; }
+.socio-encontrado.ok,
+.socio-encontrado.error { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 10px 12px; border-radius: var(--radio); }
+.socio-encontrado.ok { background: #e7f2ea; color: #1f5a31; }
+.socio-encontrado.error { background: #fbeee9; color: var(--ladrillo); }
+.socio-encontrado.buscando { color: var(--apagado); }
+.socio-encontrado-detalle { font-size: 0.85rem; opacity: 0.9; }
+#prestar-cedula[readonly] { background-color: var(--papel); }
+.socio-encontrado.error { display: block; }

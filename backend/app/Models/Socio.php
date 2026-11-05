@@ -53,8 +53,7 @@ class Socio extends Model
         return $this->hasMany(Notificacion::class);
     }
 
-    // true mientras no se haya cargado una cédula real (alta rápida o
-    // registro público con datos autogenerados)
+    // la cédula todavía no se cargó
     public function cedulaPendiente(): bool
     {
         return str_starts_with((string) $this->cedula, 'PENDIENTE-');
@@ -75,11 +74,7 @@ class Socio extends Model
         return $this->prestamos()->where('estado', 'vencido')->exists();
     }
 
-    // Un socio solo cuenta como "centro educativo" a todos los efectos
-    // (por ejemplo, para saltarse el límite de 1 reserva activa) si
-    // declaró serlo (tipo = centro_educativo) Y además un bibliotecario o
-    // administrador lo verificó a mano (ver SocioController::verificarCentroEducativo).
-    // Mientras no esté verificado, opera igual que un socio particular.
+    // centro educativo = tipo centro_educativo y verificado por un bibliotecario
     public function esCentroEducativoVerificado(): bool
     {
         return $this->tipo === 'centro_educativo' && $this->verificado_centro_educativo === true;

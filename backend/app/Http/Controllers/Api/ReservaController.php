@@ -12,9 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class ReservaController extends Controller
 {
-    // Administrador y bibliotecario ("gestión") pueden ver/gestionar las
-    // reservas de cualquier socio; un socio común solo puede ver, crear y
-    // cancelar las suyas propias.
+    // admin y bibliotecario ven todas; el socio solo las suyas
     private function esGestion(Request $request): bool
     {
         $usuario = $request->user();
@@ -28,14 +26,12 @@ class ReservaController extends Controller
         $query = Reserva::with('socio', 'libro');
 
         if ($this->esGestion($request)) {
-            // Gestión sí puede filtrar por cualquier socio.
+            // gestión puede filtrar por socio
             if ($socioId = $request->get('socio_id')) {
                 $query->where('socio_id', $socioId);
             }
         } else {
-            // Un socio común solo puede ver sus propias reservas, sin
-            // importar qué socio_id le pida al endpoint: no tiene forma
-            // de "espiar" las reservas de otro.
+            // el socio solo ve las suyas, pida el socio_id que pida
             $socioPropio = $request->user()?->socio;
             $query->where('socio_id', $socioPropio?->id ?? 0);
         }
@@ -56,9 +52,7 @@ class ReservaController extends Controller
             'fecha_deseada' => ['required', 'date', 'after_or_equal:today'],
         ]);
 
-        // Un socio común solo puede reservar a su propio nombre: si mandó
-        // un socio_id distinto al suyo (a mano, sin pasar por la UI), se
-        // rechaza en vez de crear la reserva a nombre de otra persona.
+        // el socio solo puede reservar a su nombre
         if (! $this->esGestion($request)) {
             $socioPropio = $request->user()?->socio;
 
@@ -85,11 +79,8 @@ class ReservaController extends Controller
                 return response()->json(['message' => 'El socio ya tiene una reserva activa para este libro.'], 422);
             }
 
-            // Regla: mientras el socio no esté verificado como centro
-            // educativo por un bibliotecario (Socio::esCentroEducativoVerificado),
-            // opera igual que un particular y solo puede tener 1 reserva
-            // activa en total (contando todos los libros, no solo este).
-            // Un centro educativo ya verificado no tiene ese límite.
+            // Regla: un particular (o centro educativo sin verificar) solo puede
+            // tener 1 reserva activa en total.
             if (! $socio->esCentroEducativoVerificado()) {
                 $tieneOtraReservaActiva = Reserva::where('socio_id', $socio->id)
                     ->whereIn('estado', ['pendiente', 'pendiente_retiro'])
@@ -102,8 +93,7 @@ class ReservaController extends Controller
                 }
             }
 
-            // Si hay un ejemplar disponible en este momento, se marca directamente
-            // como pendiente de retiro; si no, queda en cola ("pendiente").
+            // si hay una copia libre queda para retirar; si no, en espera
             $ejemplarDisponible = Ejemplar::where('libro_id', $data['libro_id'])
                 ->where('estado', 'disponible')
                 ->first();
@@ -143,9 +133,7 @@ class ReservaController extends Controller
     }
 
     // PATCH /reservas/{id}/confirmar
-    // El bibliotecario confirma la entrega del libro reservado -> se convierte en préstamo
-    // (delegar la creación real del préstamo a PrestamoController desde el frontend,
-    // acá solo se actualiza el estado de la reserva).
+    // Marca la reserva como entregada (el préstamo se crea aparte).
     public function confirmar(Request $request, Reserva $reserva)
     {
         if ($reserva->estado !== 'pendiente_retiro') {

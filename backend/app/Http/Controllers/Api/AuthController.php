@@ -14,8 +14,7 @@ use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
-    // Contraseña segura: 8+ caracteres, mayúscula, minúscula y número.
-    // (mismas reglas que muestra el verificador del frontend)
+    // 8+ caracteres, mayúscula, minúscula y número (igual que en el frontend)
     private const REGEX_PASSWORD = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/';
 
     private const MENSAJES = [
@@ -25,6 +24,8 @@ class AuthController extends Controller
         'email.email' => 'El correo electrónico no es válido.',
         'email.unique' => 'Ya existe una cuenta con ese correo electrónico.',
         'cedula.unique' => 'Ya existe un socio con esa cédula.',
+        'telefono.regex' => 'El teléfono solo puede tener números (y +, -, espacios o paréntesis).',
+        'acepta_terminos.accepted' => 'Para crear la cuenta tenés que aceptar los Términos y Condiciones y la Política de Privacidad.',
     ];
 
     // POST /auth/login
@@ -45,7 +46,6 @@ class AuthController extends Controller
             return response()->json(['message' => 'Usuario inactivo.'], 403);
         }
 
-        // Requiere laravel/sanctum instalado (php artisan install:api)
         $token = $usuario->createToken('api-token')->plainTextToken;
 
         return response()->json([
@@ -61,31 +61,20 @@ class AuthController extends Controller
     }
 
     // POST /auth/registro
-    // Registro público: siempre crea una cuenta con rol "socio" y tipo
-    // "particular" (para administrador/bibliotecario, las cuentas se crean
-    // desde UsuarioController/BibliotecarioController, no acá).
-    //
-    // El registro pide los datos del carnet de socio: nombres, apellidos,
-    // cédula (que además es el código de barras), email y contraseña;
-    // teléfono y dirección son opcionales. El carnet vale hasta fin de año.
-    //
-    // Antes se podía declarar acá mismo "pertenezco a un centro
-    // educativo", pero esa declaración no se verificaba: cualquiera podía
-    // tildarla al crear la cuenta. Para que el tipo de socio realmente
-    // signifique algo, ahora toda cuenta nueva arranca como "particular" y
-    // el pase a centro educativo (verificado) solo lo puede hacer un
-    // bibliotecario a mano, viendo la credencial real, desde la pestaña de
-    // socios (ver SocioController::verificarCentroEducativo).
+    // Registro público: crea un usuario con rol "socio" y su carnet (tipo
+    // particular). El pase a centro educativo lo hace un bibliotecario.
+    // Teléfono y dirección son opcionales; el carnet vale hasta fin de año.
     public function registro(Request $request)
     {
         $data = $request->validate([
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['required', 'string', 'max:150'],
             'cedula' => ['required', 'string', 'max:30', 'unique:socios,cedula'],
-            'telefono' => ['nullable', 'string', 'max:50'],
+            'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
             'direccion' => ['nullable', 'string'],
             'email' => ['required', 'email', 'max:150', 'unique:usuarios,email'],
             'password' => ['required', 'string', 'min:8', 'regex:'.self::REGEX_PASSWORD],
+            'acepta_terminos' => ['accepted'],
         ], self::MENSAJES);
 
         $usuarioYSocio = DB::transaction(function () use ($data, $request) {
@@ -136,10 +125,8 @@ class AuthController extends Controller
     }
 
     // PUT /auth/perfil
-    // Cada usuario logueado edita sus propios datos ("Mi cuenta"). Si es
-    // socio, también se actualizan los datos del carnet (apellido, cédula,
-    // teléfono, dirección). La contraseña solo cambia si se envía una nueva,
-    // y en ese caso se exige la actual.
+    // "Mi cuenta": cada usuario edita sus datos. Para cambiar la contraseña
+    // se pide la actual.
     public function actualizarPerfil(Request $request)
     {
         $usuario = $request->user()->load('rol', 'socio');
@@ -155,7 +142,7 @@ class AuthController extends Controller
             $reglas += [
                 'apellido' => ['required', 'string', 'max:150'],
                 'cedula' => ['required', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
-                'telefono' => ['nullable', 'string', 'max:50'],
+                'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
                 'direccion' => ['nullable', 'string'],
             ];
         }

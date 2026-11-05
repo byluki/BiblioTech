@@ -1,5 +1,5 @@
 services:
-  # ---------- BACKEND (Laravel API) ----------
+  # API Laravel (PHP-FPM)
   app:
     build:
       context: ./backend
@@ -8,24 +8,27 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     container_name: bibliotech-app
+    restart: unless-stopped
     volumes:
       - ./backend:/var/www
     environment:
       - DB_CONNECTION=mysql
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_DATABASE=biblioteca_barrial
-      - DB_USERNAME=biblioteca
-      - DB_PASSWORD=secret
+      - DB_DATABASE=${DB_DATABASE:-biblioteca_barrial}
+      - DB_USERNAME=${DB_USERNAME:-biblioteca}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
     depends_on:
       db:
         condition: service_healthy
     networks:
       - bibliotech
 
+  # Nginx delante de la API (puerto 8000)
   api:
     image: nginx:alpine
     container_name: bibliotech-api
+    restart: unless-stopped
     ports:
       - "8000:80"
     volumes:
@@ -36,50 +39,50 @@ services:
     networks:
       - bibliotech
 
-  # ---------- FRONTEND (estático) ----------
+  # Frontend estático (puerto 3000)
   frontend:
     build:
       context: ./frontend
     container_name: bibliotech-frontend
+    restart: unless-stopped
     ports:
       - "3000:80"
     volumes:
-      # Para desarrollo: los cambios en ./frontend se ven sin reconstruir
       - ./frontend:/usr/share/nginx/html:ro
     networks:
       - bibliotech
 
-  # ---------- BASE DE DATOS ----------
+  # Base de datos. El puerto solo se abre en la propia máquina (127.0.0.1)
   db:
     image: mysql:8.0
     container_name: bibliotech-db
     restart: unless-stopped
     environment:
-      - MYSQL_DATABASE=biblioteca_barrial
-      - MYSQL_USER=biblioteca
-      - MYSQL_PASSWORD=secret
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=${DB_DATABASE:-biblioteca_barrial}
+      - MYSQL_USER=${DB_USERNAME:-biblioteca}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-secret}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 10
     networks:
       - bibliotech
 
+  # phpMyAdmin, solo accesible desde la propia máquina (127.0.0.1:8080)
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: bibliotech-phpmyadmin
+    restart: unless-stopped
     environment:
       - PMA_HOST=db
-      - PMA_USER=root
-      - PMA_PASSWORD=root
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - db
     networks:

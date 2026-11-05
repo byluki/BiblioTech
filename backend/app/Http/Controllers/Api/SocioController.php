@@ -23,8 +23,7 @@ class SocioController extends Controller
                     ->orWhere('cedula', 'like', "%{$buscar}%")
                     ->orWhere('numero_socio', 'like', "%{$buscar}%");
 
-                // También permitir búsquedas por nombre completo, por ejemplo
-                // "Lucas Cabrera" cuando nombre/apellido están separados.
+                // nombre completo, ej. "Lucas Cabrera"
                 $partes = preg_split('/\s+/', trim($buscar), 2);
                 if (count($partes) === 2) {
                     $q->orWhere(function ($q2) use ($partes) {
@@ -35,16 +34,14 @@ class SocioController extends Controller
             });
         }
 
-        return $query->paginate($request->integer('per_page', 20));
+        return $query->orderBy('apellido')->orderBy('nombre')->paginate($request->integer('per_page', 20));
     }
 
     // POST /socios
     public function store(Request $request)
     {
         $data = $request->validate([
-            // Estos campos siguen siendo aceptados cuando el administrador los
-            // proporciona, pero ahora son opcionales para los formularios
-            // rápidos de alta/reserva del frontend.
+            // opcionales: si no vienen, se completan abajo
             'numero_socio' => ['sometimes', 'string', 'unique:socios,numero_socio'],
             'valido_hasta' => ['sometimes', 'nullable', 'date'],
             'foto' => ['nullable', 'string'],
@@ -52,7 +49,7 @@ class SocioController extends Controller
             'apellido' => ['sometimes', 'string', 'max:150'],
             'cedula' => ['sometimes', 'string', 'max:30', 'unique:socios,cedula'],
             'direccion' => ['nullable', 'string'],
-            'telefono' => ['nullable', 'string'],
+            'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
             'email' => ['required', 'email', 'max:150'],
             'fecha_alta' => ['sometimes', 'date'],
             'tipo' => ['required', 'in:particular,centro_educativo'],
@@ -60,12 +57,10 @@ class SocioController extends Controller
         ], [
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico no es válido.',
+            'telefono.regex' => 'El teléfono solo puede tener números (y +, -, espacios o paréntesis).',
         ]);
 
-        // El frontend puede crear un socio desde "Reservar" o "Prestar"
-        // enviando solamente nombre + tipo. La tabla exige numero_socio,
-        // apellido, cedula y fecha_alta, por lo que completamos esos datos
-        // automáticamente cuando no vienen informados.
+        // datos que la tabla exige y no vinieron en el pedido
         $partesNombre = preg_split('/\s+/', trim($data['nombre']), 2);
         $data['apellido'] = $data['apellido'] ?? ($partesNombre[1] ?? '-');
         $data['cedula'] = $data['cedula'] ?? 'PENDIENTE-' . Str::uuid();
@@ -98,17 +93,17 @@ class SocioController extends Controller
             'apellido' => ['sometimes', 'string', 'max:150'],
             'cedula' => ['sometimes', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
             'direccion' => ['nullable', 'string'],
-            'telefono' => ['nullable', 'string'],
+            'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
             'email' => ['sometimes', 'required', 'email', 'max:150'],
             'valido_hasta' => ['sometimes', 'nullable', 'date'],
             'tipo' => ['sometimes', 'in:particular,centro_educativo'],
         ], [
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico no es válido.',
+            'telefono.regex' => 'El teléfono solo puede tener números (y +, -, espacios o paréntesis).',
         ]);
 
-        // si la cédula pendiente se reemplaza por una real, el código de
-        // barras (numero_socio) pasa a ser la cédula
+        // al cargar la cédula real, pasa a ser el código de barras
         if (isset($data['cedula']) && $socio->cedulaPendiente() && !str_starts_with($data['cedula'], 'PENDIENTE-')) {
             $data['numero_socio'] = $data['cedula'];
         }
@@ -151,12 +146,8 @@ class SocioController extends Controller
     }
 
     // PATCH /socios/{id}/verificar-educativo
-    // Un bibliotecario o administrador confirma "a mano" (viendo la
-    // credencial real del centro educativo) que el socio pertenece de
-    // verdad a un centro educativo. Hasta que esto pase, el socio -aunque
-    // se haya declarado centro educativo al registrarse- opera igual que
-    // un particular (ver Socio::esCentroEducativoVerificado() y
-    // ReservaController::store()).
+    // Un bibliotecario confirma, con la credencial, que el socio es un
+    // centro educativo. Sin esa verificación reserva como particular.
     public function verificarCentroEducativo(Request $request, Socio $socio)
     {
         $data = $request->validate([
@@ -167,9 +158,7 @@ class SocioController extends Controller
 
         $socio->update([
             'verificado_centro_educativo' => $verificado,
-            // si se confirma la verificación, dejamos el tipo en
-            // centro_educativo (por si no había quedado declarado así);
-            // si se revierte, no tocamos el tipo, solo la marca de verificado
+            // al verificar queda como centro_educativo; al quitarla no se toca el tipo
             'tipo' => $verificado ? 'centro_educativo' : $socio->tipo,
         ]);
 

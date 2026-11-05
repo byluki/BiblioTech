@@ -1,10 +1,7 @@
-# =============================================================================
-# Dockerfile - BiblioTech (Laravel API)
-# =============================================================================
+# API Laravel sobre PHP-FPM
 
-# ---- Etapa 1: instalar dependencias PHP con Composer -----------------------
+# Etapa 1: dependencias con Composer
 FROM composer:2 AS vendor
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install \
@@ -14,10 +11,9 @@ RUN composer install \
     --prefer-dist \
     --optimize-autoloader
 
-# ---- Etapa 2: imagen final PHP-FPM ------------------------------------------
+# Etapa 2: imagen final
 FROM php:8.4-fpm-alpine
 
-# Extensiones que Laravel + MySQL necesitan
 RUN apk add --no-cache \
         libzip-dev \
         libpng-dev \
@@ -31,12 +27,9 @@ RUN apk add --no-cache \
         intl \
         opcache
 
-# OPcache activado: PHP no recompila los archivos en cada petición
 RUN { echo 'opcache.enable=1'; echo 'opcache.memory_consumption=128'; echo 'opcache.validate_timestamps=1'; echo 'opcache.revalidate_freq=2'; } > /usr/local/etc/php/conf.d/opcache.ini
 
-# Usuario no-root con el mismo UID/GID que tu usuario de host (WSL/Linux),
-# para que los archivos creados dentro del contenedor te pertenezcan a vos
-# y no a root. Por defecto usa 1000:1000 (el UID/GID más común en WSL).
+# www-data con el mismo UID/GID que el usuario del sistema
 ARG UID=1000
 ARG GID=1000
 RUN deluser www-data 2>/dev/null || true \
@@ -49,7 +42,7 @@ WORKDIR /var/www
 COPY --from=vendor /app/vendor ./vendor
 COPY . .
 
-RUN cp .env.example .env 2>/dev/null || true \
+RUN cp -n .env.example .env 2>/dev/null || true \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs storage/app/public bootstrap/cache \
     && chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache

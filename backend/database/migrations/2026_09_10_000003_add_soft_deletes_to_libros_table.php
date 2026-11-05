@@ -9,11 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('libros', function (Blueprint $table) {
-            // Baja lógica: un libro con ejemplares que tienen historial de
-            // préstamos no se puede borrar físicamente (la FK de `prestamos`
-            // hacia `ejemplares` lo impide, ver LibroController::destroy).
-            // Con esto, "eliminar" un libro con historial lo oculta del
-            // catálogo sin perder los préstamos ya registrados.
+            // baja lógica: oculta el libro sin perder su historial de préstamos
             $table->softDeletes();
         });
     }

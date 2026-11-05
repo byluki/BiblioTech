@@ -6,10 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Rol extends Model
 {
-    // Sin esto, Eloquent adivina el nombre de tabla en inglés a partir de
-    // la clase ("Rol" -> "rols"), pero la migración creó la tabla como
-    // "roles" (create_roles_table). Sin esta línea, tanto el login como
-    // el registro fallan con "Table 'rols' doesn't exist".
+    // la tabla es "roles"
     protected $table = 'roles';
 
     protected $fillable = ['nombre'];
