@@ -2,6 +2,8 @@
 
 <img src="frontend/images/logo.png" alt="Logo BiblioTech" width="90" height="90">
 
+📖 [Guia de instalacion en Ubuntu Server](GUIA_INSTALACION_UBUNTU.md)
+
 # BiblioTech
 
 Sistema web de la Biblioteca Central de San José: catálogo, reservas, préstamos, multas y reportes.
