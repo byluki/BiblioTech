@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca Central</title>
+
+  <meta name="description" content="Catálogo de la Biblioteca Central de San José: buscá, reservá y pedí libros prestados.">
+  <meta name="theme-color" content="#e2661d">
+  <link rel="icon" href="Bibliotech.ico">
+
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome: núcleo e íconos "solid" -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <!-- calendario (flatpickr) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/es.min.js" defer></script>
+  <script src="config.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <!-- header principal: logo a la izquierda, acciones a la derecha -->
+  <header class="site-header">
+    <div class="container-fluid contenedor-ancho py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div class="brand-logo">
+        <div class="brand-logo-icon"><img src="/images/logo.png" alt="Logo de la Biblioteca" width="44" height="44" fetchpriority="high"></div>
+        <div>
+          <h1>Biblioteca Central</h1>
+          <p class="header-sub">San José</p>
+        </div>
+      </div>
+
+      <div class="header-actions" id="header-auth-invitado">
+        <button type="button" class="header-icon-btn btn-abrir-carrito" data-bs-toggle="offcanvas" data-bs-target="#carrito-offcanvas" aria-controls="carrito-offcanvas" title="Carrito">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="header-icon-badge contador-carrito d-none">0</span>
+        </button>
+        <button type="button" class="header-icon-btn" id="header-btn-catalogo-invitado" title="Libros en catálogo">
+          <i class="fa-solid fa-book"></i>
+          <span class="header-icon-badge" id="contador-libros-header">0</span>
+        </button>
+        <button type="button" class="header-icon-btn header-btn-menu-toggle" id="header-btn-menu-cuenta" data-bs-toggle="offcanvas" data-bs-target="#menu-offcanvas" aria-controls="menu-offcanvas" title="Menú">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+      <div class="header-actions d-none" id="header-auth-sesion">
+        <button type="button" class="header-icon-btn btn-abrir-carrito" data-requiere-rol="socio" data-bs-toggle="offcanvas" data-bs-target="#carrito-offcanvas" aria-controls="carrito-offcanvas" title="Carrito">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="header-icon-badge contador-carrito d-none">0</span>
+        </button>
+        <button type="button" class="header-icon-btn" id="header-btn-catalogo-sesion" data-requiere-rol="gestion" title="Ir al catálogo">
+          <i class="fa-solid fa-book"></i>
+          <span class="header-icon-badge" id="contador-libros-header-sesion">0</span>
+        </button>
+        <div class="dropdown" id="menu-mis-reservas" data-requiere-rol="socio">
+          <button type="button" class="header-icon-btn" id="header-btn-mis-reservas" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Mis reservas y préstamos">
+            <i class="fa-solid fa-bookmark"></i>
+            <span class="header-icon-badge d-none" id="contador-mis-reservas">0</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end p-2 menu-mis-reservas-lista" id="lista-mis-reservas-dropdown">
+            <li class="dropdown-header px-2">Mis reservas y préstamos</li>
+            <li id="mis-reservas-vacio" class="text-muted small px-2 py-2">No tenés reservas ni préstamos activos.</li>
+          </ul>
+        </div>
+        <button type="button" class="header-icon-btn header-btn-menu-toggle" id="header-btn-menu-sesion" data-requiere-rol="gestion" data-bs-toggle="offcanvas" data-bs-target="#menu-offcanvas" aria-controls="menu-offcanvas" title="Menú">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <!-- socio: botón de usuario con su foto, en lugar del menú -->
+        <div class="dropdown" id="menu-usuario" data-requiere-rol="socio">
+          <button type="button" class="btn-usuario" id="btn-usuario" data-bs-toggle="dropdown" aria-expanded="false" title="Mi cuenta">
+            <span class="avatar-usuario" id="header-avatar"></span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end menu-usuario-lista">
+            <li class="menu-usuario-cabecera"><span class="menu-usuario-nombre-socio" id="menu-usuario-nombre"></span><span class="menu-usuario-email" id="menu-usuario-email"></span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button type="button" class="dropdown-item" id="menu-usuario-cuenta"><i class="fa-solid fa-user me-2"></i>Mi cuenta</button></li>
+            <li><button type="button" class="dropdown-item" id="menu-usuario-prestamos"><i class="fa-solid fa-book me-2"></i>Mis libros prestados</button></li>
+            <li><button type="button" class="dropdown-item" id="menu-usuario-salir"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar sesión</button></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- menú lateral: cuenta y secciones -->
+  <div class="offcanvas offcanvas-end menu-offcanvas" tabindex="-1" id="menu-offcanvas" aria-labelledby="menu-offcanvas-label">
+    <div class="offcanvas-header">
+      <span class="menu-offcanvas-brand"><i class="fa-solid fa-book-open me-2"></i>Biblioteca Central</span>
+      <button type="button" class="menu-offcanvas-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+
+      <!-- bloque de cuenta: invitado -->
+      <div class="menu-auth-block" id="menu-auth-invitado">
+        <a href="#" class="btn btn-menu-cuenta" id="header-btn-login" data-bs-dismiss="offcanvas"><i class="fa-solid fa-right-to-bracket me-2"></i>Iniciar sesión</a>
+        <a href="#" class="btn btn-menu-cuenta btn-menu-cuenta-solid" id="header-btn-registro" data-bs-dismiss="offcanvas"><i class="fa-solid fa-user-plus me-2"></i>Crear cuenta</a>
+      </div>
+
+      <!-- bloque de cuenta: con sesión iniciada -->
+      <div class="menu-auth-block d-none" id="menu-auth-sesion">
+        <div class="menu-usuario-fila">
+          <span class="avatar-usuario" id="menu-avatar"></span>
+          <p class="menu-usuario-nombre mb-0" id="header-usuario-nombre"></p>
+        </div>
+        <a href="#" class="btn btn-menu-cuenta" id="header-btn-mi-cuenta" data-bs-dismiss="offcanvas"><i class="fa-solid fa-user me-2"></i>Mi cuenta</a>
+        <a href="#" class="btn btn-menu-cuenta" id="header-btn-logout" data-bs-dismiss="offcanvas"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar sesión</a>
+      </div>
+
+      <hr class="menu-offcanvas-divider">
+
+      <p class="menu-section-label">Menú</p>
+      <ul class="menu-nav-list" id="menu-nav-tabs" role="tablist">
+        <li>
+          <button class="menu-nav-link active" data-bs-toggle="pill" data-bs-target="#tab-catalogo" data-bs-dismiss="offcanvas" type="button" role="tab">
+            <i class="fa-solid fa-book me-2"></i>Catálogo
+          </button>
+        </li>
+        <li data-requiere-rol="gestion">
+          <button class="menu-nav-link" data-bs-toggle="pill" data-bs-target="#tab-contabilidad" data-bs-dismiss="offcanvas" type="button" role="tab">
+            <i class="fa-solid fa-clipboard-list me-2"></i>Contabilidad
+          </button>
+        </li>
+        <li data-requiere-rol="gestion">
+          <button class="menu-nav-link" data-bs-toggle="pill" data-bs-target="#tab-socios" data-bs-dismiss="offcanvas" type="button" role="tab">
+            <i class="fa-solid fa-users me-2"></i>Socios
+          </button>
+        </li>
+        <li data-requiere-rol="gestion">
+          <button class="menu-nav-link" data-bs-toggle="pill" data-bs-target="#tab-multas" data-bs-dismiss="offcanvas" type="button" role="tab">
+            <i class="fa-solid fa-money-bill-wave me-2"></i>Multas
+          </button>
+        </li>
+        <li data-requiere-rol="gestion">
+          <button class="menu-nav-link" id="menu-tab-btn-reportes" data-bs-toggle="pill" data-bs-target="#tab-reportes" data-bs-dismiss="offcanvas" type="button" role="tab">
+            <i class="fa-solid fa-chart-line me-2"></i>Reportes
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- carrito: reserva varios libros de una vez -->
+  <div class="offcanvas offcanvas-end carrito-offcanvas" tabindex="-1" id="carrito-offcanvas" aria-labelledby="carrito-titulo">
+    <div class="offcanvas-header">
+      <h2 class="carrito-titulo" id="carrito-titulo">Tu carrito</h2>
+      <button type="button" class="menu-offcanvas-close" data-bs-dismiss="offcanvas" aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+      <div id="carrito-mensaje" class="alert py-2 small d-none" role="status"></div>
+      <p id="carrito-vacio" class="carrito-vacio">Todavía no agregaste libros. Tocá “Agregar” en un libro disponible para sumarlo.</p>
+      <ul class="list-unstyled carrito-lista" id="carrito-lista"></ul>
+
+      <form id="carrito-form" class="carrito-form d-none" novalidate>
+        <div class="mb-3 d-none">
+          <label for="carrito-nombre" class="form-label">Nombre del solicitante</label>
+          <input type="text" id="carrito-nombre" class="form-control" list="datalist-socios" autocomplete="off">
+        </div>
+        <div class="mb-3 d-none">
+          <label for="carrito-tipo" class="form-label">Tipo de usuario</label>
+          <select id="carrito-tipo" class="form-select">
+            <option value="Particular">Particular</option>
+            <option value="Centro educativo">Centro educativo</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="carrito-fecha" class="form-label">¿Para cuándo los querés retirar?</label>
+          <input type="text" id="carrito-fecha" class="form-control" data-calendario placeholder="Elegí una fecha" required>
+        </div>
+        <button type="submit" class="btn btn-brand w-100" id="carrito-confirmar">Reservar</button>
+        <button type="button" class="btn btn-link w-100 mt-2 carrito-vaciar" id="carrito-vaciar">Vaciar carrito</button>
+      </form>
+    </div>
+  </div>
+
+  <main class="container-fluid contenedor-ancho my-5">
+
+    <div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-catalogo" role="tabpanel">
+
+    <!-- inicio: buscador -->
+    <!-- administrador y bibliotecario: reservas para entregar -->
+    <section class="card panel panel-reservas-inicio d-none" id="panel-reservas-inicio" data-requiere-rol="gestion" aria-labelledby="titulo-reservas-inicio">
+      <div class="card-body p-4">
+        <div class="reservas-inicio-cabecera">
+          <h2 class="panel-title mb-0" id="titulo-reservas-inicio">Reservas<span class="contador" id="contador-reservas-inicio"></span></h2>
+          <p class="reservas-inicio-resumen mb-0" id="resumen-reservas-inicio"></p>
+        </div>
+        <div class="tabla-reservas" role="table" aria-labelledby="titulo-reservas-inicio">
+          <div class="tabla-reservas-fila tabla-reservas-encabezado" role="row">
+            <span role="columnheader">Socio</span>
+            <span role="columnheader">Libro</span>
+            <span role="columnheader">Reservado</span>
+            <span role="columnheader">Retirar hasta</span>
+            <span role="columnheader">Estado</span>
+            <span role="columnheader"><span class="visually-hidden">Acciones</span></span>
+          </div>
+          <div id="lista-reservas-inicio" role="rowgroup"></div>
+        </div>
+        <p class="text-muted text-center py-4 mb-0 d-none" id="vacio-reservas-inicio">No hay reservas pendientes.</p>
+      </div>
+    </section>
+
+    <section class="inicio" data-requiere-rol="socio" aria-labelledby="titulo-inicio">
+      <h2 class="inicio-titulo" id="titulo-inicio">¿Qué querés leer hoy?</h2>
+      <p class="inicio-texto">Buscá en el catálogo de la Biblioteca Central, reservá desde acá y retirá el libro en el mostrador.</p>
+      <form class="inicio-buscador" id="form-buscar-inicio" role="search">
+        <label class="visually-hidden" for="buscar-inicio">Buscar por título o autor</label>
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" id="buscar-inicio" placeholder="Título o autor" autocomplete="off">
+        <button type="submit" class="btn btn-brand">Buscar</button>
+      </form>
+      <div class="inicio-categorias" id="inicio-categorias" role="group" aria-label="Ver libros por categoría"></div>
+    </section>
+
+    <!-- novedades -->
+    <section class="novedades d-none" id="seccion-novedades" aria-labelledby="titulo-novedades">
+      <div class="novedades-cabecera">
+        <h2 class="novedades-titulo" id="titulo-novedades">Llegaron hace poco</h2>
+        <div class="novedades-flechas">
+          <button type="button" class="carrusel-flecha carrusel-prev" id="novedades-prev" aria-label="Ver libros anteriores"><i class="fa-solid fa-chevron-left"></i></button>
+          <button type="button" class="carrusel-flecha carrusel-next" id="novedades-next" aria-label="Ver más libros"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="estante">
+        <ul class="list-unstyled lista-novedades" id="lista-novedades"></ul>
+      </div>
+    </section>
+
+    <div class="row g-4">
+
+      <!-- Listado -->
+      <div class="col-12" id="col-listado-libros">
+        <section class="card panel panel-plano h-100">
+          <div class="card-body p-4">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+              <h2 class="panel-title mb-0">Catálogo<span id="contador-libros" class="contador" aria-live="off"></span></h2>
+              <div class="d-flex align-items-center gap-2">
+                <!-- solo administrador -->
+                <button type="button" class="btn btn-brand btn-agregar-libro" id="btn-abrir-agregar-libro" data-requiere-rol="administrador" data-bs-toggle="modal" data-bs-target="#modal-agregar-libro" title="Agregar un libro">
+                  <i class="fa-solid fa-plus"></i><span class="d-none d-sm-inline ms-2">Agregar libro</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-4">
+              <div class="col-sm-7">
+                <div class="input-group">
+                  <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                  <input type="text" id="buscar" class="form-control" placeholder="Buscar por título o autor…">
+                </div>
+              </div>
+              <div class="col-sm-5">
+                <select id="filtro-categoria" class="form-select">
+                  <option value="Todas">Todas las categorías</option>
+                  <option value="Novela">Novela</option>
+                  <option value="Ciencia ficción">Ciencia ficción</option>
+                  <option value="Infantil">Infantil</option>
+                  <option value="Poesía">Poesía</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+            </div>
+
+            <ul class="list-unstyled lista-libros" id="lista-libros"></ul>
+            <nav class="paginador" id="paginador-libros" aria-label="Páginas del catálogo"></nav>
+
+            <div id="estado-vacio" class="text-center text-muted py-5 d-none">
+              <i class="fa-solid fa-book-open fa-2x mb-3"></i>
+              <p class="mb-0">No hay libros que coincidan con la búsqueda.</p>
+            </div>
+
+          </div>
+        </section>
+      </div>
+
+    </div>
+    </div>
+
+    <!-- Contabilidad: reservas activas + historial de préstamos -->
+    <div class="tab-pane fade" id="tab-contabilidad" role="tabpanel" data-requiere-rol="gestion">
+
+      <section class="card panel mb-4">
+        <div class="card-body p-4">
+          <h2 class="panel-title mb-3"><i class="fa-solid fa-bookmark me-2"></i>Reservas activas</h2>
+          <ul class="list-unstyled lista-reservas" id="lista-reservas"></ul>
+          <div id="estado-vacio-reservas" class="text-center text-muted py-4 d-none">
+            <p class="mb-0">No hay reservas activas.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <div class="card-body p-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h2 class="panel-title mb-0"><i class="fa-solid fa-right-left me-2"></i>Préstamos y devoluciones</h2>
+            <select id="filtro-prestamos" class="form-select w-auto">
+              <option value="Todos">Todos</option>
+              <option value="En curso">En curso</option>
+              <option value="Devueltos">Devueltos</option>
+            </select>
+          </div>
+          <ul class="list-unstyled lista-prestamos" id="lista-prestamos"></ul>
+          <div id="estado-vacio-prestamos" class="text-center text-muted py-4 d-none">
+            <p class="mb-0">No hay préstamos que coincidan.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Socios -->
+    <div class="tab-pane fade" id="tab-socios" role="tabpanel" data-requiere-rol="gestion">
+      <div class="row g-4">
+
+        <div class="col-lg-5">
+          <section class="card panel h-100">
+            <div class="card-body p-4">
+              <h2 class="panel-title"><i class="fa-solid fa-user-plus me-2"></i>Registrar socio</h2>
+              <form id="form-socio" class="mt-3" novalidate>
+                <input type="hidden" id="socio-id">
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label for="socio-nombre" class="form-label">Nombres</label>
+                    <input type="text" id="socio-nombre" class="form-control" placeholder="Ej: José" required>
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="socio-apellido" class="form-label">Apellidos</label>
+                    <input type="text" id="socio-apellido" class="form-control" placeholder="Ej: Pérez" required>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="socio-cedula" class="form-label">N.º de cédula</label>
+                  <input type="text" id="socio-cedula" class="form-control" placeholder="Ej: 6171717" inputmode="numeric" required>
+                </div>
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6">
+                    <label for="socio-telefono" class="form-label">Teléfono</label>
+                    <input type="tel" id="socio-telefono" class="form-control campo-telefono" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="Ej: 099 123 456">
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="socio-email" class="form-label">Correo electrónico</label>
+                    <input type="email" id="socio-email" class="form-control" placeholder="nombre@correo.com" required>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="socio-direccion" class="form-label">Dirección</label>
+                  <input type="text" id="socio-direccion" class="form-control" placeholder="Opcional">
+                </div>
+                <div class="row g-3 mb-4">
+                  <div class="col-sm-6">
+                    <label for="socio-valido-hasta" class="form-label">Carnet válido hasta</label>
+                    <input type="text" id="socio-valido-hasta" class="form-control" data-calendario placeholder="Fin de año si lo dejás vacío">
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="socio-tipo" class="form-label">Tipo de usuario</label>
+                    <select id="socio-tipo" class="form-select">
+                      <option value="Particular">Particular</option>
+                      <option value="Centro educativo">Centro educativo</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-brand w-100" id="socio-guardar">
+                  <i class="fa-solid fa-user-plus me-2"></i>Registrar socio
+                </button>
+                <button type="button" class="btn btn-outline-secondary w-100 mt-2 d-none" id="socio-cancelar-edicion">Cancelar edición</button>
+              </form>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-lg-7">
+          <section class="card panel h-100">
+            <div class="card-body p-4">
+              <h2 class="panel-title mb-3"><i class="fa-solid fa-users me-2"></i>Socios registrados</h2>
+              <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="search" class="form-control" id="buscador-socios" placeholder="Buscar por cédula o nombre" autocomplete="off" aria-label="Buscar socio por cédula o nombre">
+              </div>
+              <ul class="list-unstyled lista-reservas" id="lista-socios"></ul>
+              <nav class="paginador" id="paginador-socios" aria-label="Páginas de socios"></nav>
+              <div id="estado-vacio-socios" class="text-center text-muted py-5 d-none">
+                <i class="fa-solid fa-users fa-2x mb-3"></i>
+                <p class="mb-0" id="texto-vacio-socios">Todavía no hay socios registrados.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+      </div>
+
+      <datalist id="datalist-socios"></datalist>
+    </div>
+
+    <!-- Multas -->
+    <div class="tab-pane fade" id="tab-multas" role="tabpanel" data-requiere-rol="gestion">
+      <div class="row g-4">
+
+        <div class="col-lg-5">
+          <section class="card panel h-100">
+            <div class="card-body p-4">
+              <h2 class="panel-title"><i class="fa-solid fa-circle-dollar-to-slot me-2"></i>Registrar multa</h2>
+              <form id="form-multa" class="mt-3" novalidate>
+                <div class="mb-3">
+                  <label for="multa-socio" class="form-label">Socio</label>
+                  <input type="text" id="multa-socio" class="form-control" list="datalist-socios" placeholder="Nombre del socio" required>
+                </div>
+                <div class="mb-3">
+                  <label for="multa-motivo" class="form-label">Motivo</label>
+                  <select id="multa-motivo" class="form-select">
+                    <option value="Atraso en devolución">Atraso en devolución</option>
+                    <option value="Libro perdido">Libro perdido</option>
+                    <option value="Libro deteriorado">Libro deteriorado</option>
+                  </select>
+                </div>
+                <div class="mb-4">
+                  <label for="multa-monto" class="form-label">Monto ($)</label>
+                  <input type="number" id="multa-monto" class="form-control" min="1" max="10000" step="1" placeholder="0" required>
+                  <div class="form-text">Hasta $ 10.000.</div>
+                </div>
+                <button type="submit" class="btn btn-brand w-100">
+                  <i class="fa-solid fa-circle-dollar-to-slot me-2"></i>Registrar multa
+                </button>
+              </form>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-lg-7">
+          <section class="card panel h-100">
+            <div class="card-body p-4">
+              <h2 class="panel-title mb-3"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Multas registradas</h2>
+              <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="search" class="form-control" id="buscador-multas" placeholder="Buscar por socio (nombre o cédula)" autocomplete="off" aria-label="Buscar multas por socio">
+              </div>
+              <div id="resumen-multas" class="resumen-multas d-none" aria-live="polite"></div>
+              <ul class="list-unstyled lista-reservas" id="lista-multas"></ul>
+              <div id="estado-vacio-multas" class="text-center text-muted py-5 d-none">
+                <i class="fa-solid fa-circle-check fa-2x mb-3"></i>
+                <p class="mb-0">No hay multas registradas.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Reportes -->
+    <div class="tab-pane fade" id="tab-reportes" role="tabpanel" data-requiere-rol="gestion">
+
+      <div class="row g-3 mb-4" id="reportes-stats"></div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <section class="card panel h-100">
+            <div class="card-body p-4">
+              <h2 class="panel-title mb-3"><i class="fa-solid fa-ranking-star me-2"></i>Libros más prestados</h2>
+              <ul class="list-unstyled lista-reservas" id="lista-top-libros"></ul>
+              <div id="estado-vacio-top" class="text-center text-muted py-4 d-none">
+                <p class="mb-0">Todavía no hay préstamos registrados.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-lg-6">
+          <section class="card panel h-100">
+            <div class="card-body p-4">
+              <h2 class="panel-title mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i>Préstamos atrasados</h2>
+              <ul class="list-unstyled lista-reservas" id="lista-notificaciones"></ul>
+              <div id="estado-vacio-notificaciones" class="text-center text-muted py-4 d-none">
+                <p class="mb-0">No hay préstamos atrasados.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <section class="card panel mt-4">
+        <div class="card-body p-4">
+          <h2 class="panel-title mb-3"><i class="fa-solid fa-clock-rotate-left me-2"></i>Historial de actividad</h2>
+          <div class="input-group mb-3">
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="search" class="form-control" id="buscador-historial" placeholder="Buscar por persona (nombre del socio o usuario)" autocomplete="off">
+          </div>
+          <div class="hist-filtros mb-3" id="filtros-historial" role="group" aria-label="Filtrar historial por categoría"></div>
+          <ul class="list-unstyled lista-reservas" id="lista-historial"></ul>
+          <div id="estado-vacio-historial" class="text-center text-muted py-4 d-none">
+            <p class="mb-0">Todavía no hay actividad registrada.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <footer class="site-footer text-center py-4">
+    <p class="mb-0">&copy; 2026 Biblioteca Central, San José</p>
+  </footer>
+
+  <!-- Modal editar libro -->
+  <div class="modal fade" id="modal-editar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-editar" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa-solid fa-pen me-2"></i>Editar libro</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editar-id">
+            <div class="mb-3">
+              <label for="editar-titulo" class="form-label">Título</label>
+              <div class="d-flex gap-3 align-items-start">
+                <div class="portada-preview-wrap flex-shrink-0">
+                  <img id="editar-preview-img" class="portada-preview d-none" alt="Portada del libro">
+                  <div id="editar-preview-placeholder" class="portada-preview portada-placeholder">
+                    <i class="fa-solid fa-book"></i>
+                  </div>
+                  <div id="editar-preview-loading" class="portada-preview portada-placeholder d-none">
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                  </div>
+                </div>
+                <input type="text" id="editar-titulo" class="form-control" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="editar-autor" class="form-label">Autor</label>
+              <input type="text" id="editar-autor" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="editar-codigo-barras" class="form-label">Código de barras / ISBN</label>
+              <input type="text" id="editar-codigo-barras" class="form-control" placeholder="Escaneá o escribí el ISBN">
+            </div>
+            <div class="mb-3">
+              <label for="editar-copias" class="form-label">Cantidad de copias</label>
+              <input type="number" id="editar-copias" class="form-control campo-copias" min="1" max="200" step="1" inputmode="numeric">
+              <div class="form-text" id="editar-copias-ayuda"></div>
+            </div>
+            <div class="mb-3">
+              <label for="editar-imagen-local" class="form-label">Imagen de portada (opcional)</label>
+              <input type="file" id="editar-imagen-local" class="form-control" accept="image/*">
+            </div>
+            <div class="mb-2">
+              <label for="editar-categoria" class="form-label">Categoría</label>
+              <select id="editar-categoria" class="form-select">
+                <option value="Novela">Novela</option>
+                <option value="Ciencia ficción">Ciencia ficción</option>
+                <option value="Infantil">Infantil</option>
+                <option value="Poesía">Poesía</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="mb-2 d-none" id="grupo-editar-nueva-categoria">
+              <label for="editar-nueva-categoria" class="form-label">Nueva categoría</label>
+              <input type="text" id="editar-nueva-categoria" class="form-control" placeholder="Ej: Ensayo">
+              <div class="form-text">Si ya existe una categoría con ese nombre, se usa la existente en vez de crear una nueva.</div>
+            </div>
+            <div class="mt-3 mb-2">
+              <div class="d-flex justify-content-between align-items-end gap-2 mb-1">
+                <label for="editar-descripcion" class="form-label mb-0">Descripción <span class="text-muted small fw-normal">(opcional)</span></label>
+                <button type="button" class="btn btn-link btn-sm p-0 btn-traer-descripcion" data-para="editar-descripcion"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Traer de internet</button>
+              </div>
+              <textarea id="editar-descripcion" class="form-control campo-descripcion" rows="5" maxlength="2000" placeholder="De qué trata el libro, en pocas líneas. Se muestra en la ficha del libro."></textarea>
+              <div class="form-text d-flex justify-content-between gap-2"><span>Si la dejás vacía, la ficha busca una en Google Books u Open Library.</span><span class="contador-descripcion" data-para="editar-descripcion">0 / 2000</span></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">
+              <i class="fa-solid fa-check me-2"></i>Guardar cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal reservar libro -->
+  <div class="modal fade" id="modal-reservar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-reservar" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa-solid fa-bookmark me-2"></i>Reservar libro</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="reservar-libro-id">
+            <p class="mb-3">Libro: <strong id="reservar-libro-titulo"></strong></p>
+            <p id="reservar-como-socio-info" class="text-muted small mb-3 d-none">Vas a reservarlo con tu cuenta de socio.</p>
+            <div class="mb-3" id="grupo-reservar-nombre">
+              <label for="reservar-nombre" class="form-label">Nombre del solicitante</label>
+              <input type="text" id="reservar-nombre" class="form-control" list="datalist-socios" autocomplete="off" placeholder="Socio registrado">
+            </div>
+            <div class="mb-2" id="grupo-reservar-tipo">
+              <label for="reservar-tipo" class="form-label">Tipo de usuario</label>
+              <select id="reservar-tipo" class="form-select">
+                <option value="Particular">Particular</option>
+                <option value="Centro educativo">Centro educativo</option>
+              </select>
+              <div class="form-text">Los usuarios particulares (y los centros educativos que todavía no fueron verificados por un bibliotecario) pueden reservar varios libros, pero no más de un ejemplar del mismo. Un centro educativo ya verificado también puede reservar varios ejemplares del mismo libro.</div>
+            </div>
+            <div class="mb-2">
+              <label for="reservar-fecha" class="form-label">¿Para cuándo lo querés retirar?</label>
+              <input type="text" id="reservar-fecha" class="form-control" data-calendario placeholder="Elegí una fecha" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">
+              <i class="fa-solid fa-check me-2"></i>Confirmar reserva
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: mis libros prestados -->
+  <div class="modal fade" id="modal-mis-prestamos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-book me-2"></i>Mis libros prestados</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="list-unstyled lista-reservas" id="lista-modal-prestamos"></ul>
+          <div id="estado-vacio-modal-prestamos" class="text-center text-muted py-4 d-none">
+            <p class="mb-0">No tenés libros prestados en este momento.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal prestar libro -->
+  <div class="modal fade" id="modal-prestar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-prestar" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa-solid fa-right-from-bracket me-2"></i>Prestar libro</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="prestar-libro-id">
+            <input type="hidden" id="prestar-socio-id">
+            <input type="hidden" id="prestar-ejemplar-id">
+            <p class="mb-3">Libro: <strong id="prestar-libro-titulo"></strong></p>
+            <div class="mb-2">
+              <label for="prestar-cedula" class="form-label">Cédula de quien retira</label>
+              <input type="text" id="prestar-cedula" class="form-control" inputmode="numeric" maxlength="15" autocomplete="off" placeholder="Ej: 4123456-7" required>
+              <div class="socio-encontrado" id="prestar-socio-encontrado" aria-live="polite"></div>
+            </div>
+            <p class="text-muted small mb-0">Fecha de préstamo: <span id="prestar-fecha-hoy"></span></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">
+              <i class="fa-solid fa-check me-2"></i>Confirmar préstamo
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal iniciar sesión -->
+  <div class="modal fade" id="modal-login" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-login" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa-solid fa-right-to-bracket me-2"></i>Iniciar sesión</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="login-email" class="form-label">Correo electrónico</label>
+              <input type="email" id="login-email" class="form-control" placeholder="tu@correo.com" required>
+            </div>
+            <div class="mb-2">
+              <label for="login-password" class="form-label">Contraseña</label>
+              <input type="password" id="login-password" class="form-control" autocomplete="current-password" required>
+            </div>
+            <p class="mb-0 mt-3 small text-muted">
+              ¿No tenés cuenta?
+              <a href="#" id="link-ir-a-registro">Creá una acá</a>.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">
+              <i class="fa-solid fa-right-to-bracket me-2"></i>Iniciar sesión
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal crear cuenta -->
+  <div class="modal fade" id="modal-registro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-registro" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa-solid fa-user-plus me-2"></i>Crear cuenta</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="registro-nombre" class="form-label">Nombres</label>
+              <input type="text" id="registro-nombre" class="form-control" placeholder="Ej: José" required>
+            </div>
+            <div class="mb-3">
+              <label for="registro-apellido" class="form-label">Apellidos</label>
+              <input type="text" id="registro-apellido" class="form-control" placeholder="Ej: Pérez" required>
+            </div>
+            <div class="mb-3">
+              <label for="registro-cedula" class="form-label">N.º de cédula</label>
+              <input type="text" id="registro-cedula" class="form-control" placeholder="Ej: 6171717" inputmode="numeric" required>
+            </div>
+            <div class="mb-3">
+              <label for="registro-telefono" class="form-label">Teléfono <span class="text-muted small">(opcional)</span></label>
+              <input type="tel" id="registro-telefono" class="form-control campo-telefono" inputmode="tel" maxlength="20" autocomplete="tel">
+            </div>
+            <div class="mb-3">
+              <label for="registro-email" class="form-label">Correo electrónico</label>
+              <input type="email" id="registro-email" class="form-control" placeholder="tu@correo.com" required>
+            </div>
+            <div class="mb-3">
+              <label for="registro-password" class="form-label">Contraseña</label>
+              <input type="password" id="registro-password" class="form-control" placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password" required data-verificar="fuerza">
+            </div>
+            <div class="mb-2">
+              <label for="registro-password-confirmar" class="form-label">Confirmar contraseña</label>
+              <input type="password" id="registro-password-confirmar" class="form-control" placeholder="Repetí la contraseña" minlength="8" autocomplete="new-password" required data-verificar="igual:registro-password">
+            </div>
+            <div class="form-check mb-3 mt-1">
+              <input class="form-check-input" type="checkbox" id="registro-terminos" required>
+              <label class="form-check-label small" for="registro-terminos">
+                Leí y acepto los <a href="#" id="link-terminos">Términos y Condiciones y la Política de Privacidad</a>.
+              </label>
+            </div>
+            <p class="mb-0 small text-muted">
+              Tu cuenta se crea como usuario particular (varios libros, pero un solo ejemplar de cada uno). Si pertenecés a un
+              centro educativo, un bibliotecario puede verificarlo desde tu perfil para que puedas
+              reservar varios libros a la vez.
+            </p>
+            <p class="mb-0 mt-3 small text-muted">
+              ¿Ya tenés cuenta?
+              <a href="#" id="link-ir-a-login">Iniciá sesión</a>.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">
+              <i class="fa-solid fa-user-plus me-2"></i>Crear cuenta
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal agregar libro (solo administrador) -->
+  <div class="modal fade" id="modal-agregar-libro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-plus me-2"></i>Agregar un libro</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-libro" class="mt-3" novalidate>
+              <div class="mb-3">
+                <label for="titulo" class="form-label">Título</label>
+                <div class="d-flex gap-3 align-items-start">
+                  <div class="portada-preview-wrap flex-shrink-0">
+                    <img id="preview-portada-img" class="portada-preview d-none" alt="Portada del libro">
+                    <div id="preview-portada-placeholder" class="portada-preview portada-placeholder">
+                      <i class="fa-solid fa-book"></i>
+                    </div>
+                    <div id="preview-portada-loading" class="portada-preview portada-placeholder d-none">
+                      <span class="spinner-border spinner-border-sm" role="status"></span>
+                    </div>
+                  </div>
+                  <input type="text" id="titulo" class="form-control" placeholder="Ej: Cien años de soledad" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="codigo-barras" class="form-label">Código de barras / ISBN</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white"><i class="fa-solid fa-barcode"></i></span>
+                  <input type="text" id="codigo-barras" class="form-control" placeholder="Escaneá o escribí el ISBN">
+                  <button type="button" id="btn-buscar-isbn" class="btn btn-outline-secondary">Buscar</button>
+                </div>
+                <div class="form-text">Se guarda junto con el libro para poder identificarlo después.</div>
+              </div>
+              <div class="mb-3">
+                <label for="imagen-local" class="form-label">Imagen de portada (opcional)</label>
+                <input type="file" id="imagen-local" class="form-control" accept="image/*">
+                <div class="form-text">Si no subís una imagen, se busca una automáticamente por título/autor o código de barras.</div>
+              </div>
+              <div class="mb-3">
+                <label for="autor" class="form-label">Autor</label>
+                <input type="text" id="autor" class="form-control" placeholder="Ej: Gabriel García Márquez" required>
+              </div>
+              <div class="mb-3">
+                <label for="cantidad-copias" class="form-label">Cantidad de copias</label>
+                <input type="number" id="cantidad-copias" class="form-control campo-copias" min="1" max="200" step="1" value="1" inputmode="numeric" required>
+                <div class="form-text">Cuántos ejemplares físicos hay. Cada copia la puede reservar una persona distinta.</div>
+              </div>
+              <div class="mb-4">
+                <label for="categoria" class="form-label">Categoría</label>
+                <select id="categoria" class="form-select">
+                  <option value="Novela">Novela</option>
+                  <option value="Ciencia ficción">Ciencia ficción</option>
+                  <option value="Infantil">Infantil</option>
+                  <option value="Poesía">Poesía</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="mb-4 d-none" id="grupo-nueva-categoria">
+                <label for="nueva-categoria" class="form-label">Nueva categoría</label>
+                <input type="text" id="nueva-categoria" class="form-control" placeholder="Ej: Ensayo">
+                <div class="form-text">Si ya existe una categoría con ese nombre, se usa la existente en vez de crear una nueva.</div>
+              </div>
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-end gap-2 mb-1">
+                <label for="descripcion" class="form-label mb-0">Descripción <span class="text-muted small fw-normal">(opcional)</span></label>
+                <button type="button" class="btn btn-link btn-sm p-0 btn-traer-descripcion" data-para="descripcion"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Traer de internet</button>
+              </div>
+              <textarea id="descripcion" class="form-control campo-descripcion" rows="5" maxlength="2000" placeholder="De qué trata el libro, en pocas líneas. Se muestra en la ficha del libro."></textarea>
+              <div class="form-text d-flex justify-content-between gap-2"><span>Si la dejás vacía, la ficha busca una en Google Books u Open Library.</span><span class="contador-descripcion" data-para="descripcion">0 / 2000</span></div>
+            </div>
+              <button type="submit" class="btn btn-brand w-100" id="btn-guardar-libro">
+                <i class="fa-solid fa-book-medical me-2"></i>Agregar libro
+              </button>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal mi cuenta -->
+  <div class="modal fade" id="modal-mi-cuenta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="form-mi-cuenta" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa-solid fa-user me-2"></i>Mi cuenta</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <span class="avatar-usuario avatar-grande" id="mi-cuenta-avatar"></span>
+              <div>
+                <input type="file" id="mi-cuenta-foto" accept="image/*" class="d-none">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="mi-cuenta-elegir-foto"><i class="fa-solid fa-image me-1"></i>Elegir foto</button>
+                <button type="button" class="btn btn-outline-danger btn-sm d-none" id="mi-cuenta-quitar-foto"><i class="fa-solid fa-trash me-1"></i>Quitar</button>
+                <div class="form-text">La foto se guarda solo en este navegador.</div>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-sm-6">
+                <label for="mi-cuenta-nombre" class="form-label" id="mi-cuenta-nombre-label">Nombres</label>
+                <input type="text" id="mi-cuenta-nombre" class="form-control" required>
+              </div>
+              <div class="col-sm-6" id="mi-cuenta-grupo-apellido">
+                <label for="mi-cuenta-apellido" class="form-label">Apellidos</label>
+                <input type="text" id="mi-cuenta-apellido" class="form-control">
+              </div>
+            </div>
+            <div id="mi-cuenta-datos-socio">
+              <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                  <label for="mi-cuenta-cedula" class="form-label">N.º de cédula</label>
+                  <input type="text" id="mi-cuenta-cedula" class="form-control" inputmode="numeric">
+                </div>
+                <div class="col-sm-6">
+                  <label for="mi-cuenta-telefono" class="form-label">Teléfono</label>
+                  <input type="tel" id="mi-cuenta-telefono" class="form-control campo-telefono" inputmode="tel" maxlength="20" autocomplete="tel">
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="mi-cuenta-direccion" class="form-label">Dirección</label>
+                <input type="text" id="mi-cuenta-direccion" class="form-control">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="mi-cuenta-email" class="form-label">Correo electrónico</label>
+              <input type="email" id="mi-cuenta-email" class="form-control" required>
+            </div>
+
+            <hr>
+            <p class="small text-muted mb-2">Cambiar contraseña (dejalo vacío si no querés cambiarla)</p>
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="mi-cuenta-password-actual" class="form-label">Contraseña actual</label>
+                <input type="password" id="mi-cuenta-password-actual" class="form-control" autocomplete="current-password">
+              </div>
+              <div class="col-12">
+                <label for="mi-cuenta-password" class="form-label">Nueva contraseña</label>
+                <input type="password" id="mi-cuenta-password" class="form-control" minlength="8" autocomplete="new-password" data-verificar="fuerza">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="submit" class="btn btn-brand"><i class="fa-solid fa-floppy-disk me-2"></i>Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal registrar pago de multa -->
+  <div class="modal fade" id="modal-pagar-multa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-pagar-multa" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title">Registrar pago</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="pagar-multa-id">
+            <dl class="ficha-multa" id="pagar-multa-detalle"></dl>
+            <label for="pagar-multa-monto" class="form-label">Monto que paga</label>
+            <div class="input-group mb-1">
+              <span class="input-group-text">$</span>
+              <input type="number" id="pagar-multa-monto" class="form-control" min="1" step="1" required>
+            </div>
+            <div class="form-text mb-3" id="pagar-multa-ayuda"></div>
+            <label for="pagar-multa-metodo" class="form-label">Método de pago</label>
+            <select id="pagar-multa-metodo" class="form-select" required>
+              <option value="">Elegí cómo pagó</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="debito">Tarjeta de débito</option>
+              <option value="credito">Tarjeta de crédito</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="mercado_pago">Mercado Pago</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">Registrar pago</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ficha del libro (portada, datos y descripción breve) -->
+  <div class="modal fade" id="modal-detalle-libro" tabindex="-1" aria-hidden="true" aria-labelledby="detalle-titulo">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-body detalle-libro">
+          <button type="button" class="btn-close detalle-cerrar" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          <div class="detalle-portada" id="detalle-portada"></div>
+          <div class="detalle-info">
+            <h2 class="detalle-titulo" id="detalle-titulo"></h2>
+            <p class="detalle-autor" id="detalle-autor"></p>
+            <div class="detalle-datos" id="detalle-datos"></div>
+            <div class="detalle-descripcion" id="detalle-descripcion" aria-live="polite"></div>
+            <p class="detalle-fuente" id="detalle-fuente"></p>
+            <div class="detalle-acciones" id="detalle-acciones"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal elegir qué copia se devuelve (libros con varias copias prestadas) -->
+  <div class="modal fade" id="modal-devolver" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Registrar devolución</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">¿Quién devuelve <strong id="devolver-libro-titulo"></strong>?</p>
+          <ul class="list-unstyled lista-reservas mb-0" id="lista-devolver"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal registrar devolución (con observación) -->
+  <div class="modal fade" id="modal-devolucion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-devolucion" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title">Registrar devolución</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="devolucion-prestamo-id">
+            <dl class="ficha-multa ficha-devolucion" id="devolucion-detalle"></dl>
+            <label for="devolucion-observacion" class="form-label">Observación <span class="text-muted small fw-normal">(opcional)</span></label>
+            <textarea id="devolucion-observacion" class="form-control" rows="3" maxlength="500" placeholder="Ej: tapa doblada, páginas subrayadas, llegó en buen estado"></textarea>
+            <div class="form-text">Queda registrada en el historial del préstamo.</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-brand">Registrar devolución</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal verificar centro educativo -->
+  <div class="modal fade" id="modal-verificar-escolar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Pasar a cuenta de centro educativo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Vas a verificar a <strong id="verificar-escolar-nombre"></strong> como centro educativo.</p>
+          <ul class="lista-verificacion">
+            <li>Podrá tener <strong>varias reservas activas</strong> a la vez (una cuenta particular tiene una sola).</li>
+            <li>Antes de confirmar, pedí la credencial o constancia del centro educativo y revisá que el nombre coincida.</li>
+          </ul>
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" id="verificar-escolar-check">
+            <label class="form-check-label" for="verificar-escolar-check">Vi la credencial del centro educativo y los datos coinciden.</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-brand" id="verificar-escolar-confirmar" disabled>Verificar cuenta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de aviso (pagar o retirar en el local) -->
+  <div class="modal fade" id="modal-aviso-local" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body aviso-local">
+          <span class="aviso-local-icono" id="aviso-local-icono" aria-hidden="true"></span>
+          <h5 class="modal-title" id="aviso-local-titulo"></h5>
+          <div id="aviso-local-texto"></div>
+          <button type="button" class="btn btn-brand mt-3" data-bs-dismiss="modal">Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Términos y Condiciones / Política de Privacidad -->
+  <div class="modal fade" id="modal-terminos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Términos y Condiciones y Política de Privacidad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body texto-legal">
+        <h6>MARCO LEGAL</h6>
+
+        <h6>Términos y Condiciones</h6>
+
+        <h6>Objeto</h6>
+        <p>Los presentes Términos y Condiciones establecen las normas para el uso de los servicios de la biblioteca, incluyendo el registro de socios, préstamos, devoluciones, renovaciones y reservas de ejemplares.</p>
+        <p>Al registrarse como socio y utilizar los servicios de la biblioteca, el usuario acepta cumplir con estas condiciones y con las normas establecidas por la institución.</p>
+
+        <h6>Registro de socios</h6>
+        <p>Para utilizar los servicios de préstamo y reserva, el usuario deberá estar registrado como socio de la biblioteca y proporcionar los datos necesarios para su identificación y gestión de los servicios.</p>
+        <p>Cada socio es responsable de mantener actualizados sus datos y de utilizar correctamente su cuenta.</p>
+
+        <h6>Préstamos</h6>
+        <p>Los préstamos permiten a los socios retirar ejemplares de la biblioteca durante un período determinado.</p>
+        <p>Se establecen las siguientes reglas:</p>
+        <p>- Un socio suspendido no puede solicitar ni realizar préstamos mientras dure la suspensión.</p>
+        <p>- Un ejemplar solo puede tener un préstamo activo a la vez.</p>
+        <p>- El socio deberá devolver el ejemplar dentro del plazo establecido.</p>
+        <p>- El socio es responsable de los ejemplares que tenga registrados a su nombre durante el período del préstamo.</p>
+        <p>- La biblioteca podrá establecer límites sobre la cantidad de ejemplares que un socio puede tener prestados simultáneamente.</p>
+
+        <h6>Renovaciones</h6>
+        <p>Los préstamos podrán renovarse cuando las condiciones de la biblioteca lo permitan.</p>
+        <p>No será posible renovar un préstamo cuando:</p>
+        <p>- El ejemplar tenga una reserva pendiente realizada por otro socio.</p>
+        <p>- El socio se encuentre suspendido.</p>
+        <p>- Se haya alcanzado el límite de renovaciones establecido por la biblioteca.</p>
+        <p>La renovación estará sujeta a la disponibilidad del ejemplar y a las condiciones vigentes.</p>
+
+        <h6>Reservas</h6>
+        <p>Los socios podrán realizar reservas sobre ejemplares que se encuentren disponibles para este servicio.</p>
+        <p>Se establecen las siguientes condiciones:</p>
+        <p>- Un socio no puede reservar el mismo libro más de una vez simultáneamente.</p>
+        <p>- Una reserva será válida durante el período establecido por la biblioteca.</p>
+        <p>- Una vez que el ejemplar sea asignado al socio que realizó la reserva, este deberá retirarlo dentro del plazo establecido.</p>
+        <p>- La biblioteca podrá cancelar una reserva cuando haya vencido el plazo para retirarla o cuando se detecte una reserva duplicada.</p>
+
+        <h6>Suspensiones</h6>
+        <p>La biblioteca podrá suspender temporalmente a un socio cuando incumpla las normas establecidas, por ejemplo, por retrasos reiterados en las devoluciones o por otras situaciones previstas en el reglamento interno.</p>
+        <p>Mientras dure la suspensión, el socio no podrá realizar nuevos préstamos.</p>
+        <p>La suspensión no implica necesariamente la eliminación de la cuenta ni de los datos del socio.</p>
+
+        <h6>Responsabilidades del usuario</h6>
+        <p>El usuario se compromete a:</p>
+        <p>- Proporcionar información correcta al registrarse.</p>
+        <p>- Respetar los plazos de devolución.</p>
+        <p>- Cuidar los ejemplares prestados.</p>
+        <p>- No utilizar la cuenta de otro socio.</p>
+        <p>- Respetar las normas de préstamos, renovaciones y reservas.</p>
+        <p>- Informar a la biblioteca sobre cualquier inconveniente relacionado con su cuenta o con los ejemplares recibidos.</p>
+
+        <h6>Modificaciones</h6>
+        <p>La biblioteca podrá modificar estos Términos y Condiciones cuando sea necesario para actualizar sus servicios, procedimientos o normas internas.</p>
+        <p>Los cambios serán comunicados a los usuarios cuando corresponda.</p>
+
+        <h6>Política de Privacidad</h6>
+
+        <h6>Finalidad</h6>
+        <p>La biblioteca se compromete a proteger la privacidad de sus socios y a utilizar sus datos personales únicamente para fines relacionados con la prestación y gestión de sus servicios.</p>
+
+        <h6>Datos recopilados</h6>
+        <p>Para gestionar el funcionamiento de la biblioteca podrán recopilarse datos como:</p>
+        <p>- Nombre y apellido.</p>
+        <p>- Datos de contacto.</p>
+        <p>- Información necesaria para identificar al socio.</p>
+        <p>- Historial de préstamos.</p>
+        <p>- Reservas realizadas.</p>
+        <p>- Renovaciones.</p>
+        <p>- Estado de la cuenta, incluyendo posibles suspensiones.</p>
+        <p>La información recopilada deberá limitarse a los datos necesarios para el funcionamiento del servicio.</p>
+
+        <h6>Uso de los datos</h6>
+        <p>Los datos personales podrán utilizarse para:</p>
+        <p>- Registrar y administrar socios.</p>
+        <p>- Gestionar préstamos y devoluciones.</p>
+        <p>- Gestionar reservas y renovaciones.</p>
+        <p>- Informar sobre vencimientos o disponibilidad de ejemplares.</p>
+        <p>- Controlar el estado de las cuentas.</p>
+        <p>- Aplicar las normas de la biblioteca.</p>
+        <p>- Mejorar la organización y funcionamiento del servicio.</p>
+        <p>Los datos no deberán utilizarse para fines ajenos a los servicios de la biblioteca sin la correspondiente autorización o base legal.</p>
+
+        <h6>Protección de la información</h6>
+        <p>La biblioteca deberá adoptar medidas razonables para proteger los datos personales frente al acceso, modificación, pérdida o divulgación no autorizada.</p>
+        <p>El acceso a la información de los socios estará limitado a las personas que necesiten utilizarla para cumplir funciones relacionadas con la administración de la biblioteca.</p>
+
+        <h6>Confidencialidad</h6>
+        <p>La información relacionada con los préstamos, reservas y actividad de los socios será tratada de forma confidencial.</p>
+        <p>La biblioteca no deberá divulgar información personal de sus socios a terceros, salvo que exista una obligación legal, una autorización válida o una situación que lo permita conforme a la normativa aplicable.</p>
+
+        <h6>Conservación de los datos</h6>
+        <p>Los datos personales serán conservados durante el tiempo necesario para cumplir con las finalidades para las cuales fueron recopilados y con las obligaciones legales correspondientes.</p>
+        <p>Cuando los datos ya no sean necesarios, podrán ser eliminados o tratados de acuerdo con las normas aplicables.</p>
+
+        <h6>Derechos de los usuarios</h6>
+        <p>Los socios podrán solicitar información sobre los datos personales que la biblioteca mantiene sobre ellos y, cuando corresponda, solicitar su actualización, corrección o eliminación conforme a la normativa vigente.</p>
+
+        <h6>Aceptación</h6>
+        <p>Al registrarse y utilizar los servicios de la biblioteca, el usuario declara conocer y aceptar los presentes Términos y Condiciones y la Política de Privacidad, sin perjuicio de los derechos que le correspondan conforme a la legislación vigente.</p>
+        <h6>Legislación aplicable</h6>
+        <p>El tratamiento de los datos personales y el funcionamiento de la biblioteca deberán ajustarse a la normativa vigente aplicable, incluyendo las disposiciones uruguayas relativas a la protección de datos personales y privacidad.</p>
+        
+        <h6>Legislación aplicable</h6>
+        <p>El tratamiento de los datos personales y el funcionamiento de la biblioteca deberán ajustarse a la normativa vigente aplicable, en particular a:</p>
+        <p>- Ley N° 18.331 de Protección de Datos Personales y Acción de Habeas Data.</p>
+        <p>- Decreto N° 414/009, reglamentario de la Ley N° 18.331.</p>
+        <p>- Artículos 37 a 40 de la Ley N° 19.670, que modificaron la Ley N° 18.331 (ámbito de aplicación, comunicación de vulneraciones de seguridad, delegado de protección de datos y responsabilidad proactiva).</p>
+        <p>- Decreto N° 64/020, reglamentario de los artículos 37 a 40 de la Ley N° 19.670.</p>
+        <p class="mb-0">y demás disposiciones uruguayas relativas a la protección de datos personales y privacidad.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-brand" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación -->
+  <div class="modal fade" id="modal-confirmar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-body pt-4">
+          <p class="mb-0" id="confirmar-texto"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" id="confirmar-no">Cancelar</button>
+          <button type="button" class="btn btn-brand" id="confirmar-si">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- avisos (errores en rojo), abajo a la derecha -->
+  <div class="zona-avisos" id="zona-avisos" aria-live="assertive" aria-atomic="false"></div>
+
+</body>
+</html>

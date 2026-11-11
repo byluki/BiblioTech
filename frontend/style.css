@@ -1,0 +1,2153 @@
+/* Biblioteca Central - estilos */
+
+:root {
+  /* paleta: naranja, dorado y crema (--marino es el naranja, el nombre quedó de antes) */
+  --marino: #e2661d;
+  --marino-hondo: #a3400f;
+  --celeste: #f0955a;
+  --naranja: #f2b134;
+  --oliva: #2f7d46;
+  --ladrillo: #a34a34;
+  --rojo-aviso: #b4232c;
+  --resalte: #fdebd3;       /* fondos suaves (etiquetas, calendario) */
+
+  --tinta: #2b2016;
+  --apagado: #8a7a68;
+  --papel: #faf5ec;
+  --ficha: #ffffff;
+  --linea: #ecdfc9;
+  --linea-suave: #f1e7d6;
+
+  --radio: 6px;
+  --radio-grande: 10px;
+  --sombra-menu: 0 8px 24px rgba(163, 64, 15, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  font-family: 'Libre Franklin', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background-color: var(--papel);
+  color: var(--tinta);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+/* footer siempre abajo */
+main {
+  flex: 1 0 auto;
+}
+
+h1, h2, h3, h4, .panel-title, .modal-title {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--marino-hondo);
+}
+
+a {
+  color: var(--marino);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--marino-hondo);
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--marino);
+  outline-offset: 2px;
+}
+
+/* ---------- Encabezado ---------- */
+
+.site-header {
+  background-color: var(--marino);
+  border-bottom: 3px solid var(--marino-hondo);
+  color: #fff;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-icon {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.brand-logo-icon img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.brand-logo h1 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.header-sub {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  margin: 2px 0 0 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+
+.header-icon-btn:hover,
+.header-icon-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.7);
+  color: #fff;
+}
+
+.site-header :focus-visible {
+  outline-color: #fff;
+}
+
+.header-icon-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--naranja);
+  color: var(--marino-hondo);
+  font-size: 0.68rem;
+  font-weight: 700;
+  min-width: 19px;
+  height: 19px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+/* menús desplegables (Mis reservas, opciones de un libro) */
+.dropdown-menu {
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  box-shadow: var(--sombra-menu);
+}
+
+.dropdown-item {
+  border-radius: var(--radio);
+}
+
+.menu-mis-reservas-lista {
+  min-width: 280px;
+  max-width: 320px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 8px;
+  margin-top: 10px !important;
+}
+
+.menu-mis-reservas-lista .dropdown-header {
+  font-weight: 700;
+  color: var(--marino-hondo);
+  text-transform: none;
+  font-size: 0.85rem;
+}
+
+.mis-reservas-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0.5rem;
+  border-radius: var(--radio);
+}
+
+.mis-reservas-item:hover {
+  background-color: var(--papel);
+}
+
+.mis-reservas-item .mis-reservas-info h4 {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--tinta);
+  margin: 0 0 2px;
+}
+
+.mis-reservas-item .mis-reservas-info p {
+  font-size: 0.78rem;
+  color: var(--apagado);
+  margin: 0;
+}
+
+.mis-reservas-item .mis-reservas-badge {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.mis-reservas-item .btn-cancelar-mi-reserva {
+  border: none;
+  background: transparent;
+  color: var(--ladrillo);
+  flex-shrink: 0;
+  padding: 4px 6px;
+  border-radius: var(--radio);
+}
+
+.mis-reservas-item .btn-cancelar-mi-reserva:hover {
+  background-color: rgba(163, 74, 52, 0.12);
+}
+
+/* ---------- Paneles y formularios ---------- */
+
+.panel {
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-grande);
+  background-color: var(--ficha);
+  box-shadow: none;
+}
+
+/* el catálogo va sin caja */
+.panel-plano {
+  background: transparent;
+  border: 0;
+}
+
+.panel-plano > .card-body {
+  padding: 0 !important;
+}
+
+.panel-title {
+  font-size: 1.2rem;
+}
+
+/* ocultamos los íconos decorativos de los títulos */
+.panel-title > i {
+  display: none;
+}
+
+.panel-plano .panel-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.btn-brand {
+  background-color: var(--marino);
+  border: 1px solid var(--marino);
+  color: #fff;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radio);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-brand:hover,
+.btn-brand:focus-visible {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--tinta);
+  --bs-btn-border-color: var(--linea);
+  --bs-btn-hover-bg: var(--papel);
+  --bs-btn-hover-border-color: var(--apagado);
+  --bs-btn-hover-color: var(--tinta);
+  --bs-btn-active-bg: var(--linea);
+  --bs-btn-active-border-color: var(--apagado);
+  --bs-btn-active-color: var(--tinta);
+  border-radius: var(--radio);
+}
+
+.btn-agregar-libro {
+  white-space: nowrap;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+  border-color: var(--linea);
+  border-radius: var(--radio);
+  background-color: #fff;
+}
+
+.input-group > .form-control,
+.input-group > .input-group-text {
+  border-radius: 0;
+}
+
+.input-group > :first-child {
+  border-top-left-radius: var(--radio);
+  border-bottom-left-radius: var(--radio);
+}
+
+.input-group > :last-child {
+  border-top-right-radius: var(--radio);
+  border-bottom-right-radius: var(--radio);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--marino);
+  box-shadow: 0 0 0 0.2rem rgba(226, 102, 29, 0.18);
+}
+
+.modal-content {
+  background-color: var(--ficha);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-grande);
+  box-shadow: 0 18px 48px rgba(43, 32, 22, 0.22);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--linea-suave);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+}
+
+.modal-title > i {
+  display: none;
+}
+
+/* vista previa de portada en los formularios */
+.portada-preview-wrap {
+  width: 52px;
+}
+
+.portada-preview {
+  width: 52px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 1px 3px 3px 1px;
+  border: 1px solid var(--linea);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  color: var(--apagado);
+  font-size: 1.1rem;
+}
+
+.portada-placeholder {
+  background-color: var(--papel);
+}
+
+/* ---------- Contador ---------- */
+
+.contador {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 10px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  background-color: var(--naranja);
+  color: var(--marino-hondo);
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  position: relative;
+  top: -2px;
+}
+
+.contador:empty {
+  display: none;
+}
+
+/* ---------- Catálogo ---------- */
+
+.lista-libros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  gap: 34px 24px;
+  padding: 0;
+  margin: 0;
+}
+
+.libro-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* recuadro de la tarjeta */
+  background-color: var(--ficha);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 12px;
+  transition: border-color 0.15s ease;
+  /* no dibuja las tarjetas fuera de pantalla */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+
+.libro-portada-wrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.libro-portada {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  height: auto;
+  object-fit: cover;
+  background-color: #dfe3df;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(43, 32, 22, 0.08);
+}
+
+/* libros sin portada: tapa de tela con el título */
+.libro-portada-vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 14px 16px 18px;
+  text-align: center;
+  color: #fff;
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow: hidden;
+  position: relative;
+}
+
+.libro-portada-vacia::before {
+  content: '';
+  position: absolute;
+  inset: 10px 10px 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+}
+
+.libro-portada-vacia span {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.libro-portada-vacia { background-color: #a3400f; font-weight: 600; }
+.libro-portada-vacia.tono-1 { background-color: #7a5a2b; }
+.libro-portada-vacia.tono-2 { background-color: #2f6b45; }
+.libro-portada-vacia.tono-3 { background-color: #8a3b2e; }
+.libro-portada-vacia.tono-4 { background-color: #b0701c; }
+
+.libro-info {
+  flex-grow: 1;
+}
+
+.libro-info h3 {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-size: 0.98rem;
+  font-weight: 500;
+  margin: 0 0 2px 0;
+  color: var(--tinta);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.libro-autor {
+  margin: 0 0 8px 0;
+  color: var(--apagado);
+  font-size: 0.9rem;
+}
+
+.libro-info p {
+  margin: 0 0 4px 0;
+}
+
+/* categoría y estado, una al lado de la otra */
+.etiqueta {
+  display: inline-block;
+  color: var(--apagado);
+  font-size: 0.8rem;
+  margin-right: 8px;
+}
+
+.etiqueta-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  letter-spacing: 0;
+}
+
+.etiqueta-estado::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+
+.estado-disponible { color: var(--oliva); }
+.estado-reservado { color: #96721c; }
+.estado-prestado { color: var(--ladrillo); }
+
+.etiqueta-tipo {
+  display: inline-block;
+  color: var(--marino-hondo);
+  background-color: var(--resalte);
+  font-size: 0.74rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.texto-reserva {
+  font-size: 0.84rem;
+  color: var(--apagado);
+  margin-top: 6px !important;
+}
+
+.texto-codigo-barras {
+  font-size: 0.76rem;
+  color: var(--apagado);
+  font-variant-numeric: tabular-nums;
+}
+
+/* acciones al pie de cada libro */
+.acciones-libro {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+
+.btn-accion-libro {
+  border: 1px solid var(--linea);
+  background: var(--ficha);
+  color: var(--marino);
+  font-size: 0.9rem;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radio);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-accion-libro:hover,
+.btn-accion-libro:focus-visible {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  color: #fff;
+}
+
+/* botón único de la fila: ancho completo */
+.acciones-libro .btn-accion-libro.btn-accion-libro-full {
+  width: 100%;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 36px;
+  padding: 7px 12px;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acciones-libro .btn-accion-libro.btn-accion-libro-grande {
+  flex: 1 1 0;
+  width: auto;
+  height: 38px;
+  font-size: 1rem;
+}
+
+.btn-editar,
+.btn-eliminar {
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+}
+
+.btn-editar { color: var(--marino-hondo); }
+.btn-eliminar { color: var(--ladrillo); }
+
+/* menú Editar / Eliminar sobre la portada */
+.btn-menu-libro {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radio);
+  background: rgba(252, 252, 250, 0.92);
+  color: var(--marino-hondo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(30, 39, 51, 0.25);
+}
+
+.btn-menu-libro:hover,
+.btn-menu-libro:focus-visible {
+  background: #fff;
+}
+
+.menu-libro-admin .dropdown-menu {
+  min-width: 140px;
+  padding: 6px;
+}
+
+.menu-libro-admin .dropdown-item.btn-editar,
+.menu-libro-admin .dropdown-item.btn-eliminar {
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 0.88rem;
+  padding: 7px 10px;
+}
+
+.menu-libro-admin .dropdown-item.btn-editar:hover,
+.menu-libro-admin .dropdown-item.btn-editar:focus {
+  background-color: var(--papel);
+}
+
+.menu-libro-admin .dropdown-item.btn-eliminar:hover,
+.menu-libro-admin .dropdown-item.btn-eliminar:focus {
+  background-color: #f8e3de;
+}
+
+/* ---------- Menú lateral ---------- */
+
+.menu-offcanvas {
+  width: 380px;
+  max-width: 100vw;
+  background-color: var(--ficha) !important;
+  border-left: 1px solid var(--linea);
+}
+
+.menu-offcanvas .offcanvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.menu-offcanvas-brand {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--marino-hondo);
+  margin-right: auto;
+}
+
+.menu-offcanvas-brand i {
+  display: none;
+}
+
+.menu-offcanvas-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--linea);
+  background: transparent;
+  color: var(--marino);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.menu-offcanvas-close:hover,
+.menu-offcanvas-close:focus-visible {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  color: #fff;
+}
+
+.menu-offcanvas .offcanvas-body {
+  padding: 1.4rem 1.25rem 1.75rem;
+}
+
+.menu-auth-block {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.btn-menu-cuenta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--linea);
+  background: transparent;
+  color: var(--marino-hondo);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radio);
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-menu-cuenta:hover {
+  background-color: var(--papel);
+  color: var(--marino-hondo);
+  text-decoration: none;
+}
+
+.btn-menu-cuenta-solid {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  color: #fff;
+}
+
+.btn-menu-cuenta-solid:hover {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+.menu-usuario-nombre {
+  color: var(--marino-hondo);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.menu-offcanvas-divider {
+  border-color: var(--linea);
+  margin: 1.3rem 0 1rem 0;
+}
+
+.menu-section-label {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--marino-hondo);
+  margin: 0 0 0.6rem 0;
+}
+
+.menu-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-nav-link {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  color: var(--tinta);
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 0 var(--radio) var(--radio) 0;
+  transition: background-color 0.15s ease;
+}
+
+.menu-nav-link:hover {
+  background-color: var(--papel);
+}
+
+.menu-nav-link.active {
+  color: var(--marino-hondo);
+  font-weight: 600;
+  background-color: var(--papel);
+  border-left-color: var(--marino);
+}
+
+.menu-nav-link i {
+  color: var(--marino);
+  width: 20px;
+}
+
+/* ---------- Pie ---------- */
+
+.site-footer {
+  background-color: var(--marino-hondo);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+/* ---------- Reservas, préstamos y otras listas ---------- */
+
+.lista-reservas,
+.lista-prestamos {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+/* filas separadas por una línea */
+.reserva-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.reserva-item:last-child {
+  border-bottom: 0;
+}
+
+.reserva-item h3 {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--tinta);
+}
+
+.notificacion-item {
+  border-left: 3px solid var(--ladrillo);
+  padding-left: 12px;
+}
+
+.reserva-grupo {
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.reserva-grupo:last-child {
+  border-bottom: 0;
+}
+
+.reserva-grupo-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.reserva-grupo-header h3 {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--tinta);
+}
+
+.etiqueta-cantidad-reservas {
+  color: var(--apagado);
+  font-size: 0.78rem;
+  margin-left: auto;
+}
+
+.btn-aceptar-todas {
+  width: auto;
+  height: auto;
+  padding: 6px 12px;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.reserva-grupo-libros {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reserva-grupo-libro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--papel);
+  border-radius: var(--radio);
+  padding: 10px 12px;
+}
+
+.reserva-grupo-libro-titulo {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0 0 2px 0;
+  color: var(--marino-hondo);
+}
+
+/* ---------- Reportes ---------- */
+
+.stat-card {
+  background-color: var(--ficha);
+  border: 1px solid var(--linea);
+  border-left: 4px solid var(--marino);
+  border-radius: var(--radio);
+  padding: 16px 18px;
+  text-align: left;
+  height: 100%;
+}
+
+.stat-numero {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--marino-hondo);
+}
+
+.stat-etiqueta {
+  font-size: 0.88rem;
+  color: var(--apagado);
+  margin-top: 2px;
+}
+
+/* historial de actividad */
+.hist-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hist-filtro {
+  background-color: transparent;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 4px 12px;
+  font-size: 0.86rem;
+  color: var(--tinta);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.hist-filtro:hover { background-color: var(--papel); }
+
+.hist-filtro.activo {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  color: #fff;
+}
+
+.hist-conteo {
+  opacity: 0.7;
+  font-size: 0.78rem;
+  margin-left: 2px;
+}
+
+.hist-badge {
+  display: inline-block;
+  border-radius: 3px;
+  padding: 2px 9px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.hist-reservas  { background: #e3f0ff; color: #1b4f8f; }
+.hist-facturas  { background: #fff1cc; color: #7a5300; }
+.hist-prestamos { background: #e0f5e4; color: #1f6b30; }
+.hist-socios    { background: #ebe4f5; color: #5b2d85; }
+.hist-libros    { background: #fde4e1; color: #8f2b1f; }
+.hist-cuentas   { background: #e6e9e6; color: #343a40; }
+
+.hist-persona { color: var(--marino-hondo); font-weight: 600; }
+
+/* ---------- Avatar y ancho de la página ---------- */
+
+.avatar-usuario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--marino);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.avatar-usuario.avatar-grande { width: 84px; height: 84px; font-size: 2rem; }
+
+.menu-usuario-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.menu-usuario-fila .menu-usuario-nombre {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#menu-auth-sesion { flex-wrap: wrap; }
+
+.contenedor-ancho {
+  max-width: 1800px;
+  padding-left: clamp(16px, 3vw, 56px);
+  padding-right: clamp(16px, 3vw, 56px);
+}
+
+/* ---------- Modales ---------- */
+
+.modal.fade .modal-dialog {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 0.24s ease, opacity 0.2s ease;
+}
+
+.modal.show .modal-dialog {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 479.98px) {
+  .brand-logo h1 {
+    font-size: 1.25rem;
+  }
+  .lista-libros {
+    gap: 28px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Botón "agregar" ---------- */
+
+.btn-agregar-carrito {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 7px 18px;
+  border: 1px solid var(--marino);
+  border-radius: 999px;
+  background-color: var(--marino);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-agregar-carrito:hover,
+.btn-agregar-carrito:focus-visible {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+.btn-agregar-carrito.en-carrito {
+  background-color: transparent;
+  color: var(--marino-hondo);
+}
+
+.btn-agregar-carrito.en-carrito:hover {
+  background-color: #f8e3de;
+  color: var(--ladrillo);
+  border-color: var(--ladrillo);
+}
+
+/* ---------- Novedades ---------- */
+
+.novedades {
+  margin: 20px 0 44px;
+}
+
+.novedades-titulo {
+  text-align: left;
+  font-size: 1.7rem;
+  margin: 0 0 22px 0;
+}
+
+.novedades-carrusel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.carrusel-flecha:hover { color: var(--marino); }
+
+.lista-novedades {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 26px;
+  margin: 0;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.lista-novedades::-webkit-scrollbar { display: none; }
+
+.novedad-item {
+  flex: 0 0 clamp(150px, 15vw, 190px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+.novedad-titulo {
+  margin: 12px 0 2px 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.novedad-item .libro-autor { margin-bottom: 10px; }
+.novedad-item .btn-agregar-carrito { flex: 0 0 auto; align-self: flex-start; }
+.novedad-item .etiqueta-estado { align-self: flex-start; }
+
+/* ---------- Carrito ---------- */
+
+.carrito-offcanvas {
+  width: 400px;
+  max-width: 100vw;
+  background-color: var(--ficha) !important;
+  border-left: 1px solid var(--linea);
+}
+
+.carrito-offcanvas .offcanvas-header {
+  border-bottom: 1px solid var(--linea-suave);
+  padding: 1.1rem 1.25rem;
+}
+
+.carrito-titulo {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.carrito-offcanvas .offcanvas-body { padding: 1.25rem; }
+
+.carrito-vacio {
+  color: var(--apagado);
+  margin: 0.5rem 0;
+}
+
+.carrito-lista {
+  margin: 0 0 1.25rem 0;
+  padding: 0;
+}
+
+.carrito-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.carrito-miniatura {
+  width: 48px;
+  height: 72px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 2px;
+  background-color: #a3400f;
+  box-shadow: 0 0 0 1px rgba(43, 32, 22, 0.08);
+}
+
+.carrito-miniatura.tono-1 { background-color: #7a5a2b; }
+.carrito-miniatura.tono-2 { background-color: #2f6b45; }
+.carrito-miniatura.tono-3 { background-color: #8a3b2e; }
+.carrito-miniatura.tono-4 { background-color: #b0701c; }
+
+.carrito-datos { flex: 1 1 auto; min-width: 0; }
+
+.carrito-item-titulo {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.carrito-item-autor,
+.carrito-item-aviso {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--apagado);
+}
+
+.carrito-item-aviso { color: var(--ladrillo); font-weight: 600; }
+
+.carrito-cantidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.btn-cantidad-carrito {
+  border: 1px solid var(--linea-suave);
+  background: transparent;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radio);
+  line-height: 1;
+}
+
+.btn-cantidad-carrito:disabled { opacity: 0.4; }
+
+.carrito-cantidad-valor { font-size: 0.9rem; font-weight: 600; }
+
+.btn-quitar-carrito {
+  border: 0;
+  background: transparent;
+  color: var(--apagado);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radio);
+  flex-shrink: 0;
+}
+
+.btn-quitar-carrito:hover {
+  background-color: #f8e3de;
+  color: var(--ladrillo);
+}
+
+.carrito-vaciar {
+  color: var(--apagado);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 575.98px) {
+  .novedades-carrusel .carrusel-flecha { display: none; }
+}
+
+/* ---------- Avisos ---------- */
+
+.zona-avisos {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2000; /* por encima de modales y menús */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.aviso {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 12px 14px 16px;
+  border-radius: var(--radio);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(20, 24, 30, 0.28);
+  animation: aviso-entra 0.22s ease-out;
+}
+
+.aviso-error { background-color: var(--rojo-aviso); border: 1px solid #8e1a22; }
+.aviso-ok { background-color: var(--oliva); border: 1px solid #1f5a31; }
+
+.aviso-icono { font-size: 1.15rem; margin-top: 2px; flex-shrink: 0; }
+.aviso-cuerpo { flex: 1 1 auto; min-width: 0; }
+.aviso-titulo { margin: 0 0 2px; font-weight: 700; font-size: 0.92rem; }
+.aviso-texto { margin: 0; font-size: 0.88rem; line-height: 1.4; overflow-wrap: anywhere; }
+
+.aviso-cerrar {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.aviso-cerrar:hover,
+.aviso-cerrar:focus-visible { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.aviso :focus-visible { outline-color: #fff; }
+
+.aviso.saliendo {
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+@keyframes aviso-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 575.98px) {
+  .zona-avisos { right: 16px; bottom: 16px; }
+}
+
+/* ---------- Botones ocupados ---------- */
+
+.cargando {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.cargando::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.05em;
+  height: 1.05em;
+  margin: -0.525em 0 0 -0.525em;
+  border-radius: 50%;
+  border: 2px solid var(--spinner, var(--marino));
+  border-right-color: transparent;
+  animation: girar 0.7s linear infinite;
+}
+
+.btn-brand.cargando,
+.btn-agregar-carrito.cargando,
+.btn-peligro.cargando { --spinner: #fff; }
+
+.btn:disabled,
+.btn-accion-libro:disabled { cursor: not-allowed; }
+.btn-brand:disabled,
+.btn-brand.cargando {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  opacity: 0.85;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.btn-peligro {
+  background-color: var(--ladrillo);
+  border-color: var(--ladrillo);
+}
+
+.btn-peligro:hover,
+.btn-peligro:focus-visible {
+  background-color: #8e2c20;
+  border-color: #8e2c20;
+}
+
+/* ---------- Contraseñas ---------- */
+
+.campo-password { position: relative; }
+.campo-password .form-control { padding-right: 46px; }
+
+.btn-ver-password {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--apagado);
+}
+
+.btn-ver-password:hover,
+.btn-ver-password[aria-pressed="true"] { color: var(--marino); background-color: var(--papel); }
+
+.medidor-password { margin-top: 8px; }
+
+.medidor-barra {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.medidor-barra span {
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--linea);
+  transition: background-color 0.2s ease;
+}
+
+.medidor-password[data-nivel="1"] .medidor-barra span:nth-child(-n+1) { background-color: var(--ladrillo); }
+.medidor-password[data-nivel="2"] .medidor-barra span:nth-child(-n+2) { background-color: #c08a1e; }
+.medidor-password[data-nivel="3"] .medidor-barra span { background-color: var(--oliva); }
+
+.medidor-nivel {
+  margin: 6px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--apagado);
+  min-height: 1.2em;
+}
+
+.medidor-password[data-nivel="1"] .medidor-nivel { color: var(--ladrillo); }
+.medidor-password[data-nivel="3"] .medidor-nivel { color: var(--oliva); }
+
+.medidor-reglas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 12px;
+  font-size: 0.8rem;
+  color: var(--apagado);
+}
+
+.medidor-reglas i { font-size: 0.45rem; width: 14px; vertical-align: middle; margin-right: 4px; }
+.medidor-reglas li.ok { color: var(--oliva); }
+.medidor-reglas li.ok i { font-size: 0.75rem; }
+
+.coincidencia-password { margin: 6px 0 0; font-size: 0.8rem; font-weight: 600; min-height: 1.2em; }
+.coincidencia-password.ok { color: var(--oliva); }
+.coincidencia-password.mal { color: var(--ladrillo); }
+
+/* ---------- Calendario ---------- */
+
+.flatpickr-wrapper { display: block; width: 100%; }
+.flatpickr-input[readonly] { background-color: #fff; cursor: pointer; }
+
+.flatpickr-calendar {
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-menu);
+  border: 1px solid var(--linea);
+}
+
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after { display: none; }
+
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month .flatpickr-monthDropdown-months { color: var(--marino-hondo); font-weight: 700; }
+.flatpickr-current-month { font-size: 1rem; }
+.flatpickr-months .flatpickr-prev-month:hover svg,
+.flatpickr-months .flatpickr-next-month:hover svg { fill: var(--naranja); }
+span.flatpickr-weekday { color: var(--apagado); font-weight: 600; }
+
+.flatpickr-day { border-radius: var(--radio); color: var(--tinta); }
+.flatpickr-day.today { border-color: var(--marino); }
+.flatpickr-day:hover,
+.flatpickr-day:focus { background: var(--resalte); border-color: var(--resalte); }
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus { background: var(--marino); border-color: var(--marino); color: #fff; }
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover { color: #cbbfae; }
+
+/* ---------- Multas ---------- */
+
+.resumen-multas {
+  background-color: var(--papel);
+  border-radius: var(--radio);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+
+.resumen-multas-titulo { margin: 0 0 8px; font-weight: 700; color: var(--marino-hondo); }
+
+.resumen-multas-cifras { display: flex; flex-wrap: wrap; gap: 8px 32px; }
+.resumen-multas-cifras > div { display: flex; flex-direction: column; }
+
+.resumen-cifra {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.resumen-cifra.pendiente { color: var(--ladrillo); }
+.resumen-cifra.pagado { color: var(--oliva); }
+.resumen-etiqueta { font-size: 0.8rem; color: var(--apagado); }
+
+.monto-multa { font-variant-numeric: tabular-nums; margin-left: 6px; }
+.cedula-multa { font-weight: 400; font-size: 0.82rem; color: var(--apagado); margin-left: 4px; }
+.detalle-pago { color: var(--oliva); margin-top: 2px; }
+
+.ficha-multa {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: var(--radio);
+  background-color: var(--papel);
+}
+
+.ficha-multa dt { font-size: 0.78rem; font-weight: 600; color: var(--apagado); }
+.ficha-multa dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+@media (max-width: 479.98px) {
+  .ficha-multa { grid-template-columns: 1fr; }
+}
+
+/* datos del carnet */
+.datos-socio { display: flex; flex-wrap: wrap; gap: 2px 16px; }
+
+/* menú ⋮ sobre la portada */
+.menu-libro-admin {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+.menu-libro-admin .btn-menu-libro { position: static; }
+
+/* encabezado en celulares: logo y botones en una sola fila */
+@media (max-width: 479.98px) {
+  .site-header .container { flex-wrap: nowrap !important; gap: 8px !important; }
+  .brand-logo { gap: 8px; min-width: 0; }
+  .brand-logo-icon { width: 42px; height: 42px; }
+  .brand-logo-icon img { width: 34px; height: 34px; }
+  .brand-logo h1 { font-size: 1.05rem; }
+  .header-sub { font-size: 0.75rem; }
+  .header-actions { gap: 6px; }
+  .header-icon-btn { width: 38px; height: 38px; font-size: 0.95rem; }
+}
+
+/* ---------- Copias ---------- */
+
+.texto-copias {
+  font-size: 0.8rem;
+  color: var(--apagado);
+  margin: 4px 0 0 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.texto-en-espera {
+  display: inline-block;
+  margin-left: 6px;
+  color: #96721c;
+  font-weight: 600;
+}
+
+.campo-copias { max-width: 140px; }
+
+.acciones-compactas .btn-agregar-carrito { flex: 1 1 auto; min-width: 0; padding: 7px 10px; }
+.acciones-compactas .btn-agregar-carrito .texto-boton { display: none; }
+.acciones-compactas .btn-accion-libro.btn-accion-libro-grande { flex: 0 0 36px; width: 36px; height: 36px; font-size: 0.9rem; }
+
+/* ---------- Inicio ---------- */
+
+.inicio {
+  max-width: 860px;
+  padding: clamp(8px, 3vw, 40px) 0 clamp(28px, 4vw, 56px);
+}
+
+.inicio-titulo {
+  font-size: clamp(2.3rem, 5.6vw, 4.1rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  margin: 0 0 14px;
+}
+
+.inicio-texto {
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  color: #6f604f;
+  max-width: 56ch;
+  margin: 0 0 26px;
+}
+
+.inicio-buscador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 2px solid var(--marino-hondo);
+  border-radius: 14px;
+  padding: 6px 6px 6px 20px;
+  transition: box-shadow 0.15s ease;
+}
+
+.inicio-buscador:focus-within { box-shadow: 0 0 0 4px rgba(226, 102, 29, 0.22); }
+.inicio-buscador > i { color: var(--marino-hondo); font-size: 1.1rem; }
+
+.inicio-buscador input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+  color: var(--tinta);
+  padding: 12px 0;
+}
+
+.inicio-buscador input::placeholder { color: #a8998a; }
+
+.inicio-buscador .btn-brand {
+  border-radius: 10px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+.inicio-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.inicio-categoria {
+  border: 1px solid var(--linea);
+  background: #fff;
+  color: var(--tinta);
+  border-radius: 999px;
+  padding: 6px 15px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.inicio-categoria:hover { border-color: var(--marino); color: var(--marino-hondo); }
+
+.inicio-categoria.activa {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+/* ---------- Novedades ---------- */
+
+.novedades { margin: 0 0 56px; }
+
+.novedades-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.novedades-titulo { text-align: left; margin: 0; font-size: 1.6rem; }
+
+.novedades-flechas { display: flex; gap: 6px; }
+
+.novedades-flechas .carrusel-flecha {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--linea);
+  background: #fff;
+  color: var(--marino-hondo);
+  font-size: 0.95rem;
+}
+
+.novedades-flechas .carrusel-flecha:hover { border-color: var(--marino); color: var(--marino); }
+
+.estante .lista-novedades {
+  gap: 0;
+  padding: 0 0 8px;
+}
+
+.estante .novedad-item {
+  flex: 0 0 clamp(158px, 15vw, 200px);
+  padding: 0 14px;
+}
+
+.estante .novedad-item .libro-portada-wrap {
+  margin: 0 -14px;
+  padding: 0 22px 18px;
+  width: auto;
+  background:
+    linear-gradient(to bottom,
+      transparent calc(100% - 18px),
+      #c47a3c calc(100% - 18px),
+      #c47a3c calc(100% - 14px),
+      #8f4a1b calc(100% - 14px));
+}
+
+/* sombra que proyecta la tabla */
+.estante .novedad-item .libro-portada-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 10px;
+  background: linear-gradient(rgba(90, 45, 15, 0.28), transparent);
+  pointer-events: none;
+}
+
+.estante .novedad-item .libro-portada {
+  box-shadow: 6px 0 10px -4px rgba(70, 35, 10, 0.45), 0 0 0 1px rgba(43, 32, 22, 0.08);
+}
+
+.estante .novedad-titulo { margin-top: 18px; }
+
+/* ---------- Portadas sin imagen ---------- */
+
+.libro-portada-vacia {
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: inset 8px 0 0 rgba(0, 0, 0, 0.16), inset 10px 0 0 rgba(255, 255, 255, 0.07);
+}
+
+.libro-portada-vacia::before { inset: 10px 10px 10px 18px; }
+.libro-portada-vacia span { font-weight: 700; }
+
+.libro-portada-vacia small {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- Botón "agregar" ---------- */
+
+.btn-agregar-carrito {
+  background-color: transparent;
+  color: var(--marino-hondo);
+  border: 1.5px solid var(--marino);
+}
+
+.btn-agregar-carrito:hover,
+.btn-agregar-carrito:focus-visible {
+  background-color: var(--marino);
+  border-color: var(--marino);
+  color: #fff;
+}
+
+.btn-agregar-carrito.en-carrito {
+  background-color: var(--marino-hondo);
+  border-color: var(--marino-hondo);
+  color: #fff;
+}
+
+.btn-agregar-carrito.en-carrito:hover {
+  background-color: var(--ladrillo);
+  border-color: var(--ladrillo);
+  color: #fff;
+}
+
+.btn-agregar-carrito.cargando { --spinner: var(--marino); }
+
+@media (max-width: 575.98px) {
+  .inicio-buscador { padding-left: 14px; }
+  .inicio-buscador .btn-brand { padding: 0.7rem 1rem; }
+  .novedades-flechas { display: none; }
+}
+
+/* títulos largos en la tapa */
+.libro-portada-vacia span { overflow-wrap: normal; word-break: normal; hyphens: auto; -webkit-hyphens: auto; }
+main.contenedor-ancho { margin-top: 2rem !important; }
+
+/* fila de acciones: el botón de prestar queda fijo */
+.acciones-libro .btn-agregar-carrito { min-width: 0; padding-left: 8px; padding-right: 8px; gap: 5px; font-size: 0.8rem; }
+.acciones-libro .btn-accion-libro.btn-prestar-rapido { flex: 0 0 38px; width: 38px; }
+
+/* ---------- Ficha del libro ---------- */
+
+.libro-item .libro-portada,
+.novedad-item .libro-portada { cursor: pointer; }
+
+.titulo-libro-btn {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titulo-libro-btn:hover { color: var(--marino-hondo); text-decoration: underline; text-underline-offset: 3px; }
+.titulo-libro-btn:focus-visible { outline: 2px solid var(--marino); outline-offset: 2px; border-radius: 2px; }
+
+.detalle-libro {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr;
+  gap: 28px;
+  padding: 32px;
+}
+
+.detalle-cerrar { position: absolute; top: 14px; right: 14px; }
+
+.detalle-portada .libro-portada {
+  width: 100%;
+  border-radius: 2px;
+  box-shadow: 8px 8px 0 -2px rgba(163, 64, 15, 0.12), 0 0 0 1px rgba(43, 32, 22, 0.08);
+  cursor: default;
+}
+
+.detalle-portada .libro-portada-vacia { font-size: 1.15rem; }
+
+.detalle-info { min-width: 0; padding-right: 24px; }
+
+.detalle-titulo {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin: 0 0 6px;
+}
+
+.detalle-autor { font-size: 1.05rem; color: var(--apagado); margin: 0 0 14px; }
+
+.detalle-datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.detalle-datos .etiqueta,
+.detalle-datos .texto-copias { margin: 0 !important; }
+
+.detalle-descripcion p {
+  margin: 0;
+  line-height: 1.65;
+  max-width: 62ch;
+}
+
+.detalle-sin-descripcion { color: var(--apagado); }
+
+.btn-leer-mas {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 8px;
+  color: var(--marino-hondo);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* cargando descripción */
+.cargando-texto { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+
+.cargando-texto .linea {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--linea-suave) 25%, #f7efe2 50%, var(--linea-suave) 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s linear infinite;
+}
+
+.cargando-texto .linea.corta { width: 60%; }
+
+@keyframes brillo { to { background-position: -200% 0; } }
+
+.detalle-fuente { font-size: 0.8rem; color: var(--apagado); margin: 12px 0 0; min-height: 1em; }
+.detalle-fuente a { color: inherit; text-decoration: underline; }
+
+.detalle-acciones { margin-top: 20px; }
+.detalle-acciones .btn-agregar-carrito { flex: 0 0 auto; padding: 9px 22px; font-size: 0.9rem; }
+
+@media (max-width: 575.98px) {
+  .detalle-libro { grid-template-columns: 1fr; padding: 24px 20px; gap: 18px; }
+  .detalle-portada { width: 140px; }
+  .detalle-info { padding-right: 0; }
+}
+
+/* descripción manual en los formularios de libro */
+.campo-descripcion { resize: vertical; min-height: 110px; line-height: 1.5; }
+.contador-descripcion { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.btn-traer-descripcion { color: var(--marino-hondo); font-weight: 600; text-decoration: none; }
+.btn-traer-descripcion:hover { color: var(--marino); text-decoration: underline; }
+.btn-traer-descripcion.cargando { color: transparent !important; min-width: 120px; }
+.btn-editar-ficha { display: inline-block; margin-left: 10px; color: var(--marino-hondo); font-weight: 600; }
+
+/* ---------- Catálogo ---------- */
+
+.lista-libros {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 28px 24px;
+}
+
+.libro-item { padding: 16px; }
+.libro-info h3 { font-size: 1.05rem; }
+.libro-portada-vacia { font-size: 1.15rem; }
+
+@media (max-width: 1199.98px) { .lista-libros { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 991.98px) { .lista-libros { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 575.98px) { .lista-libros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 14px; } .libro-item { padding: 10px; } }
+
+/* paginador (catálogo y socios) */
+.paginador {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+}
+
+.paginador:empty { display: none; }
+
+.paginador-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--tinta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.paginador-btn:hover:not(:disabled) { border-color: var(--marino); color: var(--marino-hondo); }
+.paginador-btn.activo { background: var(--marino); border-color: var(--marino); color: #fff; }
+.paginador-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.paginador-puntos { color: var(--apagado); padding: 0 4px; }
+
+#paginador-socios { margin-top: 16px; }
+
+/* ---------- Llegaron hace poco ---------- */
+
+.estante .lista-novedades { overflow-x: auto; }
+
+.estante .novedad-item {
+  flex: 1 0 0;
+  min-width: 128px;
+  max-width: 200px;
+}
+
+.estante .novedad-item .libro-portada-vacia { font-size: 0.85rem; padding: 12px 10px 12px 16px; }
+
+@media (min-width: 1200px) {
+  .novedades-flechas { display: none; }
+}
+
+/* ---------- Botón de usuario ---------- */
+
+.btn-usuario {
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  line-height: 0;
+}
+
+.btn-usuario:hover,
+.btn-usuario:focus-visible { border-color: #fff; }
+
+.btn-usuario .avatar-usuario {
+  width: 40px;
+  height: 40px;
+  background-color: var(--marino-hondo);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.menu-usuario-lista { min-width: 240px; padding: 8px; margin-top: 10px !important; }
+
+.menu-usuario-cabecera {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px 2px;
+}
+
+.menu-usuario-nombre-socio { font-weight: 700; color: var(--marino-hondo); }
+.menu-usuario-email { font-size: 0.82rem; color: var(--apagado); overflow-wrap: anywhere; }
+.menu-usuario-lista .dropdown-item { padding: 8px 10px; }
+.menu-usuario-lista .dropdown-item i { color: var(--marino); width: 18px; }
+
+/* ---------- Aviso de pagar / retirar en el local ---------- */
+
+.aviso-local { text-align: center; padding: 32px 28px 26px; }
+
+.aviso-local-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--resalte);
+  color: var(--marino-hondo);
+  font-size: 1.6rem;
+  margin-bottom: 14px;
+}
+
+.aviso-local .modal-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 10px; }
+.aviso-local p { color: #5f5142; margin-bottom: 12px; }
+
+.aviso-local-lista {
+  list-style: none;
+  padding: 10px 14px;
+  margin: 0;
+  text-align: left;
+  background: var(--papel);
+  border-radius: var(--radio);
+  font-size: 0.92rem;
+}
+
+.aviso-local-lista li { padding: 4px 0; }
+.aviso-local-lista li + li { border-top: 1px solid var(--linea-suave); }
+
+/* ---------- Varios ---------- */
+
+.observacion-devolucion { color: #6f604f; margin-top: 2px; }
+.detalle-pago-parcial { color: #96721c; font-weight: 600; margin-top: 2px; }
+.lista-verificacion { padding-left: 1.1rem; margin-bottom: 0; color: #5f5142; }
+.lista-verificacion li { margin-bottom: 6px; }
+
+.texto-legal h6 { font-weight: 700; color: var(--marino-hondo); margin-top: 14px; }
+.texto-legal h6:first-child { margin-top: 0; }
+.texto-legal p { font-size: 0.92rem; color: #4b3f33; }
+
+/* ---------- Reservas en el inicio ---------- */
+
+.panel-reservas-inicio { margin-bottom: 40px; }
+
+.reservas-inicio-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-bottom: 14px;
+}
+
+.panel-reservas-inicio .panel-title { font-size: 1.5rem; font-weight: 800; }
+.reservas-inicio-resumen { color: var(--apagado); font-size: 0.92rem; }
+
+.tabla-reservas-fila {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.3fr) minmax(160px, 1.6fr) 110px 120px 140px 96px;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.tabla-reservas-encabezado {
+  padding-top: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--apagado);
+  border-bottom-color: var(--linea);
+}
+
+#lista-reservas-inicio .tabla-reservas-fila:hover { background: var(--papel); }
+#lista-reservas-inicio .tabla-reservas-fila:last-child { border-bottom: 0; }
+.tabla-reservas-fila.vencida { background: #fbeee9; }
+.tabla-reservas-fila.vencida:hover { background: #f8e3de !important; }
+
+.celda-socio, .celda-libro { min-width: 0; overflow-wrap: anywhere; }
+.celda-fecha { font-variant-numeric: tabular-nums; color: #5f5142; }
+.celda-acciones { display: flex; gap: 6px; justify-content: flex-end; }
+
+@media (max-width: 991.98px) {
+  .tabla-reservas-encabezado { display: none; }
+  .tabla-reservas-fila {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "socio acciones" "libro acciones" "fechas estado";
+    gap: 4px 12px;
+    padding: 12px 6px;
+  }
+  .celda-socio { grid-area: socio; }
+  .celda-libro { grid-area: libro; color: #5f5142; }
+  .celda-acciones { grid-area: acciones; }
+  .tabla-reservas-fila > span:nth-child(3) { display: none; }
+  .tabla-reservas-fila > span:nth-child(4) { grid-area: fechas; font-size: 0.85rem; }
+  .tabla-reservas-fila > span:nth-child(5) { grid-area: estado; justify-self: end; }
+  .celda-fecha::before { content: attr(data-etiqueta) ": "; color: var(--apagado); }
+}
+
+/* préstamo por cédula: socio encontrado */
+.socio-encontrado { margin-top: 8px; font-size: 0.9rem; min-height: 1.4em; }
+.socio-encontrado:empty { display: none; }
+.socio-encontrado.ok,
+.socio-encontrado.error { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 10px 12px; border-radius: var(--radio); }
+.socio-encontrado.ok { background: #e7f2ea; color: #1f5a31; }
+.socio-encontrado.error { background: #fbeee9; color: var(--ladrillo); }
+.socio-encontrado.buscando { color: var(--apagado); }
+.socio-encontrado-detalle { font-size: 0.85rem; opacity: 0.9; }
+#prestar-cedula[readonly] { background-color: var(--papel); }
+.socio-encontrado.error { display: block; }

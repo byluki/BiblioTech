@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Ejemplar;
+use App\Models\HistorialActividad;
+use App\Models\Reserva;
+use App\Models\Socio;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class ReservaController extends Controller
+{
+    // admin y bibliotecario ven todas; el socio solo las suyas
+    private function esGestion(Request $request): bool
+    {
+        $usuario = $request->user();
+
+        return $usuario && ($usuario->esAdministrador() || $usuario->esBibliotecario());
+    }
+
+    // GET /reservas  (soporta ?socio_id=, ?estado=)
+    public function index(Request $request)
+    {
+        $query = Reserva::with('socio', 'libro');
+
+        if ($this->esGestion($request)) {
+            // gestión puede filtrar por socio
+            if ($socioId = $request->get('socio_id')) {
+                $query->where('socio_id', $socioId);
+            }
+        } else {
+            // el socio solo ve las suyas, pida el socio_id que pida
+            $socioPropio = $request->user()?->socio;
+            $query->where('socio_id', $socioPropio?->id ?? 0);
+        }
+
+        if ($estado = $request->get('estado')) {
+            $query->where('estado', $estado);
+        }
+
+        return $query->orderByDesc('fecha_reserva')->paginate($request->integer('per_page', 20));
+    }
+
+    // POST /reservas
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'socio_id' => ['required', 'exists:socios,id'],
+            'libro_id' => ['required', 'exists:libros,id'],
+            'fecha_deseada' => ['required', 'date', 'after_or_equal:today'],
+        ]);
+
+        // el socio solo puede reservar a su nombre
+        if (! $this->esGestion($request)) {
+            $socioPropio = $request->user()?->socio;
+
+            if (! $socioPropio || (int) $data['socio_id'] !== (int) $socioPropio->id) {
+                return response()->json(['message' => 'Solo podés reservar a tu propio nombre.'], 403);
+            }
+        }
+
+        return DB::transaction(function () use ($data, $request) {
+            $socio = Socio::findOrFail($data['socio_id']);
+
+            // Regla: solo un socio activo puede reservar.
+            if (! $socio->estaActivo()) {
+                return response()->json(['message' => 'El socio no está activo y no puede reservar.'], 422);
+            }
+
+            // Regla: un usuario común puede reservar varios libros distintos,
+            // pero no más de un ejemplar del mismo libro. Un centro educativo
+            // verificado puede reservar varios libros y varios ejemplares del mismo.
+            if (! $socio->esCentroEducativoVerificado()) {
+                $yaTieneReserva = Reserva::where('socio_id', $socio->id)
+                    ->where('libro_id', $data['libro_id'])
+                    ->whereIn('estado', ['pendiente', 'pendiente_retiro'])
+                    ->exists();
+
+                if ($yaTieneReserva) {
+                    return response()->json([
+                        'message' => 'Ya tenés una reserva activa para este libro. Solo un centro educativo verificado puede reservar más de un ejemplar del mismo libro.',
+                    ], 422);
+                }
+            }
+
+            // si hay una copia libre queda para retirar; si no, en espera
+            $ejemplarDisponible = Ejemplar::where('libro_id', $data['libro_id'])
+                ->where('estado', 'disponible')
+                ->first();
+
+            $reserva = Reserva::create([
+                'socio_id' => $socio->id,
+                'libro_id' => $data['libro_id'],
+                'ejemplar_id' => $ejemplarDisponible?->id,
+                'fecha_reserva' => now()->toDateString(),
+                'fecha_deseada' => $data['fecha_deseada'],
+                'fecha_limite' => $ejemplarDisponible ? now()->addDays(2)->toDateString() : null,
+                'estado' => $ejemplarDisponible ? 'pendiente_retiro' : 'pendiente',
+            ]);
+
+            if ($ejemplarDisponible) {
+                $ejemplarDisponible->update(['estado' => 'reservado']);
+            }
+
+            HistorialActividad::registrar($request->user()?->id, 'reserva', 'reservas', $reserva->id);
+
+            return response()->json($reserva->load('socio', 'libro'), 201);
+        });
+    }
+
+    // GET /reservas/{id}
+    public function show(Request $request, Reserva $reserva)
+    {
+        if (! $this->esGestion($request)) {
+            $socioPropio = $request->user()?->socio;
+
+            if (! $socioPropio || (int) $reserva->socio_id !== (int) $socioPropio->id) {
+                return response()->json(['message' => 'No podés ver la reserva de otro socio.'], 403);
+            }
+        }
+
+        return $reserva->load('socio', 'libro', 'ejemplar');
+    }
+
+    // PATCH /reservas/{id}/confirmar
+    // Marca la reserva como entregada (el préstamo se crea aparte).
+    public function confirmar(Request $request, Reserva $reserva)
+    {
+        if ($reserva->estado !== 'pendiente_retiro') {
+            return response()->json(['message' => 'La reserva no está lista para retiro.'], 422);
+        }
+
+        $reserva->update(['estado' => 'confirmada']);
+
+        HistorialActividad::registrar($request->user()?->id, 'reserva_confirmada', 'reservas', $reserva->id);
+
+        return response()->json($reserva);
+    }
+
+    // PATCH /reservas/{id}/cancelar
+    public function cancelar(Request $request, Reserva $reserva)
+    {
+        // Un socio común solo puede cancelar su propia reserva; gestión
+        // (administrador/bibliotecario) puede cancelar cualquiera.
+        if (! $this->esGestion($request)) {
+            $socioPropio = $request->user()?->socio;
+
+            if (! $socioPropio || (int) $reserva->socio_id !== (int) $socioPropio->id) {
+                return response()->json(['message' => 'No podés cancelar la reserva de otro socio.'], 403);
+            }
+        }
+
+        if (in_array($reserva->estado, ['confirmada', 'cancelada'], true)) {
+            return response()->json(['message' => 'La reserva ya fue confirmada o cancelada.'], 422);
+        }
+
+        return DB::transaction(function () use ($request, $reserva) {
+            $ejemplar = $reserva->ejemplar_id ? $reserva->ejemplar : null;
+
+            $reserva->update(['estado' => 'cancelada']);
+
+            // Si había un ejemplar apartado para esta reserva, pasa al
+            // siguiente socio en espera (si hay); si no, queda disponible.
+            if ($ejemplar) {
+                $siguiente = Reserva::where('libro_id', $reserva->libro_id)
+                    ->where('estado', 'pendiente')
+                    ->oldest('fecha_reserva')
+                    ->oldest('id')
+                    ->first();
+
+                if ($siguiente) {
+                    $ejemplar->update(['estado' => 'reservado']);
+                    $siguiente->update([
+                        'ejemplar_id' => $ejemplar->id,
+                        'estado' => 'pendiente_retiro',
+                        'fecha_limite' => now()->addDays(2)->toDateString(),
+                    ]);
+                } else {
+                    $ejemplar->update(['estado' => 'disponible']);
+                }
+            }
+
+            HistorialActividad::registrar($request->user()?->id, 'reserva_cancelada', 'reservas', $reserva->id);
+
+            return response()->json($reserva);
+        });
+    }
+}

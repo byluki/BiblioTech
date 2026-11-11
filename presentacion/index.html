@@ -1,0 +1,1523 @@
+<title>BiblioTech</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: la mesa de una biblioteca. Fichas catalográficas, tarjeta de préstamo, sellos de fecha, carnets y papel continuo; cada sección lleva su signatura (Dewey 025 = operaciones de bibliotecas). */
+:root {
+  --desk: #e7e3da;        /* mesa / fondo */
+  --desk-dark: #d8d2c4;
+  --card: #fcfbf7;        /* cartulina de ficha */
+  --manila: #ecd9a8;      /* tarjeta de préstamo */
+  --ink: #1d1b18;         /* tinta de máquina */
+  --ink-soft: #5d574d;
+  --rule-blue: #b9cde3;   /* renglones de la ficha */
+  --rule-red: #d6463a;    /* línea roja de encabezado */
+  --stamp: #4b3c9a;       /* tinta violeta del fechador */
+  --stamp-red: #c2322a;
+  --brand: #e2661d;       /* naranja de la app */
+  --oak: #9a6a3c;
+  --oak-dark: #6e4824;
+  --brass: #c9a34e;
+
+  --f-display: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif;
+  --f-type: 'Courier Prime', 'Courier New', Courier, monospace;
+  --f-body: 'Libre Franklin', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --thud: cubic-bezier(.3,1.6,.5,1);
+  --ease: cubic-bezier(.2,.7,.1,1);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 18px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+
+/* grano de papel sobre toda la mesa */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: .35; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .32 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- barra superior y etiqueta de lomo ---------- */
+.progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 50; margin-top: env(safe-area-inset-top, 0px); }
+.progress span { display: block; height: 100%; background: var(--brand); transform-origin: 0 50%; transform: scaleX(0); }
+.spine {
+  position: fixed; z-index: 50;
+  left: max(18px, env(safe-area-inset-left, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: stretch; font-family: var(--f-type); font-size: 13px; line-height: 1.25;
+  box-shadow: 0 2px 0 rgba(0,0,0,.08);
+}
+.spine .call { background: var(--card); color: var(--ink); border: 1px solid var(--ink); padding: 6px 10px; text-align: center; min-width: 74px; }
+.spine .call b { display: block; font-weight: 700; }
+.spine .name { background: var(--ink); color: var(--card); padding: 6px 12px; display: flex; align-items: center; }
+.hint {
+  position: fixed; z-index: 50; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  font: 13px/1 var(--f-type); color: var(--ink-soft); background: var(--card); padding: 5px 8px; border: 1px solid var(--desk-dark);
+}
+.hint kbd { font: inherit; color: var(--ink); border: 1px solid var(--ink-soft); padding: 2px 6px; margin-right: 2px; background: var(--card); }
+
+/* ---------- secciones ---------- */
+.sec {
+  position: relative; min-height: 100vh; display: flex; align-items: center;
+  padding-block: 110px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.sec + .sec { border-top: 1px solid var(--desk-dark); }
+.sec.dark { background: #22201c; color: #f1ece2; border-top: 0; }
+.wrap { width: 100%; max-width: 1140px; margin: 0 auto; padding-inline: 24px; }
+.head { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 28px; align-items: start; }
+.label {
+  font: 700 15px/1.25 var(--f-type); text-align: center; background: var(--card); color: var(--ink);
+  border: 1.5px solid var(--ink); padding: 10px 8px; width: 96px; --rot: -2deg; transform: rotate(-2deg);
+}
+.dark .label { border-color: var(--card); }
+.h2 { font: 900 clamp(48px, 7.4vw, 104px)/.88 var(--f-display); text-transform: uppercase; letter-spacing: -.005em; }
+.lead { font-size: clamp(18px, 1.6vw, 21px); max-width: 60ch; margin-top: 22px; color: var(--ink-soft); }
+.dark .lead { color: #b8b0a2; }
+
+/* ---------- aparición ---------- */
+.anim [data-r] { opacity: 0; transform: translateY(36px) rotate(var(--rot0, 0deg)); transition: opacity .8s var(--ease), transform .9s var(--ease); transition-delay: calc(var(--d, 0) * 100ms); }
+.anim [data-r].in { opacity: 1; transform: rotate(var(--rot, 0deg)); }
+
+/* sello: cae y "golpea" */
+.stamp {
+  display: inline-block; font: 900 22px/1 var(--f-display); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--stamp); border: 3px solid currentColor; padding: 6px 12px 5px; border-radius: 4px;
+  outline: 1px solid currentColor; outline-offset: 3px; transform: rotate(var(--sr, -8deg)); mix-blend-mode: multiply; opacity: .92;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+}
+.stamp.red { color: var(--stamp-red); }
+.anim .stamp.drop { opacity: 0; transform: scale(2.3) rotate(calc(var(--sr, -8deg) - 10deg)); }
+.anim .in .stamp.drop, .anim .stamp.drop.in { opacity: .92; transform: scale(1) rotate(var(--sr, -8deg));
+  transition: transform .45s var(--thud), opacity .15s linear; transition-delay: var(--sd, .5s); }
+.stamp.hit { animation: thud .45s var(--thud) both; }
+@keyframes thud { from { opacity: 0; transform: scale(2.2) rotate(0deg); } to { opacity: .92; transform: scale(1) rotate(var(--sr, -8deg)); } }
+
+/* ---------- ficha catalográfica ---------- */
+.ficha {
+  position: relative; background-color: var(--card); color: var(--ink);
+  background-image:
+    linear-gradient(var(--rule-red), var(--rule-red)),
+    repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule-blue) 27px 28px);
+  background-size: 100% 2px, 100% 100%;
+  background-position: 0 52px, 0 52px;
+  background-repeat: no-repeat;
+  box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 14px 30px -18px rgba(40,30,10,.45);
+  font-family: var(--f-type); font-size: 16.5px; line-height: 28px;
+  padding: 14px 26px 40px;
+}
+.ficha::after { content: ""; position: absolute; left: 50%; bottom: 12px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--desk); box-shadow: inset 0 1px 2px rgba(0,0,0,.25); }
+.ficha .top { height: 38px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+.ficha .top b { font-size: 16.5px; }
+
+/* ---------- portada ---------- */
+.hero { padding-block: 90px 120px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,1fr); gap: 56px; align-items: center; }
+.hero h1 { font: 900 clamp(84px, 13vw, 190px)/.8 var(--f-display); text-transform: uppercase; letter-spacing: -.01em; }
+.hero h1 span { color: var(--brand); display: block; }
+.hero .sub { margin-top: 26px; font-size: clamp(19px, 1.7vw, 22px); max-width: 34ch; color: var(--ink-soft); }
+.hero .ficha { transform: rotate(1.6deg); max-width: 520px; justify-self: end; width: 100%; }
+.hero .ficha img { position: absolute; right: 22px; top: 70px; width: 70px; height: 70px; }
+.typed { min-height: 196px; white-space: pre-wrap; padding-right: 80px; }
+.caret { display: inline-block; width: .55em; height: 1.05em; background: var(--ink); vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.hero .stamp { position: absolute; right: 24px; bottom: 34px; --sr: -11deg; }
+.cue { position: absolute; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); font: 14px/1 var(--f-type); color: var(--ink-soft); display: flex; gap: 10px; align-items: center; white-space: nowrap; }
+.cue i { display: inline-block; font-style: normal; animation: nudge 1.6s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translateY(6px); } }
+
+/* ---------- problemas: fichas desparramadas ---------- */
+.pile { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 34px 30px; margin-top: 64px; }
+.pile .ficha { padding-bottom: 44px; }
+.pile .ficha h3 { font: 700 16.5px/28px var(--f-type); text-transform: uppercase; }
+.pile .ficha .no { color: var(--rule-red); }
+.pile .ficha p { color: #3b3832; }
+.pile > :nth-child(1) { --rot: -1.8deg; --rot0: -9deg; }
+.pile > :nth-child(2) { --rot: 1.2deg;  --rot0: 7deg; }
+.pile > :nth-child(3) { --rot: -.6deg;  --rot0: -6deg; }
+.pile > :nth-child(4) { --rot: 1.6deg;  --rot0: 10deg; }
+.pile > :nth-child(5) { --rot: -1.1deg; --rot0: -5deg; }
+.pile > :nth-child(6) { --rot: .9deg;   --rot0: 8deg; }
+.pile > * { transform: rotate(var(--rot)); }
+.anim .pile [data-r] { transform: translateY(120px) rotate(var(--rot0)); }
+.anim .pile [data-r].in { transform: rotate(var(--rot)); }
+
+/* ---------- solución: cajones del fichero ---------- */
+.statement { font: 700 clamp(26px, 3.2vw, 42px)/1.1 var(--f-display); text-transform: uppercase; max-width: 26ch; margin-top: 18px; color: #d9cfbd; }
+.cabinet { margin-top: 60px; background: var(--oak-dark); padding: 18px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; box-shadow: 0 30px 50px -30px rgba(0,0,0,.6); }
+.drawer { position: relative; min-width: 0; }
+.drawer .front {
+  position: relative; z-index: 2; height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  background: linear-gradient(180deg, #b07d4b, var(--oak) 40%, #8a5d33);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.18);
+  transition: transform .7s var(--ease);
+}
+.drawer .holder { background: linear-gradient(#e6c97c, var(--brass) 50%, #9c7a2c); padding: 5px; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.drawer .holder span { display: block; background: var(--card); font: 700 15px/1 var(--f-type); padding: 8px 18px; color: var(--ink); white-space: nowrap; }
+.drawer .pull { width: 70px; height: 18px; border-radius: 0 0 40px 40px; background: linear-gradient(#e6c97c, #8f6d25); box-shadow: 0 2px 3px rgba(0,0,0,.4); }
+.drawer .inside { position: absolute; z-index: 1; left: 10px; right: 10px; top: 10px; height: 140px; background: #3c2814; overflow: hidden; }
+.drawer .inside i { position: absolute; left: 12px; right: 12px; height: 60px; background: var(--card); border-top: 2px solid var(--rule-red); }
+.drawer .inside i:nth-child(1) { top: 10px; } .drawer .inside i:nth-child(2) { top: 18px; left: 16px; } .drawer .inside i:nth-child(3) { top: 26px; }
+.drawer .txt { position: relative; z-index: 2; margin-top: 18px; color: #e9e1d2; transition: margin .7s var(--ease); }
+.drawer.in .front { transform: translateY(70px); transition-delay: calc(var(--d,0) * 140ms + .3s); }
+.drawer.in .txt { margin-top: 88px; transition-delay: calc(var(--d,0) * 140ms + .3s); }
+.drawer .txt h3 { font: 700 26px/1 var(--f-display); text-transform: uppercase; margin-bottom: 8px; color: #fff; }
+.drawer .txt p { font-size: 15.5px; color: #cdbfa7; }
+.cab-foot { margin-top: 18px; font: 15px/1.5 var(--f-type); color: #b8b0a2; }
+.cab-foot b { color: #f1ece2; }
+
+/* ---------- antes / ahora: libro de registro ---------- */
+.ledger { margin-top: 56px; background: var(--card); box-shadow: 0 14px 30px -18px rgba(40,30,10,.45); }
+.ledger .row { display: grid; grid-template-columns: 200px minmax(0,1fr) minmax(0,1.3fr); border-top: 1px solid var(--rule-blue); position: relative; }
+.ledger .row:first-child { border-top: 0; }
+.ledger .hdr { font: 700 13px/1 var(--f-type); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); border-bottom: 2px solid var(--rule-red); }
+.ledger .hdr > div { padding: 14px 22px; }
+.ledger .row > div { padding: 22px 22px; min-width: 0; }
+.ledger .row > div + div { border-left: 1px solid #f0c7c2; }
+.ledger .topic { font: 700 28px/1 var(--f-display); text-transform: uppercase; }
+.ledger .before { font-family: var(--f-type); font-size: 16px; color: var(--ink-soft); position: relative; padding-bottom: 54px !important; }
+.ledger .before .stamp { position: absolute; right: 16px; bottom: 14px; font-size: 17px; padding: 4px 9px 3px; --sr: -7deg; }
+.ledger .after { font-size: 17px; }
+.ledger .after b { font-weight: 600; }
+.tag { font-family: var(--f-type); font-size: .9em; border-bottom: 2px solid var(--brand); }
+
+/* ---------- escena: tarjeta de préstamo ---------- */
+.scrolly { position: relative; height: 460vh; border-top: 1px solid var(--desk-dark); }
+.scrolly .stick { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.scrolly .stop { position: absolute; left: 0; width: 1px; height: 1px; }
+.scene { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); gap: 64px; align-items: center; }
+.scene .h2 { font-size: clamp(44px, 5.4vw, 78px); }
+.steps { position: relative; min-height: 200px; margin-top: 30px; }
+.step { position: absolute; inset: 0; opacity: 0; transform: translateY(28px); transition: opacity .5s var(--ease), transform .6s var(--ease); }
+.step.past { transform: translateY(-28px); }
+.step.on { opacity: 1; transform: none; transition-delay: .12s; }
+.step .n { font: 700 14px/1 var(--f-type); color: var(--rule-red); margin-bottom: 10px; }
+.step h3 { font: 700 34px/1 var(--f-display); text-transform: uppercase; margin-bottom: 12px; }
+.step p { color: var(--ink-soft); max-width: 44ch; }
+.counter { font: 14px/1 var(--f-type); color: var(--ink-soft); display: flex; gap: 6px; }
+.counter span { width: 30px; height: 30px; display: grid; place-items: center; border: 1.5px solid var(--ink-soft); transition: background .3s, color .3s; }
+.counter span.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+
+.pocket { position: relative; padding-top: 30px; }
+.pocket::before { /* bolsillo pegado en la contratapa */
+  content: ""; position: absolute; left: -14px; right: -14px; bottom: -18px; height: 96px; z-index: 3;
+  background: #d4bf8c; border-top: 2px dashed rgba(90,70,30,.35); box-shadow: 0 -6px 14px -8px rgba(0,0,0,.35);
+}
+.pocket::after { content: "Biblioteca Central · Devolver en la fecha indicada"; position: absolute; z-index: 4; left: 0; right: 0; bottom: 14px; text-align: center; font: 13px/1 var(--f-type); color: #6e5a2c; }
+.lcard { position: relative; z-index: 2; background: var(--manila); color: var(--ink); padding: 18px 20px 110px; font-family: var(--f-type); font-size: 15px; box-shadow: 0 2px 6px rgba(0,0,0,.18); transform: rotate(-1.2deg); }
+.lcard .t1 { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #6e5a2c; }
+.lcard .t2 { font-weight: 700; font-size: 19px; margin: 4px 0 2px; }
+.lcard .t3 { color: #6e5a2c; margin-bottom: 12px; }
+.lcard table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.lcard th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; text-align: left; color: #6e5a2c; padding: 6px 6px; border-bottom: 1.5px solid #8c7444; font-weight: 400; }
+.lcard td { height: 40px; padding: 0 6px; border-bottom: 1px solid #c8b17a; vertical-align: middle; white-space: nowrap; position: relative; }
+.lcard td + td, .lcard th + th { border-left: 1px solid #c8b17a; }
+.lcard .ink { color: var(--stamp); font-weight: 700; opacity: 0; transition: opacity .3s; }
+.lcard .ink.on { opacity: 1; }
+.lcard .mini { font: 900 15px/1 var(--f-display); letter-spacing: .06em; padding: 3px 6px 2px; outline-offset: 2px; border-width: 2px; position: absolute; left: 6px; top: 8px; --sr: -6deg; }
+.wait { margin-top: 16px; }
+.wait .wl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: #6e5a2c; margin-bottom: 4px; }
+.wait ol { margin: 0; padding: 0; }
+.wait li { list-style: none; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; padding: 5px 0; border-bottom: 1px dotted #b79e66; transition: color .3s; }
+.wait .who { position: relative; }
+.wait .who::after { content: ""; position: absolute; left: -3px; right: -3px; top: 52%; height: 2px; background: var(--stamp-red); transform: scaleX(0); transform-origin: left; transition: transform .45s var(--ease); }
+.wait li.x .who::after { transform: scaleX(1); }
+.wait li.x { color: #8c7a55; }
+.wait .st { color: var(--stamp); font-weight: 700; }
+.big-stamp { position: absolute; z-index: 5; right: 4px; top: 10px; font-size: 26px; --sr: 9deg; }
+
+/* la tarjeta sale del bolsillo al llegar a la escena */
+.lcard { transition: transform 1s var(--ease); }
+.anim .scrolly:not(.in) .lcard { transform: translateY(170px) rotate(2.5deg); }
+
+/* fechador de goma que entra, sella y se va */
+.stamper { position: absolute; left: 0; top: 0; width: 70px; height: 90px; z-index: 8; pointer-events: none; opacity: 0;
+  filter: drop-shadow(0 10px 10px rgba(0,0,0,.3)); }
+.stamper .knob { width: 34px; height: 34px; border-radius: 50%; margin: 0 auto; background: radial-gradient(circle at 35% 30%, #b98656, #5a3a1c); }
+.stamper .neck { width: 12px; height: 18px; margin: -2px auto 0; background: linear-gradient(90deg, #4a2f16, #8a5d33, #4a2f16); }
+.stamper .base { height: 30px; margin-top: -1px; background: linear-gradient(#3a3631, #1f1d1a); border-radius: 3px; }
+.stamper .rubber { height: 8px; margin: 0 4px; background: var(--stamp); border-radius: 0 0 2px 2px; }
+.stamper.red .rubber { background: var(--stamp-red); }
+
+/* la tarjeta se mueve un poco en cada cambio de paso */
+.lcard.nudge-f { animation: nudgeF .7s var(--ease); }
+.lcard.nudge-b { animation: nudgeB .7s var(--ease); }
+@keyframes nudgeF { 0% { transform: rotate(-1.2deg); } 35% { transform: translateY(-10px) rotate(-2.6deg); } 100% { transform: rotate(-1.2deg); } }
+@keyframes nudgeB { 0% { transform: rotate(-1.2deg); } 35% { transform: translateY(8px) rotate(.4deg); } 100% { transform: rotate(-1.2deg); } }
+/* un sello que se despega al volver atrás */
+.stamp.peel { animation: peel .5s ease-in forwards; }
+@keyframes peel { from { opacity: .92; transform: rotate(var(--sr, -8deg)); } to { opacity: 0; transform: translateY(-14px) scale(1.35) rotate(calc(var(--sr, -8deg) - 22deg)); } }
+
+/* fila de espera: el que cancela se va y el resto sube */
+.wait li { max-height: 60px; overflow: hidden; transition: max-height .6s var(--ease), opacity .45s, padding .6s var(--ease), border-color .3s, color .3s; }
+/* la ficha de reserva: pasa de un socio al siguiente en la fila */
+.wait .who { padding-right: 82px; }
+.wait .who::after { right: 79px; }
+.copy { position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none; white-space: nowrap;
+  font: 900 11px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 7px 3px; border: 1.5px dashed var(--stamp); color: var(--stamp); background: var(--manila);
+  transform: rotate(-3deg); transition: background .35s, color .35s, border-color .35s;
+  box-shadow: 1px 2px 3px rgba(0,0,0,.18); }
+.copy.on { background: var(--stamp-red); border-color: var(--stamp-red); border-style: solid; color: #fff; }
+.copy.done { background: var(--stamp); border-color: var(--stamp); border-style: solid; color: #fff; }
+.wait li.gone { max-height: 0; opacity: 0; padding-block: 0; border-bottom-color: transparent; }
+#nC { display: inline-block; }
+#nC.bump { animation: bump .6s var(--thud); }
+@keyframes bump { 0% { transform: translateY(14px); color: var(--stamp-red); } 100% { transform: none; } }
+.wait .st:not(:empty)::after { content: ""; }
+.typing::after { content: "▌"; font-weight: 400; animation: blink 1s steps(1) infinite; }
+.sprog { width: 138px; height: 3px; background: var(--desk-dark); margin-top: 12px; }
+.sprog span { display: block; height: 100%; background: var(--ink); transform-origin: 0 50%; transform: scaleX(0); }
+
+/* ---------- ciclo ---------- */
+.life { margin-top: 56px; overflow-x: auto; }
+.life svg { width: 100%; min-width: 640px; height: auto; display: block; }
+.life .st rect { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; transition: fill .3s; }
+.life .st text { font: 700 17px var(--f-type); fill: var(--ink); transition: fill .3s; }
+.life .st.lit rect { fill: var(--ink); }
+.life .st.lit text { fill: var(--card); }
+.life .edge { fill: none; stroke: var(--ink-soft); stroke-width: 1.6; }
+.life .edge-lbl { font: italic 15px var(--f-type); fill: var(--ink-soft); }
+.life .dot { fill: var(--brand); }
+.foot-notes { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 30px; margin-top: 36px; }
+.foot-notes p { border-top: 2px solid var(--ink); padding-top: 12px; font-size: 16.5px; color: var(--ink-soft); }
+.foot-notes b { color: var(--ink); }
+
+/* ---------- roles: carnets ---------- */
+.carnets { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 22px; margin-top: 60px; }
+.carnet { background: var(--card); color: var(--ink); min-width: 0; display: flex; flex-direction: column; box-shadow: 0 16px 30px -18px rgba(0,0,0,.6); transform: rotate(var(--rot, 0deg)); }
+.carnet.in:hover { transform: translateY(-8px) rotate(-1deg); transition: transform .4s var(--ease); }
+.carnet .band { background: var(--c); color: #fff; padding: 10px 16px; font: 700 12px/1 var(--f-type); letter-spacing: .12em; text-transform: uppercase; display: flex; justify-content: space-between; }
+.carnet .body { padding: 18px 16px 14px; flex: 1; }
+.carnet h3 { font: 900 32px/1 var(--f-display); text-transform: uppercase; margin-bottom: 12px; }
+.carnet ul { margin: 0; padding: 0; list-style: none; font-size: 15.5px; color: #3b3832; }
+.carnet li { padding: 6px 0; border-top: 1px dotted #c9c2b3; }
+.carnet .code { margin: 0 16px 14px; height: 38px;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px, var(--ink) 8px 11px, transparent 11px 12px, var(--ink) 12px 13px, transparent 13px 17px); }
+.carnet .num { margin: -10px 16px 14px; font: 12px/1 var(--f-type); letter-spacing: .3em; color: var(--ink-soft); }
+.carnet.guest { background: transparent; border: 2px dashed #8c857a; color: #f1ece2; box-shadow: none; }
+.carnet.guest h3 { color: #f1ece2; }
+.carnet.guest ul { color: #cfc6b6; }
+.carnet.guest li { border-top-color: #5a554d; }
+.carnet.guest .band { background: transparent; color: #b8b0a2; border-bottom: 2px dashed #8c857a; }
+.carnet.guest .nocode { margin: 0 16px 14px; font: 13px/1.4 var(--f-type); color: #b8b0a2; }
+.note { margin-top: 30px; font-size: 16.5px; color: #b8b0a2; max-width: 68ch; }
+
+/* ---------- reportes: papel continuo ---------- */
+.reports { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 40px; margin-top: 56px; align-items: start; }
+.continuo {
+  position: relative; padding: 18px 46px 26px; font: 15px/30px var(--f-type); color: var(--ink);
+  background:
+    radial-gradient(circle at 15px 15px, var(--desk) 5px, transparent 6px) left top / 30px 30px repeat-y,
+    radial-gradient(circle at 15px 15px, var(--desk) 5px, transparent 6px) right top / 30px 30px repeat-y,
+    repeating-linear-gradient(to bottom, #f7faf4 0 60px, #dfecd9 60px 120px);
+  box-shadow: 0 14px 30px -18px rgba(40,30,10,.45);
+  overflow-x: auto;
+}
+.continuo::before, .continuo::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; border-left: 1px dashed #b9b4a6; }
+.continuo::before { left: 30px; } .continuo::after { right: 30px; }
+.continuo pre { margin: 0; font: inherit; white-space: pre; }
+.continuo .hd { font-weight: 700; }
+.continuo .bar { color: var(--brand); }
+.continuo .small { color: var(--ink-soft); font-size: 13px; }
+.rlist { display: flex; flex-direction: column; }
+.rlist div { padding: 18px 0; border-top: 2px solid var(--ink); }
+.rlist div:last-child { border-bottom: 2px solid var(--ink); }
+.rlist h3 { font: 700 26px/1 var(--f-display); text-transform: uppercase; margin-bottom: 6px; }
+.rlist p { color: var(--ink-soft); font-size: 16px; }
+
+/* ---------- números ---------- */
+.nums { margin-top: 56px; border-top: 2px solid var(--ink); }
+.nrow { display: grid; grid-template-columns: 220px minmax(0,1fr) auto; gap: 28px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid #bdb5a5; }
+.nrow .v { font: 900 clamp(64px, 8vw, 104px)/.9 var(--f-display); font-variant-numeric: tabular-nums; }
+.nrow .l { font-size: 19px; }
+.nrow .s { font: 13px/1 var(--f-type); color: var(--ink-soft); text-align: right; }
+.stack { margin-top: 26px; font: 15px/1.6 var(--f-type); color: var(--ink-soft); }
+
+/* ---------- cierre ---------- */
+.end { justify-content: center; text-align: center; }
+.end .wrap { display: flex; flex-direction: column; align-items: center; }
+.end img { width: 96px; height: 96px; margin-bottom: 30px; }
+.end .stamp { font-size: clamp(64px, 12vw, 150px); padding: 10px 34px 4px; border-width: 8px; outline-width: 3px; outline-offset: 8px; --sr: -6deg; --sd: .2s; }
+.end .lead { margin: 50px auto 0; text-align: center; }
+.end .q { margin-top: 26px; font: 700 18px/1 var(--f-type); }
+
+/* ---------- historia: una tarde cualquiera ---------- */
+.diary { margin-top: 56px; border-top: 2px solid var(--ink); }
+.entry { display: grid; grid-template-columns: 170px minmax(0,1fr); gap: 28px; padding: 22px 0; border-bottom: 1px solid #bdb5a5; }
+.entry time { font: 700 15px/1.4 var(--f-type); color: var(--rule-red); padding-top: 7px; }
+.entry p { font-size: clamp(21px, 2.2vw, 28px); line-height: 1.35; max-width: 42ch; }
+.entry p em { font-style: italic; }
+.moral { margin-top: 44px; font: 900 clamp(34px, 4.6vw, 62px)/.95 var(--f-display); text-transform: uppercase; max-width: 22ch; }
+.moral span { color: var(--brand); }
+
+/* ---------- quiénes somos ---------- */
+.team { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 22px; margin-top: 56px; }
+.team .carnet .ph { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 14px;
+  background: var(--desk-dark); color: var(--ink-soft); font: 900 26px/1 var(--f-display); }
+.team .carnet h3 { font-size: 28px; margin-bottom: 4px; }
+.team .carnet .role { font: 700 13px/1.3 var(--f-type); text-transform: uppercase; letter-spacing: .06em; color: var(--c); margin-bottom: 10px; }
+.course { margin-top: 18px; font: 15px/1.5 var(--f-type); color: var(--ink-soft); }
+
+/* ---------- competencia ---------- */
+.ledger.cmp .row { grid-template-columns: 190px minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr); }
+.cmp .row > div { font-size: 16px; }
+.cmp .row > .topic { font-size: 26px; }
+.cmp .topic small { display: block; margin-top: 8px; font: 13px/1.3 var(--f-type); text-transform: none; color: var(--ink-soft); }
+.cmp .row.ours { background: #fbeee0; }
+.cmp .row.ours .topic { color: var(--brand); }
+.cmp-foot { margin-top: 30px; max-width: 70ch; font-size: 17px; color: var(--ink-soft); }
+.cmp-foot b { color: var(--ink); }
+
+/* ---------- demo ---------- */
+.demo-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 56px; margin-top: 56px; align-items: center; }
+.guion { transform: rotate(var(--rot, -1deg)); }
+.guion ol { list-style: none; margin: 0; padding: 0; }
+.guion button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 8px; width: 100%; cursor: pointer; font: 16.5px/28px var(--f-type); color: var(--ink); }
+.guion button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.guion .box { width: 18px; height: 18px; border: 1.5px solid var(--ink); margin-top: 5px; position: relative; }
+.guion button[aria-pressed="true"] .box::after { content: "✓"; position: absolute; left: 0; top: -14px; font: 900 30px/1 var(--f-display); color: var(--stamp-red); animation: thud .35s var(--thud) both; --sr: -6deg; }
+.guion button[aria-pressed="true"] .t { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--stamp-red); }
+.live { display: flex; flex-direction: column; align-items: flex-start; gap: 30px; }
+.live .stamp { font-size: clamp(54px, 7vw, 92px); padding: 8px 26px 2px; border-width: 6px; outline-width: 2px; outline-offset: 6px; --sr: -7deg; }
+.launch { display: inline-flex; align-items: center; gap: 10px; font: 700 18px/1 var(--f-type); background: var(--brand); color: #fff; padding: 16px 22px; text-decoration: none; box-shadow: 0 4px 0 #9c4512; }
+.launch:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #9c4512; }
+.live .small { font: 14px/1.5 var(--f-type); color: #b8b0a2; max-width: 36ch; }
+
+/* ---------- seguridad y sistemas ---------- */
+.sec-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 48px; margin-top: 56px; align-items: start; }
+.rlist h3 .k { font: 700 13px/1 var(--f-type); color: var(--rule-red); margin-right: 10px; vertical-align: 4px; }
+.infra { background: var(--card); padding: 18px; box-shadow: 0 14px 30px -18px rgba(40,30,10,.45); }
+.infra svg { width: 100%; height: auto; display: block; }
+.infra .bx rect { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+.infra .bx.in rect { fill: var(--desk-dark); }
+.infra .bx .t1 { font: 700 17px var(--f-type); fill: var(--ink); }
+.infra .bx .t2 { font: 13px var(--f-type); fill: var(--ink-soft); }
+.infra .wire { fill: none; stroke: var(--ink-soft); stroke-width: 1.6; }
+.infra .net { fill: none; stroke: var(--brand); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.infra .netl { font: italic 14px var(--f-type); fill: var(--brand); }
+.infra .legend { margin-top: 12px; font: 13.5px/1.5 var(--f-type); color: var(--ink-soft); }
+.next { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; margin-top: 44px; }
+.next div { border: 2px dashed #8c857a; padding: 16px 18px; font-size: 16px; color: var(--ink-soft); }
+.next b { display: block; margin-bottom: 8px; font: 700 13px/1 var(--f-type); letter-spacing: .1em; text-transform: uppercase; color: var(--rule-red); }
+.next strong { color: var(--ink); font-weight: 600; }
+
+/* ---------- Lucía, con BiblioTech ---------- */
+.lu-grid { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); gap: 48px; margin-top: 56px; align-items: center; }
+.lu-steps { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.lu-steps button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 128px minmax(0,1fr); gap: 16px; width: 100%; padding: 12px 0; border-bottom: 1px solid #bdb5a5; cursor: pointer; opacity: .42; transition: opacity .35s; }
+.lu-steps button:hover { opacity: .75; }
+.lu-steps button[aria-current="step"] { opacity: 1; }
+.lu-steps button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.lu-steps time { font: 700 14px/1.4 var(--f-type); color: var(--rule-red); padding-top: 4px; }
+.lu-steps b { display: block; font: 700 25px/1 var(--f-display); text-transform: uppercase; margin-bottom: 4px; }
+.lu-steps .d { display: block; font-size: 15.5px; line-height: 1.45; color: var(--ink-soft); }
+.lu-ctrl { margin-top: 16px; display: flex; gap: 14px; align-items: center; }
+.lu-ctrl button { all: unset; cursor: pointer; font: 700 14px/1 var(--f-type); border: 1.5px solid var(--ink); padding: 8px 12px; color: var(--ink); background: var(--card); }
+.lu-ctrl button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.lu-prog { width: 140px; height: 3px; background: var(--desk-dark); }
+.lu-prog span { display: block; height: 100%; background: var(--ink); transform-origin: 0 50%; transform: scaleX(0); transition: transform .5s var(--ease); }
+
+.browser { background: var(--card); border: 1.5px solid var(--ink); box-shadow: 0 18px 34px -20px rgba(40,30,10,.55); transform: rotate(var(--rot, .6deg)); min-width: 0; }
+.browser .chrome { display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-bottom: 1.5px solid var(--ink); background: var(--desk); }
+.browser .chrome i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink); flex: none; }
+.browser .url { margin-left: 10px; flex: 1; min-width: 0; font: 13px/1 var(--f-type); background: var(--card); border: 1px solid var(--desk-dark); padding: 6px 10px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.screen { position: relative; height: 410px; padding: 22px; overflow: hidden; background: #fff; }
+.lu-search { display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--ink); padding: 10px 14px; font: 16px/1 var(--f-type); min-height: 42px; }
+.lu-q.typing::after { content: "▌"; animation: blink 1s steps(1) infinite; }
+.lu-res { position: relative; margin-top: 18px; display: grid; grid-template-columns: 66px minmax(0,1fr); gap: 16px; padding: 16px; border: 1px solid var(--desk-dark); background: var(--card);
+  opacity: 0; transform: translateY(18px); transition: opacity .5s var(--ease), transform .55s var(--ease); }
+.screen:not([data-s="0"]) .lu-res { opacity: 1; transform: none; }
+.lu-cover { height: 96px; background: linear-gradient(90deg, #22483e 0 8px, #2f6555 8px); color: #f3e2ad; font: 700 11px/1.1 var(--f-display); text-transform: uppercase; padding: 8px 6px 6px 14px; }
+.lu-res h4 { font: 700 23px/1.05 var(--f-display); text-transform: uppercase; }
+.lu-res .au { font-size: 14px; color: var(--ink-soft); margin: 3px 0 10px; }
+.lu-badge { display: none; font: 700 12px/1 var(--f-type); padding: 5px 8px; border: 1.5px solid currentColor; }
+.lu-badge.b1 { color: var(--stamp-red); }
+.lu-badge.b3 { color: #2f7a43; }
+.lu-badge.b4 { color: var(--stamp); }
+.screen[data-s="1"] .b1, .screen[data-s="2"] .b1, .screen[data-s="3"] .b3, .screen[data-s="4"] .b4 { display: inline-block; animation: pop .4s var(--thud); }
+@keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: none; opacity: 1; } }
+.lu-btn { display: inline-block; margin-top: 12px; font: 700 14px/1 var(--f-type); background: var(--brand); color: #fff; padding: 10px 14px; box-shadow: 0 3px 0 #9c4512; transition: background .3s, box-shadow .15s, transform .15s; }
+.lu-btn .b { display: none; }
+.lu-btn.press { transform: translateY(3px); box-shadow: 0 0 0 #9c4512; }
+.screen[data-s="2"] .lu-btn { background: var(--stamp); box-shadow: 0 3px 0 #2e2468; }
+.screen[data-s="2"] .lu-btn .a { display: none; }
+.screen[data-s="2"] .lu-btn .b { display: inline; }
+.screen[data-s="3"] .lu-btn, .screen[data-s="4"] .lu-btn { display: none; }
+.lu-st { position: absolute; right: 14px; top: 14px; font-size: 19px; padding: 4px 9px 3px; --sr: -9deg; opacity: 0; }
+.screen[data-s="2"] .lu-st.r, .screen[data-s="3"] .lu-st.r, .screen[data-s="4"] .lu-st.p { opacity: .92; animation: thud .45s var(--thud) both; }
+.lu-acct { position: absolute; left: 22px; right: 22px; bottom: 22px; display: grid; gap: 4px; padding: 14px 16px; background: var(--card); border: 1.5px solid var(--ink); border-top: 4px solid #2f7a43;
+  font: 15px/1.3 var(--f-type); box-shadow: 0 10px 20px -12px rgba(0,0,0,.4); transform: translateY(160%); transition: transform .6s var(--ease); }
+.lu-acct b { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.lu-acct .ok { color: #2f7a43; font-weight: 700; }
+.screen[data-s="3"] .lu-acct { transform: none; }
+.lu-toast { position: absolute; left: 22px; right: 22px; bottom: 22px; padding: 13px 16px; background: var(--ink); color: var(--card); font: 700 14.5px/1.3 var(--f-type);
+  transform: translateY(160%); transition: transform .55s var(--ease); }
+.screen[data-s="2"] .t2, .screen[data-s="4"] .t4 { transform: none; transition-delay: .35s; }
+.lu-cur { position: absolute; left: 0; top: 0; width: 26px; height: 26px; z-index: 9; pointer-events: none; transition: transform .9s var(--ease), opacity .4s; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+.screen[data-s="3"] .lu-cur, .screen[data-s="4"] .lu-cur { opacity: 0; }
+
+/* ---------- por dentro ---------- */
+.flow-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 48px; margin-top: 56px; align-items: start; }
+.hops { list-style: none; margin: 0; padding: 0 0 0 34px; position: relative; }
+.hops::before { content: ""; position: absolute; left: 10px; top: 12px; bottom: 12px; width: 2px; background: var(--desk-dark); }
+.hops .fill { position: absolute; left: 10px; top: 12px; width: 2px; height: 0; background: var(--brand); transition: height .45s var(--ease); }
+.hop { position: relative; padding: 9px 0 11px; border-bottom: 1px dotted #bdb5a5; opacity: .35; transition: opacity .35s; }
+.hop::before { content: ""; position: absolute; left: -30px; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: var(--desk); border: 2px solid var(--ink-soft); transition: background .3s, border-color .3s, transform .3s var(--thud); }
+.hop.lit { opacity: 1; }
+.hop.lit::before { background: var(--brand); border-color: var(--brand); }
+.hop.now::before { transform: scale(1.35); }
+.hop h3 { font: 700 21px/1.1 var(--f-display); text-transform: uppercase; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.hop code { font: 700 13px/1 var(--f-type); color: var(--stamp); text-transform: none; }
+.hop .err { font: 700 11.5px/1 var(--f-type); color: var(--stamp-red); border: 1.5px solid currentColor; padding: 2px 5px; }
+.hop p { font-size: 15px; line-height: 1.45; color: var(--ink-soft); margin-top: 3px; }
+.codes { min-width: 0; }
+.code-h { font: 700 12px/1 var(--f-type); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 8px; }
+.code-h ~ .code-h { margin-top: 22px; }
+.src { margin: 0; background: #22201c; color: #efe8da; font: 13.5px/1.55 var(--f-type); padding: 16px 18px; overflow-x: auto; white-space: pre; box-shadow: 0 14px 30px -18px rgba(40,30,10,.55); }
+.src .ck { color: #f0a35e; font-weight: 700; }
+.src .cs { color: #b9d99a; }
+.src .cn { color: #9cc3f5; }
+.src .cc { color: #8f887a; font-style: italic; }
+.live .small b { color: #f1ece2; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 960px) {
+  .lu-grid, .flow-grid { grid-template-columns: 1fr; }
+  .team { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .ledger.cmp .row { grid-template-columns: 1fr; }
+  .demo-grid, .sec-grid { grid-template-columns: 1fr; }
+  .entry { grid-template-columns: 1fr; gap: 4px; }
+  .hero-grid, .scene, .reports { grid-template-columns: 1fr; }
+  .hero .ficha { justify-self: start; }
+  .pile, .carnets { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .cabinet { grid-template-columns: 1fr; }
+  .ledger .row { grid-template-columns: 1fr; }
+  .ledger .row > div + div { border-left: 0; border-top: 1px dashed #f0c7c2; }
+  .ledger .hdr { display: none; }
+  .scene { gap: 22px; }
+  .scene .h2 { font-size: 40px; }
+  .scene .label { display: none; }
+  .steps { min-height: 170px; margin-top: 14px; }
+  .lcard { padding-bottom: 90px; }
+  .head { grid-template-columns: 1fr; gap: 18px; }
+  .nrow { grid-template-columns: 140px minmax(0,1fr); }
+  .nrow .s { display: none; }
+  .hint { display: none; }
+}
+@media (max-width: 600px) {
+  body { font-size: 16.5px; }
+  .wrap { padding-inline: 0; }
+  .pile, .carnets, .foot-notes, .team, .next { grid-template-columns: 1fr; }
+  .sec { padding-block: 84px; }
+  .scene .counter { display: none; }
+  .step p { font-size: 15px; }
+  .lcard { font-size: 13px; padding-inline: 12px; }
+  .lcard th, .lcard td { padding: 0 3px; }
+  .spine .name { display: none; }
+  .nrow { grid-template-columns: 96px minmax(0,1fr); gap: 16px; }
+  .lu-steps button { grid-template-columns: 1fr; gap: 2px; }
+  .screen { padding: 14px; height: 400px; }
+  .lu-res { grid-template-columns: 52px minmax(0,1fr); gap: 12px; padding: 12px; }
+  .lu-cover { height: 78px; font-size: 9px; }
+  .lu-acct, .lu-toast { left: 14px; right: 14px; bottom: 14px; }
+  .src { font-size: 12.5px; padding: 14px; }
+}
+</style>
+
+<div class="progress" aria-hidden="true"><span id="bar"></span></div>
+
+<!-- 1. Portada -->
+<header class="sec hero" id="inicio" data-stop data-label="Portada" data-call="025.04|BIB">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Biblio<span>Tech</span></h1>
+      <p class="sub">El sistema que ordena préstamos, reservas, socios y multas de la Biblioteca Central.</p>
+    </div>
+    <div class="ficha">
+      <div class="top"><b>025.04 BIB</b><span>Ficha n.º 1</span></div>
+      <img src="data:image/png;base64,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" alt="Logo de BiblioTech">
+      <p class="typed" id="typed" aria-label="BiblioTech. Sistema de gestión para la Biblioteca Central. Proyecto web con Laravel, JavaScript y MySQL. 2026."></p>
+      <span class="stamp drop red" style="--sd:2.8s">Catalogado</span>
+    </div>
+  </div>
+  <div class="cue" aria-hidden="true"><i>↓</i> bajá con la rueda</div>
+</header>
+
+<!-- Quiénes somos -->
+<section class="sec" id="equipo" data-stop data-label="Quiénes somos" data-call="025.04|EQU">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.04<br>EQU</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Quiénes somos</h2>
+        <p class="lead" data-r style="--d:2">El equipo que diseñó, programó y puso en marcha BiblioTech.</p>
+        <p class="course" data-r style="--d:3">[Materia] · [Institución] · [Grupo] · 2026</p>
+      </div>
+    </div>
+    <div class="team">
+      <article class="carnet" data-r style="--d:1; --c:var(--brand); --rot:-1deg">
+        <div class="band"><span>Equipo</span><span>01</span></div>
+        <div class="body"><div class="ph">LC</div><h3>Lucas Cabrera</h3><p class="role">Backend y API</p><ul><li>Reglas de préstamos y reservas</li><li>Permisos por rol</li></ul></div>
+      </article>
+      <article class="carnet" data-r style="--d:2; --c:#3b6b3f; --rot:.8deg">
+        <div class="band"><span>Equipo</span><span>02</span></div>
+        <div class="body"><div class="ph">MS</div><h3>Mateo Saavedra</h3><p class="role">Frontend y documentación</p><ul><li>Catálogo y carrito</li><li>Paneles de cada rol</li><li>Documentación del proyecto</li></ul></div>
+      </article>
+      <article class="carnet" data-r style="--d:3; --c:var(--stamp); --rot:-.6deg">
+        <div class="band"><span>Equipo</span><span>03</span></div>
+        <div class="body"><div class="ph">RR</div><h3>Rodrigo Roquero</h3><p class="role">Base de datos</p><ul><li>Modelo de datos</li><li>Migraciones y reportes</li><li>Ayudante de documentación</li></ul></div>
+      </article>
+      <article class="carnet" data-r style="--d:4; --c:var(--oak); --rot:1.2deg">
+        <div class="band"><span>Equipo</span><span>04</span></div>
+        <div class="body"><div class="ph">MC</div><h3>Máximo Cabrera</h3><p class="role">Infraestructura</p><ul><li>Docker y servidor</li><li>Seguridad y despliegue</li></ul></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Historia de apertura -->
+<section class="sec" id="historia" data-stop data-label="Una tarde cualquiera" data-call="025.1|HIS">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.1<br>HIS</div>
+      <div><h2 class="h2" data-r style="--d:1">Una tarde cualquiera</h2></div>
+    </div>
+    <div class="diary">
+      <div class="entry" data-r style="--d:1"><time>Martes, 16:40</time><p>Lucía llega a la biblioteca. Necesita <em>Cien años de soledad</em> para el escrito del jueves.</p></div>
+      <div class="entry" data-r style="--d:2"><time>16:42</time><p>La bibliotecaria busca en el cuaderno. Dice “prestado”, pero la fecha está borroneada y no se entiende a quién se lo dieron.</p></div>
+      <div class="entry" data-r style="--d:3"><time>16:50</time><p>Lucía pide que se lo guarden. Le dicen que sí, de palabra. Ya se lo habían prometido a otras dos personas.</p></div>
+      <div class="entry" data-r style="--d:4"><time>Jueves</time><p>El libro vuelve al estante y nadie le avisa. Lucía rinde el escrito sin haberlo leído.</p></div>
+    </div>
+    <p class="moral" data-r style="--d:5">Lucía es inventada. <span>Lo que le pasó, no.</span></p>
+  </div>
+</section>
+
+<!-- El problema -->
+<section class="sec" id="problema" data-stop data-label="El problema" data-call="025.1|PRO">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.1<br>PRO</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Una biblioteca que funcionaba de memoria</h2>
+        <p class="lead" data-r style="--d:2">Antes del sistema, cada préstamo, reserva y multa dependía de que alguien se acordara. Estos eran los problemas de todos los días.</p>
+      </div>
+    </div>
+    <div class="pile">
+      <article class="ficha" data-r style="--d:0"><div class="top"><b class="no">PROB. 1</b><span>disponibilidad</span></div><h3>¿Está o no está?</h3><p>Para saber si un libro estaba había que ir hasta la estantería a fijarse.</p></article>
+      <article class="ficha" data-r style="--d:1"><div class="top"><b class="no">PROB. 2</b><span>vencimientos</span></div><h3>Atrasos invisibles</h3><p>Nadie se enteraba de un préstamo vencido hasta que otro socio preguntaba por el libro.</p></article>
+      <article class="ficha" data-r style="--d:2"><div class="top"><b class="no">PROB. 3</b><span>reservas</span></div><h3>Reservas de palabra</h3><p>Quien pedía un libro primero no siempre era quien lo recibía.</p></article>
+      <article class="ficha" data-r style="--d:3"><div class="top"><b class="no">PROB. 4</b><span>multas</span></div><h3>Multas en un cuaderno</h3><p>Montos, pagos a medias y deudas viejas, todo anotado a mano.</p></article>
+      <article class="ficha" data-r style="--d:4"><div class="top"><b class="no">PROB. 5</b><span>socios</span></div><h3>Datos poco confiables</h3><p>Carnets vencidos, cédulas repetidas y ninguna forma de distinguir una escuela de un particular.</p></article>
+      <article class="ficha" data-r style="--d:5"><div class="top"><b class="no">PROB. 6</b><span>informes</span></div><h3>Cero números</h3><p>Imposible saber qué se lee más, quién debe libros o cuántos ejemplares se perdieron.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- 3. La solución -->
+<section class="sec dark" id="solucion" data-stop data-label="La solución" data-call="025.04|SOL">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.04<br>SOL</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Lo que construimos</h2>
+        <p class="statement" data-r style="--d:2">Una solución web donde catálogo, préstamos y socios están en un solo lugar.</p>
+      </div>
+    </div>
+    <div class="cabinet">
+      <div class="drawer" data-r style="--d:1">
+        <div class="inside"><i></i><i></i><i></i></div>
+        <div class="front"><div class="holder"><span>A · La web</span></div><div class="pull"></div></div>
+        <div class="txt"><h3>Frontend</h3><p>HTML, CSS y JavaScript. Catálogo, carrito de reservas, ficha de cada libro y un panel distinto para cada rol.</p></div>
+      </div>
+      <div class="drawer" data-r style="--d:2">
+        <div class="inside"><i></i><i></i><i></i></div>
+        <div class="front"><div class="holder"><span>B · La API</span></div><div class="pull"></div></div>
+        <div class="txt"><h3>Laravel</h3><p>Valida cada regla del negocio. Inicio de sesión con tokens de Sanctum y permisos por rol.</p></div>
+      </div>
+      <div class="drawer" data-r style="--d:3">
+        <div class="inside"><i></i><i></i><i></i></div>
+        <div class="front"><div class="holder"><span>C · Los datos</span></div><div class="pull"></div></div>
+        <div class="txt"><h3>MySQL</h3><p>Libros, ejemplares, socios, préstamos, reservas, multas, avisos y el historial de actividad.</p></div>
+      </div>
+    </div>
+    <p class="cab-foot" data-r style="--d:4"><b>Docker + nginx:</b> todo el sistema se levanta con contenedores, igual en cualquier computadora.</p>
+  </div>
+</section>
+
+<!-- Lucía, con BiblioTech -->
+<section class="sec" id="lucia" data-stop data-label="Lucía, con BiblioTech" data-call="025.6|LUC">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.6<br>LUC</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">La misma tarde, con BiblioTech</h2>
+        <p class="lead" data-r style="--d:2">Volvemos a la historia de Lucía, pero esta vez la biblioteca usa el sistema.</p>
+      </div>
+    </div>
+    <div class="lu-grid">
+      <div data-r style="--d:2">
+        <ol class="lu-steps" id="luSteps">
+          <li><button type="button" data-i="0"><time>Martes 16:40</time><span><b>Busca el libro</b><span class="d">Entra al catálogo desde su casa. Para buscar no hace falta iniciar sesión.</span></span></button></li>
+          <li><button type="button" data-i="1"><time>16:40</time><span><b>Ve que está prestado</b><span class="d">El sistema le muestra que no queda ningún ejemplar libre.</span></span></button></li>
+          <li><button type="button" data-i="2"><time>16:41</time><span><b>Lo reserva</b><span class="d">Inicia sesión y toca Reservar. Queda primera en la fila, a su nombre.</span></span></button></li>
+          <li><button type="button" data-i="3"><time>Miércoles 10:15</time><span><b>El libro vuelve</b><span class="d">Cuando lo devuelven, la reserva pasa sola a Lucía. Tiene 2 días para retirarlo.</span></span></button></li>
+          <li><button type="button" data-i="4"><time>Miércoles 17:00</time><span><b>Se lo lleva</b><span class="d">La bibliotecaria registra el préstamo, con 14 días de plazo.</span></span></button></li>
+        </ol>
+        <div class="lu-ctrl"><button type="button" id="luPlay">↺ Repetir</button><span class="lu-prog"><span id="luProg"></span></span></div>
+      </div>
+      <div class="browser" data-r style="--d:3; --rot:.6deg">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i><span class="url" id="luUrl">BiblioTech · Catálogo</span></div>
+        <div class="screen" id="luScreen" data-s="0" aria-live="polite">
+          <div class="lu-search"><span aria-hidden="true">⌕</span><span id="luQ" class="lu-q"></span></div>
+          <div class="lu-res">
+            <div class="lu-cover" aria-hidden="true">Cien años de soledad</div>
+            <div>
+              <h4 id="luTitle">Cien años de soledad</h4>
+              <p class="au">Gabriel García Márquez · 1 ejemplar</p>
+              <span class="lu-badge b1">Prestado · 0 disponibles</span><span class="lu-badge b3">Listo para retirar · 2 días</span><span class="lu-badge b4">Prestado a Lucía · 14 días</span>
+              <div><span class="lu-btn" id="luBtn"><span class="a">Reservar</span><span class="b">Reservado ✓</span></span></div>
+            </div>
+            <span class="stamp lu-st r">Reserva</span>
+            <span class="stamp lu-st p red">Prestado</span>
+          </div>
+          <div class="lu-acct"><b>Mis reservas</b><span>Cien años de soledad</span><span class="ok">Lista para retirar · hasta el viernes</span></div>
+          <div class="lu-toast t2">Reserva creada · Sos la 1.ª en la fila</div>
+          <div class="lu-toast t4">Préstamo registrado · Vence en 14 días</div>
+          <svg class="lu-cur" id="luCur" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2 L4 19 L8.5 14.8 L11.6 21.6 L14.6 20.2 L11.6 13.6 L18 13.6 Z" fill="#1d1b18" stroke="#fcfbf7" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+    <p class="moral" data-r style="--d:4">Esta vez, Lucía llega al escrito <span>con el libro en la mano.</span></p>
+  </div>
+</section>
+
+<!-- 4. Antes / ahora -->
+<section class="sec" id="antes-ahora" data-stop data-label="Antes y ahora" data-call="025.1|ANT">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.1<br>ANT</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Qué solucionamos</h2>
+        <p class="lead" data-r style="--d:2">Cada problema de la pila, con lo que hace el sistema ahora.</p>
+      </div>
+    </div>
+    <div class="ledger">
+      <div class="row hdr"><div>Tema</div><div>Antes</div><div>Ahora</div></div>
+      <div class="row" data-r>
+        <div class="topic">Disponibilidad</div>
+        <div class="before">Ir a la estantería a ver si el libro estaba.<span class="stamp drop red">Resuelto</span></div>
+        <div class="after">Cada ejemplar tiene su estado y el catálogo se puede consultar <b>sin iniciar sesión</b>. También se busca por código de barras o ISBN.</div>
+      </div>
+      <div class="row" data-r>
+        <div class="topic">Préstamos</div>
+        <div class="before">Fechas anotadas a mano y renovaciones sin límite.<span class="stamp drop red">Resuelto</span></div>
+        <div class="after">Plazo de <span class="tag">14 días</span> y hasta <span class="tag">2 renovaciones</span>. No se renueva si está vencido o si otro socio lo espera. Un ejemplar nunca tiene dos préstamos activos.</div>
+      </div>
+      <div class="row" data-r>
+        <div class="topic">Multas</div>
+        <div class="before">Un cuaderno con deudas que nadie sumaba.<span class="stamp drop red">Resuelto</span></div>
+        <div class="after">Multas por <b>atraso, pérdida o deterioro</b>, con pagos parciales, método de pago y saldo al día. Cada socio ve lo que debe desde su cuenta.</div>
+      </div>
+      <div class="row" data-r>
+        <div class="topic">Socios</div>
+        <div class="before">Carnets vencidos y datos duplicados.<span class="stamp drop red">Resuelto</span></div>
+        <div class="after">La cédula es el <b>código de barras del carnet</b>, que vale hasta fin de año. Cada socio está activo, suspendido o inactivo, y la cédula no se repite.</div>
+      </div>
+      <div class="row" data-r>
+        <div class="topic">Centros educativos</div>
+        <div class="before">Una escuela pedía varios ejemplares y no había cómo registrarlo.<span class="stamp drop red">Resuelto</span></div>
+        <div class="after">Un bibliotecario <b>verifica la credencial</b> y el centro puede reservar varios ejemplares del mismo libro. Un particular, uno solo.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Escena: tarjeta de préstamo -->
+<section class="scrolly" id="reservas" aria-label="Fila de reservas">
+  <div class="stop" style="top:0" data-stop data-label="Fila de reservas" data-call="025.6|RES"></div>
+  <div class="stop" style="top:100vh" data-stop></div>
+  <div class="stop" style="top:200vh" data-stop></div>
+  <div class="stop" style="top:300vh" data-stop></div>
+  <div class="stick">
+    <div class="wrap scene">
+      <div>
+        <div class="label" style="margin-bottom:22px">025.6<br>RES</div>
+        <h2 class="h2">La fila de espera se maneja sola</h2>
+        <div class="steps" id="steps">
+          <div class="step on"><p class="n">1 / 4</p><h3>El libro está prestado</h3><p>Ana lo tiene en su casa. Bruno y Carla lo reservaron y quedan en fila, en el orden en que lo pidieron.</p></div>
+          <div class="step"><p class="n">2 / 4</p><h3>Ana lo devuelve</h3><p>La copia no vuelve al estante: queda apartada para el primero de la fila. Bruno tiene 2 días para retirarla.</p></div>
+          <div class="step"><p class="n">3 / 4</p><h3>Bruno cancela</h3><p>El sistema le pasa la reserva directo a Carla, la siguiente en la fila, con un nuevo plazo de 2 días.</p></div>
+          <div class="step"><p class="n">4 / 4</p><h3>Carla la retira</h3><p>Se registra el préstamo con vencimiento a 14 días y la reserva queda confirmada. Nadie tuvo que acordarse de nada.</p></div>
+        </div>
+        <div class="counter" id="counter"><span class="on">1</span><span>2</span><span>3</span><span>4</span></div>
+        <div class="sprog" aria-hidden="true"><span id="sprog"></span></div>
+      </div>
+      <div class="pocket" id="pocket" aria-hidden="true">
+        <div class="stamper" id="stamper"><div class="knob"></div><div class="neck"></div><div class="base"></div><div class="rubber"></div></div>
+        <div class="lcard">
+          <span class="stamp big-stamp" id="bigStamp">Prestado</span>
+          <span class="copy" id="copy">Reserva</span>
+          <p class="t1">Tarjeta de préstamo</p>
+          <p class="t2">Cien años de soledad</p>
+          <p class="t3">García Márquez · Ejemplar A-0142</p>
+          <table>
+            <thead><tr><th style="width:26%">Socio</th><th>Retiró</th><th>Vence</th><th style="width:30%">Devolvió</th></tr></thead>
+            <tbody>
+              <tr><td>Ana</td><td>29 OCT</td><td>12 NOV</td><td id="tdAna"><span class="stamp mini" id="sAna" hidden>09 NOV</span></td></tr>
+              <tr><td><span class="ink" id="r2a"></span></td><td><span class="ink" id="r2b"></span></td><td><span class="ink" id="r2c"></span></td><td></td></tr>
+              <tr><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+          </table>
+          <div class="wait">
+            <p class="wl">En espera</p>
+            <ol>
+              <li id="wB"><span class="who">1. Bruno · reservó 02 NOV</span><span class="st" id="wBs"></span></li>
+              <li id="wC"><span class="who"><span id="nC">2.</span> Carla · reservó 04 NOV</span><span class="st" id="wCs"></span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Ciclo -->
+<section class="sec" id="ciclo" data-stop data-label="Vida del ejemplar" data-call="025.6|EJE">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.6<br>EJE</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">La vida de un ejemplar</h2>
+        <p class="lead" data-r style="--d:2">Un libro puede tener varias copias físicas. Cada copia pasa por estos estados y el sistema no deja saltear pasos.</p>
+      </div>
+    </div>
+    <div class="life" data-r style="--d:3" id="life">
+      <svg viewBox="0 0 1000 300" role="img" aria-label="Disponible pasa a reservado o a prestado; reservado pasa a prestado; prestado vuelve a disponible.">
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L10,5 L0,9" fill="none" stroke="#5d574d" stroke-width="1.6"/></marker></defs>
+        <path class="edge" id="e1" d="M220,100 C320,30 380,30 410,100" marker-end="url(#arr)"/>
+        <path class="edge" id="e2" d="M600,100 C650,30 730,30 780,100" marker-end="url(#arr)"/>
+        <path class="edge" id="e3" d="M870,156 C870,280 140,280 130,156" marker-end="url(#arr)"/>
+        <path class="edge" id="e4" d="M220,140 C400,205 600,205 780,140" marker-end="url(#arr)"/>
+        <text class="edge-lbl" x="242" y="34">alguien lo reserva</text>
+        <text class="edge-lbl" x="668" y="34">lo retira</text>
+        <text class="edge-lbl" x="430" y="210">préstamo directo</text>
+        <text class="edge-lbl" x="320" y="292">lo devuelve (o pasa al siguiente en la fila)</text>
+        <g class="st" id="s1"><rect x="40" y="100" width="180" height="56"/><text x="130" y="134" text-anchor="middle">DISPONIBLE</text></g>
+        <g class="st" id="s2"><rect x="410" y="100" width="190" height="56"/><text x="505" y="134" text-anchor="middle">RESERVADO</text></g>
+        <g class="st" id="s3"><rect x="780" y="100" width="180" height="56"/><text x="870" y="134" text-anchor="middle">PRESTADO</text></g>
+        <circle class="dot" r="7" id="lifeDot" cx="130" cy="100"/>
+      </svg>
+    </div>
+    <div class="foot-notes">
+      <p data-r style="--d:1">Además existen <b>extraviado</b> y <b>fuera de circulación</b>, para copias perdidas o retiradas.</p>
+      <p data-r style="--d:2">Cada cambio ocurre dentro de una <b>transacción</b>, así dos personas no pueden llevarse la misma copia al mismo tiempo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Roles -->
+<section class="sec dark" id="roles" data-stop data-label="Roles" data-call="025.1|ROL">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.1<br>ROL</div>
+      <div><h2 class="h2" data-r style="--d:1">Cada uno ve lo suyo</h2></div>
+    </div>
+    <div class="carnets">
+      <article class="carnet guest" data-r style="--d:1; --rot:-1deg">
+        <div class="band"><span>Sin carnet</span><span>—</span></div>
+        <div class="body"><h3>Invitado</h3><ul><li>Recorre el catálogo</li><li>Ve las novedades</li><li>Lee la ficha de cada libro</li></ul></div>
+        <p class="nocode">No necesita cuenta.</p>
+      </article>
+      <article class="carnet" data-r style="--d:2; --c:#3b6b3f; --rot:.8deg">
+        <div class="band"><span>Socio</span><span>2026</span></div>
+        <div class="body"><h3>Socio</h3><ul><li>Reserva con el carrito</li><li>Ve sus libros prestados</li><li>Consulta sus multas</li><li>Recibe avisos</li></ul></div>
+        <div class="code"></div><p class="num">4 512 337 1</p>
+      </article>
+      <article class="carnet" data-r style="--d:3; --c:var(--stamp); --rot:-.6deg">
+        <div class="band"><span>Personal</span><span>2026</span></div>
+        <div class="body"><h3>Bibliotecario</h3><ul><li>Presta, renueva y recibe</li><li>Gestiona socios y multas</li><li>Verifica centros educativos</li><li>Ve los reportes</li></ul></div>
+        <div class="code"></div><p class="num">B 000 014</p>
+      </article>
+      <article class="carnet" data-r style="--d:4; --c:var(--brand); --rot:1.2deg">
+        <div class="band"><span>Dirección</span><span>2026</span></div>
+        <div class="body"><h3>Administrador</h3><ul><li>Todo lo del bibliotecario</li><li>Alta y baja de libros y categorías</li><li>Crea cuentas del personal</li></ul></div>
+        <div class="code"></div><p class="num">A 000 001</p>
+      </article>
+    </div>
+    <p class="note" data-r style="--d:5">Los permisos los controla la API, no solo la pantalla: aunque alguien pida datos ajenos, un socio solo puede ver y cancelar sus propias reservas.</p>
+  </div>
+</section>
+
+<!-- 8. Reportes -->
+<section class="sec" id="reportes" data-stop data-label="Reportes" data-call="025.1|REP">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.1<br>REP</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Por fin, números</h2>
+        <p class="lead" data-r style="--d:2">Cuatro reportes listos y un historial que registra quién hizo cada cosa.</p>
+      </div>
+    </div>
+    <div class="reports">
+      <div class="rlist">
+        <div data-r style="--d:1"><h3>Libros más prestados</h3><p>Qué se lee de verdad, para saber qué comprar.</p></div>
+        <div data-r style="--d:2"><h3>Disponibilidad del catálogo</h3><p>Copias disponibles, prestadas, reservadas, extraviadas o fuera de circulación.</p></div>
+        <div data-r style="--d:3"><h3>Socios con atrasos</h3><p>Quién tiene préstamos vencidos y qué libro tiene.</p></div>
+        <div data-r style="--d:4"><h3>Préstamos por período</h3><p>Cuántos préstamos hubo entre dos fechas, con el detalle de cada uno.</p></div>
+      </div>
+      <div class="continuo" data-r style="--d:2; --rot:.6deg">
+<pre><span class="hd">HISTORIAL DE ACTIVIDAD    09/11/2026</span>
+<span class="small">ejemplo de cómo queda registrado</span>
+------------------------------------
+09:12  prestamo     prestamos  #318
+09:40  pago         multas     #77
+       Pago de 150 (efectivo)
+10:05  devolucion   prestamos  #301
+       Devolución fuera de fecha
+10:31  verificacion socios     #54
+       centro educativo
+10:48  reserva      reservas   #129
+------------------------------------
+<span class="hd">LIBROS MÁS PRESTADOS</span>  <span class="small">(ejemplo)</span>
+Ficción   <span class="bar">██████████████</span> 46
+Historia  <span class="bar">█████████</span> 31
+Ciencia   <span class="bar">██████</span> 20</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Competencia -->
+<section class="sec" id="competencia" data-stop data-label="Lo que existe afuera" data-call="025.1|COM">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.1<br>COM</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Lo que existe afuera</h2>
+        <p class="lead" data-r style="--d:2">Antes de construir, miramos qué usan bibliotecas de otros países.</p>
+      </div>
+    </div>
+    <div class="ledger cmp">
+      <div class="row hdr"><div>Sistema</div><div>Tipo</div><div>Pensado para</div><div>Para la Biblioteca Central</div></div>
+      <div class="row" data-r>
+        <div class="topic">Koha<small>Nueva Zelanda · 1999</small></div>
+        <div>Software libre, muy completo.</div>
+        <div>Bibliotecas de todo tamaño, en muchos países.</div>
+        <div>Necesita un servidor y alguien técnico para instalarlo, configurarlo y mantenerlo.</div>
+      </div>
+      <div class="row" data-r>
+        <div class="topic">Evergreen<small>Estados Unidos · 2006</small></div>
+        <div>Software libre.</div>
+        <div>Redes de muchas bibliotecas que comparten un catálogo.</div>
+        <div>Pensado para consorcios: demasiado grande para una sola biblioteca de barrio.</div>
+      </div>
+      <div class="row" data-r>
+        <div class="topic">ABCD<small>Latinoamérica · BIREME / UNESCO</small></div>
+        <div>Software libre, basado en ISIS.</div>
+        <div>Bibliotecas y centros de documentación.</div>
+        <div>Tecnología más antigua y difícil de adaptar a reglas propias.</div>
+      </div>
+      <div class="row" data-r>
+        <div class="topic">Alma<small>Ex Libris · Israel</small></div>
+        <div>Comercial, en la nube.</div>
+        <div>Universidades y bibliotecas grandes.</div>
+        <div>Licencia paga, fuera del alcance de una biblioteca barrial.</div>
+      </div>
+      <div class="row ours" data-r>
+        <div class="topic">BiblioTech<small>Nuestro proyecto · 2026</small></div>
+        <div>Hecho a medida.</div>
+        <div>La Biblioteca Central y sus socios.</div>
+        <div>Sus propias reglas: carnet con cédula, centros educativos verificados, multas con pagos parciales y la fila de reservas automática. Se levanta con Docker en cualquier computadora.</div>
+      </div>
+    </div>
+    <p class="cmp-foot" data-r>Son sistemas excelentes, pero pensados para bibliotecas grandes con un equipo técnico detrás. <b>BiblioTech hace menos cosas, y son justo las que necesita la Biblioteca Central.</b></p>
+  </div>
+</section>
+
+<!-- Demo en vivo -->
+<section class="sec dark" id="demo" data-stop data-label="En vivo" data-call="025.04|DEM">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.04<br>DEM</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Ahora, en vivo</h2>
+        <p class="lead" data-r style="--d:2">Dejamos las diapositivas y lo mostramos funcionando. Este es el recorrido que vamos a hacer.</p>
+      </div>
+    </div>
+    <div class="demo-grid">
+      <div class="ficha guion" data-r style="--d:2; --rot:-1deg">
+        <div class="top"><b>Guion de la demo</b><span>tocá cada paso</span></div>
+        <ol>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Buscar un libro en el catálogo, sin iniciar sesión.</span></button></li>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Entrar como socio y reservar un libro prestado.</span></button></li>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Entrar como bibliotecario y registrar la devolución.</span></button></li>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Ver que la reserva pasó sola al socio.</span></button></li>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Mostrar una multa y los reportes como administrador.</span></button></li>
+        </ol>
+      </div>
+      <div class="live" data-r style="--d:3">
+        <span class="stamp red">En vivo</span>
+        <a class="launch" href="http://localhost:3000" target="_blank" rel="noopener">Abrir BiblioTech <span aria-hidden="true">→</span></a>
+        <p class="small">Antes de presentar: <b>docker compose up -d</b> en la carpeta del proyecto. La página abre en localhost:3000.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Por dentro: el recorrido de una reserva -->
+<section class="sec" id="tecnico" data-stop data-label="Por dentro" data-call="025.04|API">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.04<br>API</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Qué pasa cuando Lucía toca “Reservar”</h2>
+        <p class="lead" data-r style="--d:2">Un clic en la página es un pedido a la API. Antes de guardar nada, el pedido pasa por estos controles.</p>
+      </div>
+    </div>
+    <div class="flow-grid">
+      <div data-r style="--d:2">
+        <ol class="hops" id="hops">
+          <i class="fill" id="hopFill" aria-hidden="true"></i>
+          <li class="hop"><h3>Navegador <code>POST /api/reservas</code></h3><p>El JavaScript de la página manda el pedido con el token de Lucía.</p></li>
+          <li class="hop"><h3>nginx <code>:8000</code></h3><p>Recibe el pedido y se lo pasa a Laravel (PHP-FPM).</p></li>
+          <li class="hop"><h3>Sanctum <code>auth:sanctum</code> <span class="err">401</span></h3><p>Comprueba el token. Sin una sesión válida, el pedido no sigue.</p></li>
+          <li class="hop"><h3>Validación <span class="err">422</span></h3><p>Revisa que el socio y el libro existan y que la fecha no sea pasada.</p></li>
+          <li class="hop"><h3>Reglas del negocio <span class="err">403</span> <span class="err">422</span></h3><p>Se reserva solo a nombre propio, con el socio activo y una vez por libro, salvo que sea un centro educativo verificado.</p></li>
+          <li class="hop"><h3>MySQL <code>transacción</code></h3><p>Si hay un ejemplar libre, queda para retirar por 2 días. Si no, entra a la fila como pendiente.</p></li>
+          <li class="hop"><h3>Historial</h3><p>Se anota quién reservó y cuándo.</p></li>
+          <li class="hop"><h3>Respuesta <code>201 Created</code></h3><p>La API le devuelve la reserva a la página, que muestra el aviso.</p></li>
+        </ol>
+        <div class="lu-ctrl"><button type="button" id="hopPlay">↺ Repetir</button></div>
+      </div>
+      <div class="codes" data-r style="--d:3">
+        <p class="code-h">Lo que manda la página</p>
+<pre class="src"><span class="ck">POST</span> /api/reservas
+Authorization: Bearer <span class="cs">12|xY9fQ…</span>
+Content-Type: application/json
+
+{
+  "socio_id": <span class="cn">7</span>,
+  "libro_id": <span class="cn">31</span>,
+  "fecha_deseada": <span class="cs">"2026-11-10"</span>
+}</pre>
+        <p class="code-h">Lo que contesta la API</p>
+<pre class="src"><span class="ck">201</span> Created
+
+{
+  "id": <span class="cn">58</span>,
+  "estado": <span class="cs">"pendiente"</span>,
+  "fecha_limite": <span class="cn">null</span>,
+  "libro": { "titulo": <span class="cs">"Cien años de soledad"</span> }
+}</pre>
+        <p class="code-h">Y en ReservaController.php</p>
+<pre class="src"><span class="cc">// copia libre: queda para retirar; si no, a la fila</span>
+'estado' => $ejemplarDisponible
+    ? <span class="cs">'pendiente_retiro'</span>
+    : <span class="cs">'pendiente'</span>,</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Seguridad y sistemas -->
+<section class="sec" id="seguridad" data-stop data-label="Seguridad y sistemas" data-call="025.04|SEG">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.04<br>SEG</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">Seguridad y sistemas</h2>
+        <p class="lead" data-r style="--d:2">Una biblioteca guarda cédulas, teléfonos y deudas. Así cuidamos esos datos.</p>
+      </div>
+    </div>
+    <div class="sec-grid">
+      <div class="rlist">
+        <div data-r style="--d:1"><h3><span class="k">01</span>Contraseñas ilegibles</h3><p>Se guardan con hash (bcrypt): ni nosotros podemos verlas. Exigen 8 caracteres, mayúscula, minúscula y número.</p></div>
+        <div data-r style="--d:2"><h3><span class="k">02</span>Sesiones con token</h3><p>Cada inicio de sesión recibe un token de Sanctum que se borra al salir. Un usuario dado de baja no puede entrar.</p></div>
+        <div data-r style="--d:3"><h3><span class="k">03</span>Permisos en el servidor</h3><p>Cada ruta de la API revisa el rol. Esconder un botón no alcanza: si alguien pide algo que no le toca, la API lo rechaza.</p></div>
+        <div data-r style="--d:4"><h3><span class="k">04</span>Base de datos cerrada</h3><p>MySQL y phpMyAdmin solo responden dentro de la propia máquina. Desde la red no se puede llegar a ellos.</p></div>
+        <div data-r style="--d:5"><h3><span class="k">05</span>Todo queda registrado</h3><p>El historial guarda quién prestó, cobró o anuló cada cosa. Libros y socios se dan de baja sin perder su historia.</p></div>
+        <div data-r style="--d:6"><h3><span class="k">06</span>Datos validados</h3><p>La API revisa cada dato: cédulas, teléfonos, montos y fechas. En producción los errores no muestran detalles internos.</p></div>
+      </div>
+      <div class="infra" data-r style="--d:2; --rot:.5deg">
+        <svg viewBox="0 0 560 430" role="img" aria-label="El navegador se conecta al frontend en el puerto 3000 y a la API en el 8000. La API pasa los pedidos a Laravel, que usa MySQL. MySQL y phpMyAdmin solo se abren en la propia máquina.">
+          <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L10,5 L0,9" fill="none" stroke="#5d574d" stroke-width="1.6"/></marker></defs>
+          <rect class="net" x="12" y="94" width="536" height="324"/>
+          <text class="netl" x="26" y="116">red interna de Docker</text>
+          <g class="bx"><rect x="180" y="12" width="200" height="50"/><text class="t1" x="280" y="35" text-anchor="middle">NAVEGADOR</text><text class="t2" x="280" y="53" text-anchor="middle">socio o bibliotecario</text></g>
+          <g class="bx"><rect x="40" y="136" width="200" height="58"/><text class="t1" x="140" y="161" text-anchor="middle">FRONTEND</text><text class="t2" x="140" y="181" text-anchor="middle">nginx · puerto 3000</text></g>
+          <g class="bx"><rect x="320" y="136" width="200" height="58"/><text class="t1" x="420" y="161" text-anchor="middle">API</text><text class="t2" x="420" y="181" text-anchor="middle">nginx · puerto 8000</text></g>
+          <g class="bx in"><rect x="320" y="236" width="200" height="58"/><text class="t1" x="420" y="261" text-anchor="middle">LARAVEL</text><text class="t2" x="420" y="281" text-anchor="middle">PHP-FPM · solo interno</text></g>
+          <g class="bx in"><rect x="320" y="336" width="200" height="58"/><text class="t1" x="420" y="361" text-anchor="middle">MYSQL 8</text><text class="t2" x="420" y="381" text-anchor="middle">solo 127.0.0.1</text></g>
+          <g class="bx in"><rect x="40" y="336" width="200" height="58"/><text class="t1" x="140" y="361" text-anchor="middle">PHPMYADMIN</text><text class="t2" x="140" y="381" text-anchor="middle">solo 127.0.0.1</text></g>
+          <path class="wire" d="M240,62 L150,134" marker-end="url(#arr2)"/>
+          <path class="wire" d="M320,62 L410,134" marker-end="url(#arr2)"/>
+          <path class="wire" d="M420,194 L420,234" marker-end="url(#arr2)"/>
+          <path class="wire" d="M420,294 L420,334" marker-end="url(#arr2)"/>
+          <path class="wire" d="M240,365 L318,365" marker-end="url(#arr2)"/>
+        </svg>
+        <p class="legend">Fondo blanco: se puede abrir desde la red. Fondo gris: solo funciona adentro. Son 5 contenedores que se levantan con un solo comando.</p>
+      </div>
+    </div>
+    <div class="next">
+      <div data-r style="--d:1"><b>Próximo paso</b><strong>HTTPS con certificado</strong>, para que nada viaje en texto plano.</div>
+      <div data-r style="--d:2"><b>Próximo paso</b><strong>Límite de intentos</strong> al iniciar sesión, contra quien prueba contraseñas.</div>
+      <div data-r style="--d:3"><b>Próximo paso</b><strong>Copias de seguridad</strong> automáticas de la base de datos.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Números -->
+<section class="sec" id="numeros" data-stop data-label="En números" data-call="025.04|NUM">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.04<br>NUM</div>
+      <div><h2 class="h2" data-r style="--d:1">Lo que hay debajo</h2></div>
+    </div>
+    <div class="nums">
+      <div class="nrow" data-r style="--d:1"><span class="v" data-count="63">63</span><span class="l">rutas en la API, cada una con su validación</span><span class="s">routes/api.php</span></div>
+      <div class="nrow" data-r style="--d:2"><span class="v" data-count="12">12</span><span class="l">modelos: libros, ejemplares, socios, préstamos, multas…</span><span class="s">app/Models</span></div>
+      <div class="nrow" data-r style="--d:3"><span class="v" data-count="19">19</span><span class="l">migraciones que arman la base de datos paso a paso</span><span class="s">database/migrations</span></div>
+      <div class="nrow" data-r style="--d:4"><span class="v" data-count="14">14</span><span class="l">días de plazo para cada préstamo, renovable 2 veces</span><span class="s">PrestamoController</span></div>
+      <div class="nrow" data-r style="--d:5"><span class="v" data-count="2">2</span><span class="l">días para retirar un libro reservado</span><span class="s">ReservaController</span></div>
+    </div>
+    <p class="stack" data-r style="--d:6">PHP · Laravel · Sanctum · MySQL · JavaScript · HTML · CSS · Docker · nginx</p>
+  </div>
+</section>
+
+<!-- 10. Cierre -->
+<section class="sec end" id="cierre" data-stop data-label="Cierre" data-call="027|FIN">
+  <div class="wrap">
+    <img src="data:image/png;base64,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" alt="" data-r>
+    <span class="stamp drop" id="endStamp">Gracias</span>
+    <p class="lead" data-r style="--d:3">BiblioTech ordena el trabajo de la biblioteca para que el tiempo vaya a los lectores y no a los cuadernos.</p>
+    <p class="q" data-r style="--d:4">¿Preguntas?</p>
+  </div>
+</section>
+
+<script>
+(function () {
+  // Es una presentación: las animaciones van siempre, aunque Windows tenga apagados los efectos de animación.
+  var reduce = false;
+  var root = document.documentElement;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ficha de la portada escrita a máquina
+  var typed = $('typed');
+  var text = 'BiblioTech.\n  Sistema de gestión para la\nBiblioteca Central.\n  Proyecto web: Laravel,\nJavaScript y MySQL.\n  2026.';
+  if (reduce) { typed.textContent = text; }
+  else {
+    var caret = document.createElement('span'); caret.className = 'caret';
+    var node = document.createTextNode(''); typed.appendChild(node); typed.appendChild(caret);
+    var i = 0;
+    (function tick() {
+      node.data = text.slice(0, ++i);
+      if (i < text.length) setTimeout(tick, text[i - 1] === '\n' ? 180 : 28 + Math.random() * 40);
+    })();
+  }
+
+  // aparición al hacer scroll
+  var lifeDone = false;
+  if ('IntersectionObserver' in window && !reduce) {
+    root.classList.add('anim');
+    document.querySelectorAll('[data-count]').forEach(function (el) { el.textContent = '0'; });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var t = e.target;
+        t.classList.add('in');
+        var c = t.querySelector('[data-count]'); if (c) countUp(c);
+        if (t.id === 'life' && !lifeDone) { lifeDone = true; runLife(); }
+        io.unobserve(t);
+      });
+    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
+    document.querySelectorAll('[data-r], .hero .ficha, #endStamp').forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('[data-r]').forEach(function (el) { el.classList.add('in'); });
+    lifeDone = true; runLife();
+  }
+
+  function countUp(el) {
+    var end = +el.dataset.count, t0 = null, dur = 1200;
+    function f(t) { if (!t0) t0 = t; var p = Math.min(1, (t - t0) / dur);
+      el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(f); }
+    requestAnimationFrame(f);
+  }
+
+  // recorrido del ciclo de vida
+  function runLife() {
+    var dot = $('lifeDot');
+    var route = [['e1', 's2'], ['e2', 's3'], ['e3', 's1'], ['e4', 's3'], ['e3', 's1']];
+    var states = ['s1', 's2', 's3'], idx = 0;
+    function lit(id) { states.forEach(function (s) { $(s).classList.toggle('lit', s === id); }); }
+    lit('s1');
+    var p0 = $('e1').getPointAtLength(0); dot.setAttribute('cx', p0.x); dot.setAttribute('cy', p0.y);
+    if (reduce) return;
+    function go() {
+      var leg = route[idx % route.length], path = $(leg[0]);
+      var len = path.getTotalLength(), t0 = null, dur = 1600;
+      function f(t) { if (!t0) t0 = t; var p = Math.min(1, (t - t0) / dur);
+        var e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        var pt = path.getPointAtLength(len * e); dot.setAttribute('cx', pt.x); dot.setAttribute('cy', pt.y);
+        if (p < 1) requestAnimationFrame(f); else { lit(leg[1]); idx++; setTimeout(go, 1000); } }
+      requestAnimationFrame(f);
+    }
+    setTimeout(go, 700);
+  }
+
+  // escena de la tarjeta de préstamo
+  var scrolly = $('reservas');
+  var steps = document.querySelectorAll('#steps .step');
+  var counter = document.querySelectorAll('#counter span');
+  var big = $('bigStamp'), sAna = $('sAna'), pocket = $('pocket'), stamper = $('stamper');
+  var wB = $('wB'), wBs = $('wBs'), wC = $('wC'), wCs = $('wCs'), nC = $('nC');
+  var r2 = [$('r2a'), $('r2b'), $('r2c')];
+  var shown = -1, target = 0, busy = false, k = 1;   // k: factor de velocidad (más rápido al saltar varios pasos)
+
+  function hit(el) { el.classList.remove('hit', 'peel'); void el.offsetWidth; el.classList.add('hit'); }
+  function peel(el, then) { el.classList.remove('hit', 'peel'); void el.offsetWidth; el.classList.add('peel'); later(500, function () { el.classList.remove('peel'); then(); }); }
+  function later(ms, fn) { setTimeout(fn, ms * k); }
+  // escribe a máquina
+  function type(el, text, ms, speed) {
+    var i = 0;
+    later(ms || 0, function () {
+      el.textContent = ''; el.classList.add('typing');
+      (function step() {
+        el.textContent = text.slice(0, ++i);
+        if (i < text.length) setTimeout(step, (speed || 45) * k); else el.classList.remove('typing');
+      })();
+    });
+  }
+  // borra letra por letra, como con la tecla de retroceso
+  function erase(el, ms, then) {
+    later(ms || 0, function () {
+      el.classList.add('typing');
+      (function step() {
+        var t = el.textContent;
+        if (t.length) { el.textContent = t.slice(0, -1); setTimeout(step, 28 * k); }
+        else { el.classList.remove('typing'); if (then) then(); }
+      })();
+    });
+  }
+  // el fechador entra, baja sobre el destino, sella y se va
+  function stampAt(targetEl, red, ms, onPress) {
+    later(ms, function () {
+      if (!stamper.animate) { onPress(); return; }
+      var pr = pocket.getBoundingClientRect(), tr = targetEl.getBoundingClientRect();
+      var x = tr.left + tr.width / 2 - pr.left - 35, y = tr.top + tr.height / 2 - pr.top - 90;
+      stamper.classList.toggle('red', !!red);
+      stamper.animate([
+        { opacity: 0, transform: 'translate(' + (x + 280) + 'px,' + (y - 240) + 'px) rotate(20deg)' },
+        { opacity: 1, transform: 'translate(' + x + 'px,' + (y - 46) + 'px) rotate(0deg)', offset: .42 },
+        { opacity: 1, transform: 'translate(' + x + 'px,' + (y + 2) + 'px) scale(1.02,.93)', offset: .55, easing: 'ease-out' },
+        { opacity: 1, transform: 'translate(' + x + 'px,' + (y - 46) + 'px)', offset: .72 },
+        { opacity: 0, transform: 'translate(' + (x + 240) + 'px,' + (y - 260) + 'px) rotate(16deg)' }
+      ], { duration: 1250 * k, easing: 'ease-in-out' });
+      later(1250 * .55, onPress);
+    });
+  }
+  // el librito: dónde está en cada paso y cómo vuela de una mano a otra
+  var copy = $('copy'), lcard = pocket.querySelector('.lcard');
+  var whoB = wB.querySelector('.who'), whoC = wC.querySelector('.who');
+  function rel(el) {
+    var x = 0, y = 0;
+    while (el && el !== lcard) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; }
+    return { x: x, y: y };
+  }
+  function atCell(td) { var p = rel(td); return { x: p.x + 6, y: p.y + td.offsetHeight / 2 - copy.offsetHeight / 2 }; }
+  function atWho(w) { var p = rel(w); return { x: p.x + w.offsetWidth - copy.offsetWidth - 4, y: p.y + 10 - copy.offsetHeight / 2 }; }
+  // paso 1 y 2: la reserva es de Bruno; paso 3: de Carla; paso 4: queda junto a su préstamo
+  function holder(n) {
+    return n <= 1 ? atWho(whoB)
+         : n === 2 ? atWho(whoC)
+         : atCell(r2[0].parentNode.parentNode.cells[3]);
+  }
+  function setTicket(n) {
+    copy.textContent = n === 3 ? 'Cumplida' : 'Reserva';
+    copy.classList.toggle('on', n === 1 || n === 2);
+    copy.classList.toggle('done', n === 3);
+  }
+  // la ficha salta en el lugar (cuando cambia de estado sin cambiar de dueño)
+  function hopCopy(ms, fn) {
+    later(ms, function () {
+      fn();
+      if (copy.animate) copy.animate([
+        { transform: 'rotate(-3deg)' },
+        { transform: 'translateY(-16px) rotate(-12deg) scale(1.2)', offset: .4 },
+        { transform: 'translateY(1px) rotate(-3deg) scale(1.1,.9)', offset: .8 },
+        { transform: 'rotate(-3deg)' }
+      ], { duration: 600 * k, easing: 'ease-out' });
+    });
+  }
+  var cpos = { x: 0, y: 0 };
+  function putCopy(p) { cpos = p; copy.style.left = p.x + 'px'; copy.style.top = p.y + 'px'; }
+  function flyCopy(ms, getTo) {
+    later(ms, function () {
+      var from = cpos, to = getTo();
+      putCopy(to);
+      if (!copy.animate) return;
+      var dx = from.x - to.x, dy = from.y - to.y;
+      copy.animate([
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(-3deg)' },
+        { transform: 'translate(' + dx + 'px,' + (dy - 10) + 'px) rotate(-10deg) scale(1.1)', offset: .15 },
+        { transform: 'translate(' + dx / 2 + 'px,' + (dy / 2 - 46) + 'px) rotate(-200deg) scale(1.35)', offset: .55,
+          boxShadow: '6px 16px 12px rgba(0,0,0,.28)' },
+        { transform: 'translate(0,-6px) rotate(-363deg) scale(1.05)', offset: .88 },
+        { transform: 'translate(0,0) rotate(-363deg) scale(1.15,.85)', offset: .94 },
+        { transform: 'rotate(-3deg)' }
+      ], { duration: 850 * k, easing: 'ease-in-out' });
+    });
+  }
+
+  function setBig(text, red) { big.textContent = text; big.classList.toggle('red', red); }
+  function bumpC(text) { nC.textContent = text; nC.classList.remove('bump'); void nC.offsetWidth; nC.classList.add('bump'); }
+
+  // estado final de cada paso, sin animación (para saltos y para volver atrás)
+  function applyInstant(n) {
+    big.classList.remove('hit'); sAna.classList.remove('hit');
+    setBig(n === 1 || n === 2 ? 'Reservado' : 'Prestado', n === 1 || n === 2);
+    sAna.hidden = n < 1;
+    wB.classList.toggle('x', n >= 2); wB.classList.toggle('gone', n >= 2);
+    wBs.textContent = n >= 2 ? 'canceló' : n === 1 ? 'apartado hasta 11 NOV' : '';
+    nC.textContent = n >= 2 ? '1.' : '2.';
+    wC.classList.toggle('x', n >= 3);
+    wCs.textContent = n >= 3 ? 'retiró ✓' : n === 2 ? 'apartado hasta 12 NOV' : '';
+    var vals = ['Carla', '10 NOV', '24 NOV'];
+    r2.forEach(function (el, i) { el.textContent = n >= 3 ? vals[i] : ''; el.classList.toggle('on', n >= 3); });
+    [wBs, wCs].concat(r2).forEach(function (el) { el.classList.remove('typing'); });
+    setTicket(n);
+    putCopy(holder(n));
+  }
+
+  // cada transición entre pasos, en los dos sentidos; devuelve cuánto dura (ms, sin el factor k)
+  var go = {
+    '0>1': function () {   // Ana devuelve: se sella la fecha, queda reservado y se anota a Bruno
+      stampAt($('tdAna'), false, 150, function () { sAna.hidden = false; hit(sAna); });
+      hopCopy(900, function () { setTicket(1); });   // la reserva de Bruno se activa
+      type(wBs, 'apartado hasta 11 NOV', 1000);
+      stampAt(big, true, 1350, function () { setBig('Reservado', true); hit(big); });
+      return 2600;
+    },
+    '1>0': function () {   // se despega la fecha, se borra el aviso y vuelve a "prestado"
+      erase(wBs, 100);
+      hopCopy(200, function () { setTicket(0); });
+      later(250, function () { peel(sAna, function () { sAna.hidden = true; }); });
+      stampAt(big, false, 650, function () { setBig('Prestado', false); hit(big); });
+      return 1900;
+    },
+    '1>2': function () {   // Bruno cancela: se tacha, se va y Carla sube
+      erase(wBs, 50, function () { type(wBs, 'canceló', 0); });
+      later(650, function () { wB.classList.add('x'); });
+      later(1250, function () { wB.classList.add('gone'); });
+      // la copia salta a Carla mientras ella sube al primer lugar
+      flyCopy(1250, function () { var p = holder(2); return { x: p.x, y: p.y - wB.offsetHeight }; });
+      later(1600, function () { bumpC('1.'); });
+      type(wCs, 'apartado hasta 12 NOV', 1900);
+      return 2900;
+    },
+    '2>1': function () {   // Bruno vuelve a la fila y Carla baja al segundo lugar
+      erase(wCs, 50);
+      // Bruno vuelve al lugar que ocupa ahora Carla: la copia vuelve a él
+      flyCopy(650, function () { return holder(2); });
+      later(650, function () { bumpC('2.'); wB.classList.remove('gone'); });
+      later(1250, function () { wB.classList.remove('x'); });
+      erase(wBs, 1350, function () { type(wBs, 'apartado hasta 11 NOV', 0); });
+      return 2700;
+    },
+    '2>3': function () {   // Carla retira: se anota el préstamo y se sella
+      r2.forEach(function (el) { el.classList.add('on'); });
+      flyCopy(150, function () { return holder(3); });
+      later(150 + 850 * .9, function () { setTicket(3); });   // al llegar, la reserva queda cumplida
+      type(r2[0], 'Carla', 150, 70);
+      type(r2[1], '10 NOV', 650, 70);
+      type(r2[2], '24 NOV', 1200, 70);
+      later(300, function () { wC.classList.add('x'); });
+      erase(wCs, 400, function () { type(wCs, 'retiró ✓', 0); });
+      stampAt(big, false, 1700, function () { setBig('Prestado', false); hit(big); });
+      return 2950;
+    },
+    '3>2': function () {   // se borra el préstamo de Carla y vuelve a estar apartado para ella
+      r2.forEach(function (el, i) { erase(el, 80 + i * 120, function () { el.classList.remove('on'); }); });
+      later(200, function () { setTicket(2); });
+      flyCopy(200, function () { return holder(2); });
+      later(500, function () { wC.classList.remove('x'); });
+      erase(wCs, 550, function () { type(wCs, 'apartado hasta 12 NOV', 0); });
+      stampAt(big, true, 1300, function () { setBig('Reservado', true); hit(big); });
+      return 2550;
+    }
+  };
+
+  function showStep(n) {
+    steps.forEach(function (el, i) { el.classList.toggle('on', i === n); el.classList.toggle('past', i < n); });
+    counter.forEach(function (el, i) { el.classList.toggle('on', i === n); });
+  }
+
+  // avanza o retrocede de a un paso hasta llegar al pedido, animando cada cambio
+  function pump() {
+    if (busy || shown === target) return;
+    var next = shown + (target > shown ? 1 : -1);
+    k = Math.abs(target - next) > 0 ? 0.5 : 1;   // si hay que seguir de largo, más rápido
+    busy = true;
+    showStep(next);
+    var lc = pocket.querySelector('.lcard');
+    var nud = next > shown ? 'nudge-f' : 'nudge-b';
+    lc.classList.remove('nudge-f', 'nudge-b'); void lc.offsetWidth; lc.classList.add(nud);
+    var dur = go[shown + '>' + next]();
+    shown = next;
+    setTimeout(function () { busy = false; pump(); }, dur * k + 120);
+  }
+
+  function setScene(n) {
+    if (n === target && shown !== -1) return;
+    target = n;
+    if (reduce || shown === -1) { shown = n; showStep(n); applyInstant(n); return; }
+    pump();
+  }
+  setScene(0);
+  // si cambia el tamaño o terminan de cargar las fuentes, se reacomoda el librito
+  function replaceCopy() { if (!busy && shown >= 0) putCopy(holder(shown)); }
+  window.addEventListener('resize', replaceCopy);
+  window.addEventListener('load', replaceCopy);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(replaceCopy);
+
+  // progreso, etiqueta de lomo y escena
+  var bar = $('bar'), spCall = $('spCall'), spName = $('spName'), sprog = $('sprog');
+  var labeled = Array.prototype.slice.call(document.querySelectorAll('[data-label]'));
+  function absTop(el) { return el.getBoundingClientRect().top + window.scrollY; }
+  var ticking = false, lastAct = -1;
+  function onScroll() {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(function () {
+      ticking = false;
+      var y = window.scrollY, vh = window.innerHeight;
+      var max = document.documentElement.scrollHeight - vh;
+      bar.style.transform = 'scaleX(' + (max > 0 ? y / max : 0) + ')';
+      var top = absTop(scrolly), h = scrolly.offsetHeight - vh;
+      var p = Math.max(0, Math.min(1, (y - top) / h));
+      setScene(y < top ? 0 : Math.min(3, Math.floor(p * 4 + 0.15)));
+      sprog.style.transform = 'scaleX(' + p + ')';
+      if (y > top - vh * 0.45) scrolly.classList.add('in');
+      var mid = y + vh * 0.45, act = 0;
+      labeled.forEach(function (el, i) { if (absTop(el) <= mid) act = i; });
+      if (act !== lastAct) {
+        lastAct = act;
+        var parts = labeled[act].dataset.call.split('|');
+        if (spCall) spCall.innerHTML = '<b>' + parts[0] + '</b>' + parts[1];
+        if (spName) spName.textContent = labeled[act].dataset.label;
+      }
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  // guion de la demo: cada paso se tacha al tocarlo
+  document.querySelectorAll('.guion button').forEach(function (b) {
+    b.addEventListener('click', function () { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); });
+  });
+
+  // Lucía busca y reserva: escena que avanza sola al aparecer
+  (function () {
+    var scr = $('luScreen'), q = $('luQ'), cur = $('luCur'), url = $('luUrl'), btn = $('luBtn'), prog = $('luProg');
+    var btns = Array.prototype.slice.call(document.querySelectorAll('#luSteps button'));
+    var urls = ['BiblioTech · Catálogo', 'BiblioTech · Catálogo', 'BiblioTech · Catálogo', 'BiblioTech · Mis reservas', 'BiblioTech · Mis préstamos'];
+    var word = 'cien años', timers = [], playing = false, started = false, s = -1;
+    function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+    function clear() { timers.forEach(clearTimeout); timers = []; }
+    function aim(el, dx, dy) {
+      var a = scr.getBoundingClientRect(), b = el.getBoundingClientRect();
+      cur.style.transform = 'translate(' + (b.left - a.left + (dx || 0)) + 'px,' + (b.top - a.top + (dy || 0)) + 'px)';
+    }
+    function type(done) {
+      q.textContent = ''; q.classList.add('typing');
+      if (reduce) { q.textContent = word; q.classList.remove('typing'); if (done) done(); return; }
+      var i = 0;
+      (function t() { q.textContent = word.slice(0, ++i); if (i < word.length) later(t, 70 + Math.random() * 60); else { later(function () { q.classList.remove('typing'); if (done) done(); }, 300); } })();
+    }
+    function show(n) {
+      s = n;
+      scr.setAttribute('data-s', n);
+      url.textContent = urls[n];
+      btns.forEach(function (b, i) { if (i === n) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+      prog.style.transform = 'scaleX(' + (n / 4) + ')';
+      if (n === 0) { aim(q.parentNode, q.parentNode.offsetWidth - 40, 12); }
+      else { if (q.textContent !== word) q.textContent = word; q.classList.remove('typing'); }
+      if (n === 1) aim($('luTitle'), 60, 8);
+      if (n === 2) { aim(btn, 26, 14); }
+    }
+    function play() {
+      clear(); playing = true;
+      show(0);
+      type(function () {
+        later(function () { show(1); }, 500);
+        later(function () { aim(btn, 26, 14); }, 2300);
+        later(function () { btn.classList.add('press'); }, 3300);
+        later(function () { btn.classList.remove('press'); show(2); }, 3480);
+        later(function () { show(3); }, 6600);
+        later(function () { show(4); playing = false; }, 9800);
+      });
+    }
+    btns.forEach(function (b, i) {
+      b.addEventListener('click', function () { clear(); playing = false; show(i); });
+    });
+    $('luPlay').addEventListener('click', play);
+    show(0); q.textContent = '';
+    function start() { if (!started) { started = true; play(); } }
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && e.intersectionRatio > .35) start(); }); }, { threshold: [0, .35, .6] }).observe(scr);
+    } else start();
+    window.addEventListener('resize', function () { if (s >= 0 && s <= 2 && !playing) show(s); });
+  })();
+
+  // por dentro: el pedido recorre cada control
+  (function () {
+    var hops = Array.prototype.slice.call(document.querySelectorAll('#hops .hop')), fill = $('hopFill'), timers = [], started = false;
+    function lit(n) {
+      hops.forEach(function (h, i) { h.classList.toggle('lit', i <= n); h.classList.toggle('now', i === n); });
+      var h = hops[Math.max(0, n)];
+      fill.style.height = n < 0 ? '0px' : (h.offsetTop + 8) + 'px';
+    }
+    function run() {
+      timers.forEach(clearTimeout); timers = [];
+      if (reduce) { lit(hops.length - 1); return; }
+      lit(-1);
+      hops.forEach(function (_, i) { timers.push(setTimeout(function () { lit(i); }, 500 + i * 900)); });
+    }
+    $('hopPlay').addEventListener('click', run);
+    window.addEventListener('resize', function () { var n = -1; hops.forEach(function (h, i) { if (h.classList.contains('now')) n = i; }); if (n >= 0) lit(n); });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && !started) { started = true; run(); } }); }, { threshold: .45 }).observe($('hops'));
+    } else run();
+  })();
+
+  // teclado para presentar
+  var stops = Array.prototype.slice.call(document.querySelectorAll('[data-stop]'));
+  window.addEventListener('keydown', function (e) {
+    var fwd = ['ArrowDown', 'ArrowRight', 'PageDown', ' '].indexOf(e.key) !== -1 && !e.shiftKey;
+    var back = ['ArrowUp', 'ArrowLeft', 'PageUp'].indexOf(e.key) !== -1 || (e.key === ' ' && e.shiftKey);
+    if (!fwd && !back) return;
+    if (e.key === ' ' && e.target.closest && e.target.closest('button, a')) return;   // espacio sobre un botón: lo activa
+    e.preventDefault();
+    var y = window.scrollY, tops = stops.map(absTop), target = null, k;
+    if (fwd) { for (k = 0; k < tops.length; k++) if (tops[k] > y + 8) { target = tops[k]; break; } if (target === null) target = document.documentElement.scrollHeight; }
+    else { for (k = tops.length - 1; k >= 0; k--) if (tops[k] < y - 8) { target = tops[k]; break; } if (target === null) target = 0; }
+    window.scrollTo({ top: target, behavior: reduce ? 'auto' : 'smooth' });
+  });
+})();
+</script>
