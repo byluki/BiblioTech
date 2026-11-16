@@ -62,25 +62,35 @@ class ReservaController extends Controller
         }
 
         return DB::transaction(function () use ($data, $request) {
-            $socio = Socio::findOrFail($data['socio_id']);
+            // bloqueo del socio: dos pedidos simultáneos no pueden saltarse
+            // el límite de reservas
+            $socio = Socio::lockForUpdate()->findOrFail($data['socio_id']);
 
             // Regla: solo un socio activo puede reservar.
             if (! $socio->estaActivo()) {
                 return response()->json(['message' => 'El socio no está activo y no puede reservar.'], 422);
             }
 
-            // Regla: un usuario común puede reservar varios libros distintos,
-            // pero no más de un ejemplar del mismo libro. Un centro educativo
-            // verificado puede reservar varios libros y varios ejemplares del mismo.
+            // Regla: no más de una reserva activa para el mismo libro.
+            $yaTieneReserva = Reserva::where('socio_id', $socio->id)
+                ->where('libro_id', $data['libro_id'])
+                ->whereIn('estado', ['pendiente', 'pendiente_retiro'])
+                ->exists();
+
+            if ($yaTieneReserva) {
+                return response()->json(['message' => 'El socio ya tiene una reserva activa para este libro.'], 422);
+            }
+
+            // Regla: un particular (o centro educativo sin verificar) solo puede
+            // tener 1 reserva activa en total.
             if (! $socio->esCentroEducativoVerificado()) {
-                $yaTieneReserva = Reserva::where('socio_id', $socio->id)
-                    ->where('libro_id', $data['libro_id'])
+                $tieneOtraReservaActiva = Reserva::where('socio_id', $socio->id)
                     ->whereIn('estado', ['pendiente', 'pendiente_retiro'])
                     ->exists();
 
-                if ($yaTieneReserva) {
+                if ($tieneOtraReservaActiva) {
                     return response()->json([
-                        'message' => 'Ya tenés una reserva activa para este libro. Solo un centro educativo verificado puede reservar más de un ejemplar del mismo libro.',
+                        'message' => 'Ya tenés una reserva activa. Un usuario particular (o un centro educativo todavía no verificado por un bibliotecario) solo puede tener una reserva a la vez.',
                     ], 422);
                 }
             }
@@ -88,6 +98,7 @@ class ReservaController extends Controller
             // si hay una copia libre queda para retirar; si no, en espera
             $ejemplarDisponible = Ejemplar::where('libro_id', $data['libro_id'])
                 ->where('estado', 'disponible')
+                ->lockForUpdate()
                 ->first();
 
             $reserva = Reserva::create([
@@ -157,7 +168,13 @@ class ReservaController extends Controller
         }
 
         return DB::transaction(function () use ($request, $reserva) {
-            $ejemplar = $reserva->ejemplar_id ? $reserva->ejemplar : null;
+            $reserva = Reserva::lockForUpdate()->findOrFail($reserva->id);
+
+            if (in_array($reserva->estado, ['confirmada', 'cancelada'], true)) {
+                return response()->json(['message' => 'La reserva ya fue confirmada o cancelada.'], 422);
+            }
+
+            $ejemplar = $reserva->ejemplar_id ? Ejemplar::lockForUpdate()->find($reserva->ejemplar_id) : null;
 
             $reserva->update(['estado' => 'cancelada']);
 

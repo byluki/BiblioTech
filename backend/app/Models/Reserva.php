@@ -18,12 +18,12 @@ class Reserva extends Model
 
     public function socio()
     {
-        return $this->belongsTo(Socio::class);
+        return $this->belongsTo(Socio::class)->withTrashed();
     }
 
     public function libro()
     {
-        return $this->belongsTo(Libro::class);
+        return $this->belongsTo(Libro::class)->withTrashed();
     }
 
     public function ejemplar()

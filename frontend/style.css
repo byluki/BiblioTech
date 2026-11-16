@@ -170,6 +170,16 @@ a:hover {
   box-shadow: var(--sombra-menu);
 }
 
+.dropdown-menu.show {
+  animation: menu-despliega 0.18s ease-out;
+}
+
+@keyframes menu-despliega {
+  /* translate en vez de transform para no pisar la posición que pone Bootstrap */
+  from { opacity: 0; translate: 0 -6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
 .dropdown-item {
   border-radius: var(--radio);
 }
@@ -1261,26 +1271,6 @@ a:hover {
 
 .carrito-item-aviso { color: var(--ladrillo); font-weight: 600; }
 
-.carrito-cantidad {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.btn-cantidad-carrito {
-  border: 1px solid var(--linea-suave);
-  background: transparent;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radio);
-  line-height: 1;
-}
-
-.btn-cantidad-carrito:disabled { opacity: 0.4; }
-
-.carrito-cantidad-valor { font-size: 0.9rem; font-weight: 600; }
-
 .btn-quitar-carrito {
   border: 0;
   background: transparent;
@@ -2151,3 +2141,19 @@ main.contenedor-ancho { margin-top: 2rem !important; }
 .socio-encontrado-detalle { font-size: 0.85rem; opacity: 0.9; }
 #prestar-cedula[readonly] { background-color: var(--papel); }
 .socio-encontrado.error { display: block; }
+
+.btn-ver-original { border: 0; background: none; padding: 0; color: inherit; text-decoration: underline; font-size: inherit; }
+
+/* Mis multas: total adeudado arriba de la lista */
+.multas-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  background: #fdecea;
+  border: 1px solid #f5c2bd;
+  color: #8a2a1f;
+}
+.multas-total span { font-size: 0.85rem; }

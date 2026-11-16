@@ -34,7 +34,7 @@ Route::get('/ejemplares/{ejemplar}', [EjemplarController::class, 'show']);
 | Rutas autenticadas (requieren token de Sanctum)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'activo'])->group(function () {
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);

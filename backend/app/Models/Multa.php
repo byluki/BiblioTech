@@ -22,14 +22,32 @@ class Multa extends Model
 
     protected $appends = ['saldo'];
 
+    // la cuenta se hace en centésimos (enteros) para no arrastrar errores de float
+    public static function aCentesimos($valor): int
+    {
+        return (int) round(((float) $valor) * 100);
+    }
+
     public function getSaldoAttribute(): float
     {
-        return max(0, round((float) $this->monto - (float) $this->monto_pagado, 2));
+        $saldo = self::aCentesimos($this->monto) - self::aCentesimos($this->monto_pagado);
+
+        return max(0, $saldo) / 100;
+    }
+
+    protected static function booted(): void
+    {
+        // red de seguridad: lo pagado nunca puede superar el monto
+        static::saving(function (Multa $multa) {
+            if (self::aCentesimos($multa->monto_pagado) > self::aCentesimos($multa->monto)) {
+                throw new \DomainException('El monto pagado no puede superar el monto de la multa.');
+            }
+        });
     }
 
     public function socio()
     {
-        return $this->belongsTo(Socio::class);
+        return $this->belongsTo(Socio::class)->withTrashed();
     }
 
     public function prestamo()

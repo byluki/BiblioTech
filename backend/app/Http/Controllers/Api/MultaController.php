@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\HistorialActividad;
 use App\Models\Multa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class MultaController extends Controller
@@ -94,6 +95,10 @@ class MultaController extends Controller
             'metodo_pago.in' => 'El método de pago no es válido.',
         ]);
 
+        if (isset($data['monto']) && Multa::aCentesimos($data['monto']) < Multa::aCentesimos($multa->monto_pagado)) {
+            return response()->json(['message' => 'El monto no puede ser menor a lo que ya se pagó.'], 422);
+        }
+
         if (($data['estado'] ?? null) === 'pagada') {
             $data['fecha_pago'] = now()->toDateString();
             $data['monto_pagado'] = $data['monto'] ?? $multa->monto;
@@ -115,42 +120,53 @@ class MultaController extends Controller
     // pagado llega al monto de la multa.
     public function pagar(Request $request, Multa $multa)
     {
-        if ($multa->estado === 'pagada') {
-            return response()->json(['message' => 'Esta multa ya está pagada.'], 422);
-        }
-
-        $saldo = $multa->saldo;
-
         $data = $request->validate([
-            'monto' => ['required', 'numeric', 'min:1', 'max:'.$saldo],
+            'monto' => ['required', 'numeric', 'min:1', 'max:'.Multa::MONTO_MAXIMO],
             'metodo_pago' => ['required', Rule::in(Multa::METODOS_PAGO)],
         ], [
             'monto.required' => 'Ingresá el monto que se paga.',
             'monto.min' => 'El monto tiene que ser mayor a 0.',
-            'monto.max' => 'El monto no puede ser mayor a lo que se debe ($ '.number_format($saldo, 0, ',', '.').').',
             'metodo_pago.required' => 'Elegí el método de pago.',
             'metodo_pago.in' => 'El método de pago no es válido.',
         ]);
 
-        $pagado = round((float) $multa->monto_pagado + (float) $data['monto'], 2);
-        $completa = $pagado >= (float) $multa->monto;
+        return DB::transaction(function () use ($request, $multa, $data) {
+            // bloqueo: dos pagos al mismo tiempo no pueden sumar de más
+            $multa = Multa::lockForUpdate()->findOrFail($multa->id);
 
-        $multa->update([
-            'monto_pagado' => $pagado,
-            'metodo_pago' => $data['metodo_pago'],
-            'estado' => $completa ? 'pagada' : 'pendiente',
-            'fecha_pago' => $completa ? now()->toDateString() : null,
-        ]);
+            if ($multa->estado === 'pagada') {
+                return response()->json(['message' => 'Esta multa ya está pagada.'], 422);
+            }
 
-        HistorialActividad::registrar(
-            $request->user()?->id,
-            'pago',
-            'multas',
-            $multa->id,
-            "Pago de {$data['monto']} ({$data['metodo_pago']})"
-        );
+            $saldo = Multa::aCentesimos($multa->monto) - Multa::aCentesimos($multa->monto_pagado);
+            $pago = Multa::aCentesimos($data['monto']);
 
-        return response()->json($multa->load('socio'));
+            if ($pago > $saldo) {
+                return response()->json([
+                    'message' => 'El monto no puede ser mayor a lo que se debe ($ '.number_format($saldo / 100, 0, ',', '.').').',
+                ], 422);
+            }
+
+            $pagado = Multa::aCentesimos($multa->monto_pagado) + $pago;
+            $completa = $pagado >= Multa::aCentesimos($multa->monto);
+
+            $multa->update([
+                'monto_pagado' => $pagado / 100,
+                'metodo_pago' => $data['metodo_pago'],
+                'estado' => $completa ? 'pagada' : 'pendiente',
+                'fecha_pago' => $completa ? now()->toDateString() : null,
+            ]);
+
+            HistorialActividad::registrar(
+                $request->user()?->id,
+                'pago',
+                'multas',
+                $multa->id,
+                'Pago de '.number_format($pago / 100, 2, '.', '').' ('.$data['metodo_pago'].')'
+            );
+
+            return response()->json($multa->load('socio'));
+        });
     }
 
     // GET /mis-multas  (socio logueado: sus multas pendientes y el total a pagar)
@@ -162,14 +178,17 @@ class MultaController extends Controller
             return response()->json(['multas' => [], 'total' => 0]);
         }
 
-        $multas = Multa::where('socio_id', $socio->id)
-            ->where('estado', 'pendiente')
-            ->orderBy('fecha')
+        // ?todas=1 incluye también las ya pagadas (para el historial del socio)
+        $multas = Multa::with('prestamo.ejemplar.libro:id,titulo')
+            ->where('socio_id', $socio->id)
+            ->when(! $request->boolean('todas'), fn ($q) => $q->where('estado', 'pendiente'))
+            ->orderByRaw("estado = 'pagada'")
+            ->orderByDesc('fecha')
             ->get();
 
         return response()->json([
             'multas' => $multas,
-            'total' => round($multas->sum(fn ($m) => $m->saldo), 2),
+            'total' => round($multas->where('estado', 'pendiente')->sum(fn ($m) => $m->saldo), 2),
         ]);
     }
 

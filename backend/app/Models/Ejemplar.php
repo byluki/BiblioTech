@@ -11,9 +11,10 @@ class Ejemplar extends Model
 
     protected $fillable = ['codigo_interno', 'libro_id', 'estado', 'ubicacion_fisica', 'observaciones'];
 
+    // incluye libros dados de baja, para no perder el historial
     public function libro()
     {
-        return $this->belongsTo(Libro::class);
+        return $this->belongsTo(Libro::class)->withTrashed();
     }
 
     public function prestamos()
@@ -23,6 +24,6 @@ class Ejemplar extends Model
 
     public function prestamoActivo()
     {
-        return $this->hasOne(Prestamo::class)->where('estado', 'activo');
+        return $this->hasOne(Prestamo::class)->whereIn('estado', ['activo', 'vencido']);
     }
 }

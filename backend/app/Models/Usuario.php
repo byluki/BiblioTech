@@ -15,6 +15,9 @@ class Usuario extends Authenticatable
 
     protected $casts = [
         'activo' => 'boolean',
+        // si alguna vez llega en texto plano, Laravel la hashea; si ya viene
+        // hasheada (Hash::make) la deja como está
+        'password' => 'hashed',
     ];
 
     public function rol()

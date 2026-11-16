@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\HistorialActividad;
+use App\Models\Ejemplar;
 use App\Models\Socio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -47,7 +49,7 @@ class SocioController extends Controller
             'foto' => ['nullable', 'string'],
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['sometimes', 'string', 'max:150'],
-            'cedula' => ['sometimes', 'string', 'max:30', 'unique:socios,cedula'],
+            'cedula' => ['sometimes', 'regex:/^[0-9.\-\s]{6,15}$/', 'string', 'max:30', 'unique:socios,cedula'],
             'direccion' => ['nullable', 'string'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
             'email' => ['required', 'email', 'max:150'],
@@ -58,6 +60,7 @@ class SocioController extends Controller
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico no es válido.',
             'telefono.regex' => 'El teléfono solo puede tener números (y +, -, espacios o paréntesis).',
+            'cedula.regex' => 'La cédula solo puede tener números (con o sin puntos y guion).',
         ]);
 
         // datos que la tabla exige y no vinieron en el pedido
@@ -91,7 +94,7 @@ class SocioController extends Controller
             'foto' => ['nullable', 'string'],
             'nombre' => ['sometimes', 'string', 'max:150'],
             'apellido' => ['sometimes', 'string', 'max:150'],
-            'cedula' => ['sometimes', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
+            'cedula' => ['sometimes', 'regex:/^[0-9.\-\s]{6,15}$/', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
             'direccion' => ['nullable', 'string'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
             'email' => ['sometimes', 'required', 'email', 'max:150'],
@@ -101,6 +104,7 @@ class SocioController extends Controller
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico no es válido.',
             'telefono.regex' => 'El teléfono solo puede tener números (y +, -, espacios o paréntesis).',
+            'cedula.regex' => 'La cédula solo puede tener números (con o sin puntos y guion).',
         ]);
 
         // al cargar la cédula real, pasa a ser el código de barras
@@ -118,7 +122,25 @@ class SocioController extends Controller
     // DELETE /socios/{id}  -> baja lógica (SoftDeletes)
     public function destroy(Request $request, Socio $socio)
     {
-        $socio->delete();
+        if ($socio->prestamos()->enCurso()->exists()) {
+            return response()->json(['message' => 'No se puede eliminar: el socio tiene libros sin devolver.'], 422);
+        }
+
+        if ($socio->multas()->where('estado', 'pendiente')->exists()) {
+            return response()->json(['message' => 'No se puede eliminar: el socio tiene multas sin pagar.'], 422);
+        }
+
+        DB::transaction(function () use ($socio) {
+            // sus reservas abiertas se cancelan y las copias quedan libres
+            foreach ($socio->reservas()->whereIn('estado', ['pendiente', 'pendiente_retiro'])->get() as $reserva) {
+                if ($reserva->ejemplar_id) {
+                    Ejemplar::whereKey($reserva->ejemplar_id)->where('estado', 'reservado')->update(['estado' => 'disponible']);
+                }
+                $reserva->update(['estado' => 'cancelada']);
+            }
+
+            $socio->delete();
+        });
 
         HistorialActividad::registrar($request->user()?->id, 'baja', 'socios', $socio->id);
 

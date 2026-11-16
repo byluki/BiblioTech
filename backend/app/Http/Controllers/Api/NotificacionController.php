@@ -39,19 +39,39 @@ class NotificacionController extends Controller
     }
 
     // GET /notificaciones/{id}
-    public function show(Notificacion $notificacion)
+    public function show(Request $request, Notificacion $notificacion)
     {
+        if (! $this->puedeVer($request, $notificacion)) {
+            return response()->json(['message' => 'No podés ver la notificación de otro socio.'], 403);
+        }
+
         return $notificacion;
     }
 
     // PATCH /notificaciones/{id}/leer
     // Al visualizar la notificación, el socio la marca como leída automáticamente.
-    public function leer(Notificacion $notificacion)
+    public function leer(Request $request, Notificacion $notificacion)
     {
+        if (! $this->puedeVer($request, $notificacion)) {
+            return response()->json(['message' => 'No podés modificar la notificación de otro socio.'], 403);
+        }
+
         if (! $notificacion->leida) {
             $notificacion->update(['leida' => true, 'fecha_leida' => now()]);
         }
 
         return response()->json($notificacion);
+    }
+
+    // gestión ve todas; el socio solo las suyas
+    private function puedeVer(Request $request, Notificacion $notificacion): bool
+    {
+        $usuario = $request->user();
+
+        if ($usuario->esAdministrador() || $usuario->esBibliotecario()) {
+            return true;
+        }
+
+        return $usuario->socio && (int) $notificacion->socio_id === (int) $usuario->socio->id;
     }
 }

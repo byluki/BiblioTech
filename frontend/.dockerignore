@@ -1,4 +1,5 @@
 Dockerfile
 .dockerignore
+nginx.conf
 *.md
 .DS_Store

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\UsuarioActivo;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Alias usado en routes/api.php: Route::middleware('rol:administrador')
         $middleware->alias([
             'rol' => CheckRole::class,
+            'activo' => UsuarioActivo::class,
         ]);
 
         // La API usa tokens Bearer (Sanctum) y el frontend vive en otro origen,

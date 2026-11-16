@@ -53,7 +53,7 @@ class LibroController extends Controller
             'isbn' => ['nullable', 'string'],
             'categoria_id' => ['nullable', 'exists:categorias,id'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
-            'foto_portada' => ['nullable', 'string'],
+            'foto_portada' => ['nullable', 'string', 'max:2800000', 'regex:/^(data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+|https?:\/\/\S+)$/'],
             // cantidad de copias físicas: se crea un ejemplar por cada una
             'cantidad' => ['sometimes', 'integer', 'min:1', 'max:'.self::MAX_COPIAS],
         ], [
@@ -95,7 +95,7 @@ class LibroController extends Controller
             'isbn' => ['nullable', 'string'],
             'categoria_id' => ['nullable', 'exists:categorias,id'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
-            'foto_portada' => ['nullable', 'string'],
+            'foto_portada' => ['nullable', 'string', 'max:2800000', 'regex:/^(data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+|https?:\/\/\S+)$/'],
         ]);
 
         $libro->update($data);

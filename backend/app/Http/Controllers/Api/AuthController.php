@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\HistorialActividad;
 use App\Models\Rol;
 use App\Models\Socio;
 use App\Models\Usuario;
@@ -24,6 +25,7 @@ class AuthController extends Controller
         'email.email' => 'El correo electrónico no es válido.',
         'email.unique' => 'Ya existe una cuenta con ese correo electrónico.',
         'cedula.unique' => 'Ya existe un socio con esa cédula.',
+        'cedula.regex' => 'La cédula solo puede tener números (con o sin puntos y guion).',
         'telefono.regex' => 'El teléfono solo puede tener números (y +, -, espacios o paréntesis).',
         'acepta_terminos.accepted' => 'Para crear la cuenta tenés que aceptar los Términos y Condiciones y la Política de Privacidad.',
     ];
@@ -39,6 +41,15 @@ class AuthController extends Controller
         $usuario = Usuario::with('rol', 'socio')->where('email', $data['email'])->first();
 
         if (! $usuario || ! Hash::check($data['password'], $usuario->password)) {
+            // queda registrado (sin la contraseña) para detectar intentos de fuerza bruta
+            HistorialActividad::registrar(
+                $usuario?->id,
+                'login_fallido',
+                'usuarios',
+                $usuario?->id,
+                'IP '.$request->ip()
+            );
+
             return response()->json(['message' => 'Credenciales inválidas.'], 401);
         }
 
@@ -56,7 +67,6 @@ class AuthController extends Controller
                 'email' => $usuario->email,
                 'rol' => $usuario->rol?->nombre,
                 'socio_id' => $usuario->socio?->id,
-                'centro_educativo_verificado' => $usuario->socio?->esCentroEducativoVerificado() ?? false,
             ],
         ]);
     }
@@ -70,7 +80,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'nombre' => ['required', 'string', 'max:150'],
             'apellido' => ['required', 'string', 'max:150'],
-            'cedula' => ['required', 'string', 'max:30', 'unique:socios,cedula'],
+            'cedula' => ['required', 'regex:/^[0-9.\-\s]{6,15}$/', 'string', 'max:30', 'unique:socios,cedula'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
             'direccion' => ['nullable', 'string'],
             'email' => ['required', 'email', 'max:150', 'unique:usuarios,email'],
@@ -142,7 +152,7 @@ class AuthController extends Controller
         if ($socio) {
             $reglas += [
                 'apellido' => ['required', 'string', 'max:150'],
-                'cedula' => ['required', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
+                'cedula' => ['required', 'regex:/^[0-9.\-\s]{6,15}$/', 'string', 'max:30', Rule::unique('socios', 'cedula')->ignore($socio->id)],
                 'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
                 'direccion' => ['nullable', 'string'],
             ];
@@ -187,7 +197,6 @@ class AuthController extends Controller
             'email' => $usuario->email,
             'rol' => $usuario->rol?->nombre,
             'socio_id' => $socio?->id,
-            'centro_educativo_verificado' => $socio?->esCentroEducativoVerificado() ?? false,
         ]);
     }
 

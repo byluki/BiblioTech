@@ -32,7 +32,6 @@ var busquedaHistorial = "";
 var historial = cargarHistorial();
 var sesionActual = cargarSesion();
 var carrito = cargarCarritoGuardado(); // ids (string) de libros agregados al carrito
-var cantidadesCarrito = cargarCantidadesGuardadas(); // id -> ejemplares a reservar (solo centros educativos verificados)
 var portadaEncontrada = null;
 var portadaEditando = null;
 var tituloOriginalEditando = "";
@@ -450,13 +449,15 @@ function hoyIso() {
 
 // ===== API =====
 
+// el token vive en sessionStorage: se borra al cerrar la pestaña/navegador
 function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+  return sessionStorage.getItem(TOKEN_KEY);
 }
 
 function guardarToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+  if (token) sessionStorage.setItem(TOKEN_KEY, token);
+  else sessionStorage.removeItem(TOKEN_KEY);
 }
 
 var TIMEOUT_API_MS = 20000; // 20 s máximo por petición
@@ -488,7 +489,7 @@ function apiFetch(path, opciones) {
     return r.json().catch(function () { return null; }).then(function (datos) {
       if (!r.ok) {
         // token vencido: se cierra la sesión (en el login un 401 es solo clave mal)
-        if (r.status === 401 && token && path.indexOf("/auth/") !== 0) {
+        if (r.status === 401 && (token || sesionActual) && path.indexOf("/auth/") !== 0) {
           cerrarSesionLocal();
           cargarCatalogoPublico();
         }
@@ -1214,7 +1215,7 @@ listaSocios.addEventListener("click", function (e) {
     var nuevoValorVerificado = !socio.verificado;
     var pedirConfirmacion = nuevoValorVerificado
       ? confirmarVerificacionEscolar(socio)
-      : confirmar("¿Quitar la verificación de centro educativo a " + socio.nombre + "? Ya no va a poder reservar más de un ejemplar del mismo libro.", "Quitar verificación", true);
+      : confirmar("¿Quitar la verificación de centro educativo a " + socio.nombre + "? Va a poder tener una sola reserva activa.", "Quitar verificación", true);
     pedirConfirmacion.then(function (ok) {
       if (!ok) return;
       return conCarga(boton, apiFetch("/socios/" + socio.id + "/verificar-educativo", { method: "PATCH", body: { verificado: nuevoValorVerificado } })
@@ -1896,8 +1897,26 @@ function librosFiltrados() {
   return resultado;
 }
 
-var LIBROS_POR_PAGINA = 50;
+// el catálogo muestra 3 filas por página; los libros por fila dependen del ancho
+var FILAS_POR_PAGINA = 3;
 var paginaCatalogo = 1;
+var columnasCatalogo = 0;
+
+function columnasDelCatalogo() {
+  var lista = document.getElementById("lista-libros");
+  var columnas = lista ? getComputedStyle(lista).gridTemplateColumns.split(" ").filter(Boolean).length : 0;
+  return columnas || 5;
+}
+
+function librosPorPagina() {
+  columnasCatalogo = columnasDelCatalogo();
+  return columnasCatalogo * FILAS_POR_PAGINA;
+}
+
+// al cambiar el ancho cambia la cantidad de columnas: se rearma la página
+window.addEventListener("resize", function () {
+  if (columnasCatalogo && columnasDelCatalogo() !== columnasCatalogo) renderizarLibros();
+});
 var ultimaFirmaFiltro = "";
 
 function renderizarLibros() {
@@ -1905,9 +1924,10 @@ function renderizarLibros() {
   // si cambió la búsqueda o la categoría, se vuelve a la primera página
   var firmaFiltro = filtroCategoria.value + "|" + inputBuscar.value.trim();
   if (firmaFiltro !== ultimaFirmaFiltro) { paginaCatalogo = 1; ultimaFirmaFiltro = firmaFiltro; }
-  var totalPaginas = Math.max(1, Math.ceil(todosFiltrados.length / LIBROS_POR_PAGINA));
+  var porPagina = librosPorPagina();
+  var totalPaginas = Math.max(1, Math.ceil(todosFiltrados.length / porPagina));
   if (paginaCatalogo > totalPaginas) paginaCatalogo = totalPaginas;
-  var filtrados = todosFiltrados.slice((paginaCatalogo - 1) * LIBROS_POR_PAGINA, paginaCatalogo * LIBROS_POR_PAGINA);
+  var filtrados = todosFiltrados.slice((paginaCatalogo - 1) * porPagina, paginaCatalogo * porPagina);
   renderizarPaginador(document.getElementById("paginador-libros"), paginaCatalogo, totalPaginas, function (n) {
     paginaCatalogo = n;
     renderizarLibros();
@@ -1966,10 +1986,6 @@ function renderizarLibros() {
       extraInfoHtml = '<p class="mb-0 texto-reserva">' +
         (miReserva.estado === "pendiente" ? "Estás en espera de una copia (reservaste el " + escapeHtml(miReserva.fecha) + ")" : "Lo reservaste el " + escapeHtml(miReserva.fecha)) + "</p>";
       accionesEstadoHtml = '<button class="btn-accion-libro btn-accion-libro-full" title="Cancelar reserva" data-accion="cancelar-reserva" data-id="' + libro.id + '" data-reserva-id="' + miReserva.id + '"><i class="fa-solid fa-ban"></i> Cancelar reserva</button>';
-      // un centro educativo verificado puede sumar más ejemplares del mismo libro
-      if (puedeVariosEjemplares() && libro.disponibles > 0) {
-        accionesEstadoHtml = htmlBotonAgregar(libro) + accionesEstadoHtml.replace(" btn-accion-libro-full", "");
-      }
     } else {
       if (permisos.esGestion) {
         if (libro.copias === 1 && reservasLibro.length === 1) {
@@ -2077,7 +2093,6 @@ function htmlPortadaLibro(libro) {
 // ===== Carrito =====
 
 var STORAGE_KEY_CARRITO = "biblioteca-carrito";
-var STORAGE_KEY_CANTIDADES = "biblioteca-carrito-cantidades";
 
 function cargarCarritoGuardado() {
   try {
@@ -2088,43 +2103,8 @@ function cargarCarritoGuardado() {
   }
 }
 
-function cargarCantidadesGuardadas() {
-  try {
-    var g = JSON.parse(localStorage.getItem("biblioteca-carrito-cantidades") || "{}");
-    return g && typeof g === "object" && !Array.isArray(g) ? g : {};
-  } catch (e) {
-    return {};
-  }
-}
-
 function guardarCarrito() {
-  try {
-    localStorage.setItem(STORAGE_KEY_CARRITO, JSON.stringify(carrito));
-    localStorage.setItem(STORAGE_KEY_CANTIDADES, JSON.stringify(cantidadesCarrito));
-  } catch (e) { /* sin storage: el carrito dura mientras la página */ }
-}
-
-// Centro educativo verificado (o gestión, que reserva a nombre de un socio):
-// puede reservar varios ejemplares del mismo libro. El servidor lo valida.
-function puedeVariosEjemplares() {
-  return permisos.esGestion || !!(sesionActual && sesionActual.centroVerificado);
-}
-
-// cuántos ejemplares de este libro se van a reservar (1 si no puede varios)
-function cantidadEnCarrito(id) {
-  if (!puedeVariosEjemplares()) return 1;
-  var libro = buscarLibroPorId(id);
-  var maximo = libro ? Math.max(1, libro.disponibles) : 1;
-  var n = parseInt(cantidadesCarrito[String(id)], 10) || 1;
-  return Math.max(1, Math.min(n, maximo));
-}
-
-function cambiarCantidadCarrito(id, delta) {
-  id = String(id);
-  cantidadesCarrito[id] = cantidadEnCarrito(id) + delta;
-  cantidadesCarrito[id] = cantidadEnCarrito(id);
-  guardarCarrito();
-  renderizarCarrito();
+  try { localStorage.setItem(STORAGE_KEY_CARRITO, JSON.stringify(carrito)); } catch (e) { /* sin storage: el carrito dura mientras la página */ }
 }
 
 function enCarrito(id) {
@@ -2135,7 +2115,6 @@ function alternarCarrito(id) {
   id = String(id);
   var pos = carrito.indexOf(id);
   if (pos === -1) carrito.push(id); else carrito.splice(pos, 1);
-  delete cantidadesCarrito[id];
   guardarCarrito();
   limpiarMensajeCarrito();
   renderizarLibros(); // también actualiza novedades, contadores y el panel del carrito
@@ -2186,15 +2165,7 @@ function renderizarCarrito() {
     var libro = buscarLibroPorId(id);
     if (!libro) return;
     var ok = libro.estado === "Disponible";
-    var cantidad = cantidadEnCarrito(id);
-    if (ok) disponibles += cantidad;
-    var selectorCantidadHtml = ok && puedeVariosEjemplares()
-      ? '<div class="carrito-cantidad" role="group" aria-label="Ejemplares a reservar">' +
-        '<button type="button" class="btn-cantidad-carrito" data-id="' + libro.id + '" data-delta="-1" aria-label="Menos ejemplares"' + (cantidad <= 1 ? " disabled" : "") + '><i class="fa-solid fa-minus"></i></button>' +
-        '<span class="carrito-cantidad-valor">' + cantidad + (libro.copias > 1 ? " de " + libro.disponibles + " libres" : "") + "</span>" +
-        '<button type="button" class="btn-cantidad-carrito" data-id="' + libro.id + '" data-delta="1" aria-label="Más ejemplares"' + (cantidad >= libro.disponibles ? " disabled" : "") + '><i class="fa-solid fa-plus"></i></button>' +
-        "</div>"
-      : "";
+    if (ok) disponibles++;
     items.push(
       '<li class="carrito-item" data-id="' + libro.id + '">' +
       (libro.portada
@@ -2202,7 +2173,7 @@ function renderizarCarrito() {
         : '<div class="carrito-miniatura tono-' + ((parseInt(libro.id, 10) || 0) % 5) + '"></div>') +
       '<div class="carrito-datos"><p class="carrito-item-titulo">' + escapeHtml(libro.titulo) + "</p>" +
       '<p class="carrito-item-autor">' + escapeHtml(libro.autor) + "</p>" +
-      (ok ? "" : '<p class="carrito-item-aviso">Ya no está disponible</p>') + selectorCantidadHtml + "</div>" +
+      (ok ? "" : '<p class="carrito-item-aviso">Ya no está disponible</p>') + "</div>" +
       '<button type="button" class="btn-quitar-carrito" data-id="' + libro.id + '" aria-label="Quitar ' + escapeHtml(libro.titulo) + ' del carrito"><i class="fa-solid fa-xmark"></i></button>' +
       "</li>"
     );
@@ -2274,13 +2245,8 @@ function confirmarCarrito() {
   var respuestasReservas = [];
 
   conCarga(boton, obtenerSocio.then(function (socio) {
-    // de a uno (un pedido por ejemplar): el servidor valida las reglas en cada pedido
-    var pedidos = [];
-    ids.forEach(function (id) {
-      var n = cantidadEnCarrito(id);
-      for (var k = 0; k < n; k++) pedidos.push(id);
-    });
-    return pedidos.reduce(function (cadena, id) {
+    // de a uno: el servidor valida el límite de reservas en cada pedido
+    return ids.reduce(function (cadena, id) {
       return cadena.then(function () {
         return apiFetch("/reservas", { method: "POST", body: { socio_id: socio.id, libro_id: id, fecha_deseada: fecha } })
           .then(function (r) { reservados.push(id); if (r) respuestasReservas.push(r); })
@@ -2291,17 +2257,8 @@ function confirmarCarrito() {
     reservados.forEach(function (id) {
       var l = buscarLibroPorId(id);
       registrarHistorial("Se reservó \"" + (l ? l.titulo : "un libro") + "\" a nombre de " + nombrePersona + ".", "reservas", nombrePersona);
-    });
-    // sale del carrito lo que se reservó completo; si falló algún ejemplar, queda lo que falta
-    ids.forEach(function (id) {
-      var fallaron = fallidos.filter(function (f) { return f.id === id; }).length;
       var pos = carrito.indexOf(id);
-      if (fallaron === 0) {
-        if (pos !== -1) carrito.splice(pos, 1);
-        delete cantidadesCarrito[id];
-      } else {
-        cantidadesCarrito[id] = fallaron;
-      }
+      if (pos !== -1) carrito.splice(pos, 1);
     });
     guardarCarrito();
     return Promise.all([cargarLibrosApi(), cargarReservasApi()]);
@@ -2328,9 +2285,7 @@ document.addEventListener("click", function (e) {
   var agregar = e.target.closest(".btn-agregar-carrito");
   if (agregar) { alternarCarrito(agregar.dataset.id); return; }
   var quitar = e.target.closest(".btn-quitar-carrito");
-  if (quitar) { alternarCarrito(quitar.dataset.id); return; }
-  var cantidad = e.target.closest(".btn-cantidad-carrito");
-  if (cantidad) { cambiarCantidadCarrito(cantidad.dataset.id, parseInt(cantidad.dataset.delta, 10) || 0); }
+  if (quitar) { alternarCarrito(quitar.dataset.id); }
 });
 
 document.getElementById("carrito-form").addEventListener("submit", function (e) {
@@ -2340,7 +2295,6 @@ document.getElementById("carrito-form").addEventListener("submit", function (e) 
 
 document.getElementById("carrito-vaciar").addEventListener("click", function () {
   carrito = [];
-  cantidadesCarrito = {};
   guardarCarrito();
   limpiarMensajeCarrito();
   renderizarLibros();
@@ -2441,7 +2395,7 @@ function descripcionGoogleBooks(libro, soloEspanol) {
       if (!info.description) continue;
       var titulo = normalizarComparar(info.title || "");
       if (isbn.length >= 10 || titulo.indexOf(tituloBuscado) !== -1 || tituloBuscado.indexOf(titulo) !== -1) {
-        return { texto: htmlATexto(info.description), fuente: "Google Books", enlace: info.infoLink || null };
+        return { texto: htmlATexto(info.description), fuente: "Google Books", enlace: info.infoLink || null, idioma: info.language || "" };
       }
     }
     return null;
@@ -2464,12 +2418,83 @@ function descripcionOpenLibrary(libro) {
   });
 }
 
-// Google Books (primero en español) y, si no hay, Open Library
+// Google Books (primero en español) y, si no hay, Open Library.
+// Si la descripción está en otro idioma se traduce al español.
 function buscarDescripcionExterna(libro) {
   var nada = function () { return null; };
   return descripcionGoogleBooks(libro, true).catch(nada)
     .then(function (r) { return r || descripcionGoogleBooks(libro, false).catch(nada); })
-    .then(function (r) { return r || descripcionOpenLibrary(libro).catch(nada); });
+    .then(function (r) { return r || descripcionOpenLibrary(libro).catch(nada); })
+    .then(traducirSiHaceFalta);
+}
+
+// ===== Traductor (MyMemory) =====
+var NOMBRE_IDIOMA = { en: "inglés", fr: "francés", pt: "portugués", it: "italiano", de: "alemán" };
+
+// idioma aproximado según las palabras más comunes de cada uno
+function detectarIdioma(texto) {
+  var palabras = (" " + texto.toLowerCase().replace(/[^a-záéíóúñüçãõàèìòù ]/g, " ") + " ");
+  var listas = {
+    es: ["el", "la", "los", "las", "que", "una", "por", "con", "para", "del", "es", "su"],
+    en: ["the", "and", "of", "to", "is", "in", "that", "with", "his", "her", "this", "for"],
+    pt: ["o", "os", "uma", "não", "com", "para", "que", "do", "da", "dos", "ao", "seu"],
+    fr: ["le", "les", "et", "des", "une", "est", "dans", "qui", "pour", "sur", "du", "au"],
+    it: ["il", "gli", "della", "che", "una", "per", "con", "del", "non", "sono", "è", "nel"]
+  };
+  var mejor = "es", puntos = -1;
+  Object.keys(listas).forEach(function (idioma) {
+    var n = listas[idioma].reduce(function (t, w) { return t + (palabras.split(" " + w + " ").length - 1); }, 0);
+    if (n > puntos) { puntos = n; mejor = idioma; }
+  });
+  return mejor;
+}
+
+// MyMemory acepta hasta ~500 caracteres por pedido: se parte por oraciones
+function partirEnTrozos(texto, max) {
+  var oraciones = texto.match(/[^.!?]+[.!?]*\s*/g) || [texto];
+  var trozos = [], actual = "";
+  oraciones.forEach(function (o) {
+    while (o.length > max) { // oración larguísima: se corta por palabras
+      var corte = o.lastIndexOf(" ", max);
+      if (corte < 1) corte = max;
+      if (actual) { trozos.push(actual); actual = ""; }
+      trozos.push(o.slice(0, corte));
+      o = o.slice(corte);
+    }
+    if ((actual + o).length > max) { trozos.push(actual); actual = ""; }
+    actual += o;
+  });
+  if (actual.trim()) trozos.push(actual);
+  return trozos.map(function (t) { return t.trim(); }).filter(Boolean);
+}
+
+function traducirTexto(texto, desde) {
+  var trozos = partirEnTrozos(texto, 450);
+  return Promise.all(trozos.map(function (t) {
+    var url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(t) + "&langpair=" + desde + "|es";
+    return pedirJson(url).then(function (r) {
+      var traducido = r && r.responseData && r.responseData.translatedText;
+      // cuando se acaba el cupo diario, MyMemory devuelve un aviso en vez de la traducción
+      if (Number(r.responseStatus) !== 200 || !traducido || /MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(traducido)) {
+        throw new Error("traducción no disponible");
+      }
+      return htmlATexto(traducido);
+    });
+  })).then(function (partes) { return partes.join(" "); });
+}
+
+function traducirSiHaceFalta(r) {
+  if (!r || !r.texto) return r;
+  var idioma = (r.idioma || detectarIdioma(r.texto)).slice(0, 2).toLowerCase();
+  if (idioma === "es") return r;
+  return traducirTexto(r.texto, idioma).then(function (traducido) {
+    r.original = r.texto;
+    r.texto = traducido;
+    r.traducidoDe = idioma;
+    return r;
+  }).catch(function () {
+    return r; // sin traducción se muestra el original
+  });
 }
 
 function obtenerDescripcion(libro) {
@@ -2560,22 +2585,38 @@ function abrirDetalleLibro(libroId) {
       desc.innerHTML = '<p class="detalle-sin-descripcion">Todavía no tenemos una descripción de este libro. Podés preguntar por él en el mostrador.</p>';
       return;
     }
-    var partes = recortarTexto(r.texto, LARGO_DESCRIPCION);
-    desc.innerHTML = '<p></p>' + (partes.recortado ? '<button type="button" class="btn-leer-mas" aria-expanded="false">Leer más</button>' : "");
-    desc.querySelector("p").textContent = partes.breve;
-    var leerMas = desc.querySelector(".btn-leer-mas");
-    if (leerMas) {
-      leerMas.addEventListener("click", function () {
-        var abierto = leerMas.getAttribute("aria-expanded") === "true";
-        desc.querySelector("p").textContent = abierto ? partes.breve : r.texto;
-        leerMas.textContent = abierto ? "Leer más" : "Leer menos";
-        leerMas.setAttribute("aria-expanded", String(!abierto));
-      });
+    var verOriginal = false;
+    function pintar() {
+      var texto = verOriginal ? r.original : r.texto;
+      var partes = recortarTexto(texto, LARGO_DESCRIPCION);
+      desc.innerHTML = '<p lang="' + (verOriginal ? r.traducidoDe : "es") + '"></p>' + (partes.recortado ? '<button type="button" class="btn-leer-mas" aria-expanded="false">Leer más</button>' : "");
+      desc.querySelector("p").textContent = partes.breve;
+      var leerMas = desc.querySelector(".btn-leer-mas");
+      if (leerMas) {
+        leerMas.addEventListener("click", function () {
+          var abierto = leerMas.getAttribute("aria-expanded") === "true";
+          desc.querySelector("p").textContent = abierto ? partes.breve : texto;
+          leerMas.textContent = abierto ? "Leer más" : "Leer menos";
+          leerMas.setAttribute("aria-expanded", String(!abierto));
+        });
+      }
     }
+    pintar();
     if (r.fuente) {
       fuente.innerHTML = "Descripción: " + (r.enlace
         ? '<a href="' + escapeHtml(r.enlace) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(r.fuente) + "</a>"
-        : escapeHtml(r.fuente));
+        : escapeHtml(r.fuente)) +
+        (r.traducidoDe
+          ? ". Traducida automáticamente del " + escapeHtml(NOMBRE_IDIOMA[r.traducidoDe] || "original") + '. <button type="button" class="btn-ver-original">Ver original</button>'
+          : "");
+      var botonOriginal = fuente.querySelector(".btn-ver-original");
+      if (botonOriginal) {
+        botonOriginal.addEventListener("click", function () {
+          verOriginal = !verOriginal;
+          botonOriginal.textContent = verOriginal ? "Ver traducción" : "Ver original";
+          pintar();
+        });
+      }
     }
   });
 }
@@ -2628,7 +2669,7 @@ document.addEventListener("click", function (e) {
     campo.value = r.texto.slice(0, campo.maxLength);
     actualizarContadoresDescripcion();
     campo.focus();
-    avisarOk("Descripción traída de " + r.fuente + ". Revisala antes de guardar.");
+    avisarOk("Descripción traída de " + r.fuente + (r.traducidoDe ? " y traducida del " + (NOMBRE_IDIOMA[r.traducidoDe] || "original") : "") + ". Revisala antes de guardar.");
   });
 });
 
@@ -3002,12 +3043,12 @@ function abrirModalReservar(libroId) {
   modalReservar.show();
 }
 
-// particular o centro educativo sin verificar: no puede reservar dos veces el mismo libro (lo valida el backend)
-function socioTieneReservaActivaBloqueante(socio, libroId) {
+// particular o centro educativo sin verificar: 1 reserva activa (lo valida el backend)
+function socioTieneReservaActivaBloqueante(socio) {
   if (!socio) return false;
   if (socio.tipo === "Centro educativo" && socio.verificado) return false;
   for (var i = 0; i < reservas.length; i++) {
-    if (reservas[i].socioId === socio.id && String(reservas[i].libroId) === String(libroId)) return true;
+    if (reservas[i].socioId === socio.id) return true;
   }
   return false;
 }
@@ -3053,8 +3094,8 @@ formReservar.addEventListener("submit", function (e) {
   }
 
   var socioExistente = buscarSocioPorNombre(nombre);
-  if (socioExistente && socioTieneReservaActivaBloqueante(socioExistente, libroId)) {
-    avisarError("Este socio ya tiene una reserva activa de este libro. Solo puede reservar más de un ejemplar del mismo libro si está verificado como centro educativo (ver pestaña Socios).");
+  if (socioExistente && socioTieneReservaActivaBloqueante(socioExistente)) {
+    avisarError("Este socio ya tiene una reserva activa. Solo puede tener más de una si está verificado como centro educativo (ver pestaña Socios).");
     return;
   }
 
@@ -3306,6 +3347,54 @@ function renderizarModalMisPrestamos() {
       '<span class="etiqueta-estado ' + (vencido ? "estado-prestado" : "estado-reservado") + '">Prestado</span>';
     listaModalPrestamos.appendChild(li);
   }
+}
+
+var modalMisMultas = new bootstrap.Modal(document.getElementById("modal-mis-multas"));
+
+function abrirModalMisMultas() {
+  var lista = document.getElementById("lista-mis-multas");
+  var vacio = document.getElementById("estado-vacio-mis-multas");
+  var total = document.getElementById("mis-multas-total");
+  lista.innerHTML = '<li class="text-center text-muted py-3">Cargando…</li>';
+  vacio.classList.add("d-none");
+  total.classList.add("d-none");
+  modalMisMultas.show();
+
+  apiFetch("/mis-multas?todas=1").then(function (r) {
+    var multas = (r && r.multas) || [];
+    lista.innerHTML = "";
+    vacio.classList.toggle("d-none", multas.length > 0);
+
+    if (Number(r.total) > 0) {
+      total.innerHTML = "<strong>Debés " + formatearMonto(r.total) + "</strong>" +
+        "<span>Se paga en el mostrador de la Biblioteca Central.</span>";
+      total.classList.remove("d-none");
+    }
+
+    multas.forEach(function (m) {
+      var pagada = m.estado === "pagada";
+      var libro = m.prestamo && m.prestamo.ejemplar && m.prestamo.ejemplar.libro;
+      var detalle = [fechaDesdeApi(m.fecha) || ""];
+      if (libro) detalle.push("“" + libro.titulo + "”");
+      if (pagada) {
+        detalle.push("pagada" + (m.metodo_pago ? " con " + (METODO_PAGO_LABEL[m.metodo_pago] || m.metodo_pago) : ""));
+      } else if (Number(m.monto_pagado) > 0) {
+        detalle.push("pagaste " + formatearMonto(m.monto_pagado) + " de " + formatearMonto(m.monto));
+      }
+
+      var li = document.createElement("li");
+      li.className = "reserva-item";
+      li.innerHTML =
+        '<div class="flex-grow-1"><h3>' + escapeHtml(MOTIVO_MULTA_LABEL[m.motivo] || m.motivo) + "</h3>" +
+        '<p class="mb-0 text-muted small">' + escapeHtml(detalle.join(" · ")) + "</p></div>" +
+        '<div class="text-end"><div class="fw-semibold">' + formatearMonto(pagada ? m.monto : m.saldo) + "</div>" +
+        '<span class="etiqueta-estado ' + (pagada ? "estado-disponible" : "estado-prestado") + '">' + (pagada ? "Pagada" : "Pendiente") + "</span></div>";
+      lista.appendChild(li);
+    });
+  }).catch(function (err) {
+    lista.innerHTML = "";
+    mostrarErrorApi(err);
+  });
 }
 
 function abrirModalMisPrestamos() {
@@ -3650,15 +3739,21 @@ listaPrestamos.addEventListener("click", function (e) {
 // ===== Autenticación =====
 
 function cargarSesion() {
-  var guardada = localStorage.getItem(STORAGE_KEY_SESION);
-  return guardada ? JSON.parse(guardada) : null;
+  // la sesión va junto con el token (sessionStorage); sin token no hay sesión
+  try { localStorage.removeItem(STORAGE_KEY_SESION); } catch (e) {}
+  var guardada = sessionStorage.getItem(STORAGE_KEY_SESION);
+  if (!guardada || !sessionStorage.getItem(TOKEN_KEY)) {
+    sessionStorage.removeItem(STORAGE_KEY_SESION);
+    return null;
+  }
+  try { return JSON.parse(guardada); } catch (e) { return null; }
 }
 
 function guardarSesion() {
   if (sesionActual) {
-    localStorage.setItem(STORAGE_KEY_SESION, JSON.stringify(sesionActual));
+    sessionStorage.setItem(STORAGE_KEY_SESION, JSON.stringify(sesionActual));
   } else {
-    localStorage.removeItem(STORAGE_KEY_SESION);
+    sessionStorage.removeItem(STORAGE_KEY_SESION);
   }
 }
 
@@ -3752,8 +3847,7 @@ function mapearUsuarioSesion(usuario) {
     nombre: usuario.nombre,
     email: usuario.email,
     rol: usuario.rol,
-    socioId: usuario.socio_id,
-    centroVerificado: usuario.centro_educativo_verificado === true
+    socioId: usuario.socio_id
   };
 }
 
@@ -4094,6 +4188,7 @@ headerBtnRegistro.addEventListener("click", function (e) { e.preventDefault(); a
 headerBtnLogout.addEventListener("click", function (e) { e.preventDefault(); cerrarSesion(); });
 document.getElementById("menu-usuario-cuenta").addEventListener("click", function (e) { if (sesionActual) abrirMiCuenta(e.currentTarget); });
 document.getElementById("menu-usuario-prestamos").addEventListener("click", abrirModalMisPrestamos);
+document.getElementById("menu-usuario-multas").addEventListener("click", abrirModalMisMultas);
 document.getElementById("menu-usuario-salir").addEventListener("click", cerrarSesion);
 
 // ícono de libro del invitado: va al catálogo
@@ -4164,8 +4259,7 @@ if (sesionActual && getToken()) {
       nombre: usuario.nombre,
       email: usuario.email,
       rol: usuario.rol ? usuario.rol.nombre : null,
-      socioId: usuario.socio ? usuario.socio.id : null,
-      centroVerificado: !!(usuario.socio && usuario.socio.tipo === "centro_educativo" && usuario.socio.verificado_centro_educativo)
+      socioId: usuario.socio ? usuario.socio.id : null
     };
     guardarSesion();
     actualizarUIAuth();
@@ -4177,11 +4271,10 @@ if (sesionActual && getToken()) {
     // token vencido: queda en modo invitado
     cerrarSesionLocal();
     cargarCatalogoPublico();
-    abrirModalLogin();
   });
 } else {
+  // se entra como invitado; el login se abre solo desde el menú o al reservar
   cargarCatalogoPublico();
-  abrirModalLogin();
 }
 var buscadorMultasEl = document.getElementById("buscador-multas");
 var temporizadorBusquedaMultas = null;

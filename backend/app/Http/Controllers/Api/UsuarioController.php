@@ -58,6 +58,11 @@ class UsuarioController extends Controller
 
         $usuario->update($data);
 
+        // si se desactivó, se cierran todas sus sesiones
+        if (array_key_exists('activo', $data) && ! $data['activo']) {
+            $usuario->tokens()->delete();
+        }
+
         HistorialActividad::registrar($request->user()?->id, 'modificacion', 'usuarios', $usuario->id);
 
         return response()->json($usuario);

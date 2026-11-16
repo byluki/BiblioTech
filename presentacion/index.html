@@ -277,6 +277,9 @@ body::after {
 .copy.on { background: var(--stamp-red); border-color: var(--stamp-red); border-style: solid; color: #fff; }
 .copy.done { background: var(--stamp); border-color: var(--stamp); border-style: solid; color: #fff; }
 .wait li.gone { max-height: 0; opacity: 0; padding-block: 0; border-bottom-color: transparent; }
+.wait li.pre { opacity: 0; }
+.copy { transition: opacity .3s; }
+.copy.hide { opacity: 0; }
 #nC { display: inline-block; }
 #nC.bump { animation: bump .6s var(--thud); }
 @keyframes bump { 0% { transform: translateY(14px); color: var(--stamp-red); } 100% { transform: none; } }
@@ -418,6 +421,23 @@ body::after {
 .next b { display: block; margin-bottom: 8px; font: 700 13px/1 var(--f-type); letter-spacing: .1em; text-transform: uppercase; color: var(--rule-red); }
 .next strong { color: var(--ink); font-weight: 600; }
 
+/* ---------- requerimientos ---------- */
+.req-flow { list-style: none; margin: 40px 0 0; margin-inline: calc(-1 * clamp(0px, (100vw - 1180px) / 2, 70px)); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 34px; align-items: stretch; }
+.req-flow > li { position: relative; display: flex; flex-direction: column; min-height: 470px; background: var(--card); box-shadow: 0 14px 30px -18px rgba(40,30,10,.45); border-top: 6px solid var(--c); padding: 26px 24px 24px; }
+.req-flow > li + li::before { content: "→"; position: absolute; left: -29px; top: 44px; font: 700 26px/1 var(--f-type); color: var(--ink-soft); }
+.req-flow .n { font: 700 14px/1 var(--f-type); letter-spacing: .1em; text-transform: uppercase; color: var(--c); }
+.req-flow h3 { font: 800 clamp(26px, 2.5vw, 34px)/.95 var(--f-display); text-transform: uppercase; margin: 10px 0 14px; }
+.req-flow p { font-size: 18px; line-height: 1.45; }
+.req-flow p b { font-weight: 700; }
+.req-flow .mix { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.req-flow .mix span { font: 700 14px/1 var(--f-type); padding: 6px 9px; border: 1.5px solid currentColor; }
+.req-flow .ex { margin-top: auto; padding-top: 16px; }
+.req-flow .ex div { border-top: 1px dashed #b9b1a1; padding-top: 14px; font: 15.5px/1.45 var(--f-type); color: var(--ink-soft); }
+.req-flow .ex b { display: block; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); margin-bottom: 4px; }
+.c-rf { color: var(--brand); } .c-rnf { color: var(--stamp); } .c-ep { color: #2f7a43; } .c-rl { color: var(--oak-dark); }
+.req-key { margin: 36px 0 0 148px; font-size: 18px; color: var(--ink-soft); max-width: 72ch; }
+.req-key b { color: var(--ink); }
+
 /* ---------- Lucía, con BiblioTech ---------- */
 .lu-grid { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); gap: 48px; margin-top: 56px; align-items: center; }
 .lu-steps { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
@@ -442,13 +462,13 @@ body::after {
 .lu-search { display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--ink); padding: 10px 14px; font: 16px/1 var(--f-type); min-height: 42px; }
 .lu-q.typing::after { content: "▌"; animation: blink 1s steps(1) infinite; }
 .lu-res { position: relative; margin-top: 18px; display: grid; grid-template-columns: 66px minmax(0,1fr); gap: 16px; padding: 16px; border: 1px solid var(--desk-dark); background: var(--card);
-  opacity: 0; transform: translateY(18px); transition: opacity .5s var(--ease), transform .55s var(--ease); }
+  opacity: 0; transform: translateY(18px); transition: opacity .8s var(--ease), transform .9s var(--ease); }
 .screen:not([data-s="0"]) .lu-res { opacity: 1; transform: none; }
 .lu-cover { height: 96px; background: linear-gradient(90deg, #22483e 0 8px, #2f6555 8px); color: #f3e2ad; font: 700 11px/1.1 var(--f-display); text-transform: uppercase; padding: 8px 6px 6px 14px; }
 .lu-res h4 { font: 700 23px/1.05 var(--f-display); text-transform: uppercase; }
 .lu-res .au { font-size: 14px; color: var(--ink-soft); margin: 3px 0 10px; }
 .lu-badge { display: none; font: 700 12px/1 var(--f-type); padding: 5px 8px; border: 1.5px solid currentColor; }
-.lu-badge.b1 { color: var(--stamp-red); }
+.lu-badge.b1 { color: #2f7a43; }
 .lu-badge.b3 { color: #2f7a43; }
 .lu-badge.b4 { color: var(--stamp); }
 .screen[data-s="1"] .b1, .screen[data-s="2"] .b1, .screen[data-s="3"] .b3, .screen[data-s="4"] .b4 { display: inline-block; animation: pop .4s var(--thud); }
@@ -463,14 +483,14 @@ body::after {
 .lu-st { position: absolute; right: 14px; top: 14px; font-size: 19px; padding: 4px 9px 3px; --sr: -9deg; opacity: 0; }
 .screen[data-s="2"] .lu-st.r, .screen[data-s="3"] .lu-st.r, .screen[data-s="4"] .lu-st.p { opacity: .92; animation: thud .45s var(--thud) both; }
 .lu-acct { position: absolute; left: 22px; right: 22px; bottom: 22px; display: grid; gap: 4px; padding: 14px 16px; background: var(--card); border: 1.5px solid var(--ink); border-top: 4px solid #2f7a43;
-  font: 15px/1.3 var(--f-type); box-shadow: 0 10px 20px -12px rgba(0,0,0,.4); transform: translateY(160%); transition: transform .6s var(--ease); }
+  font: 15px/1.3 var(--f-type); box-shadow: 0 10px 20px -12px rgba(0,0,0,.4); transform: translateY(160%); transition: transform .9s var(--ease); }
 .lu-acct b { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
 .lu-acct .ok { color: #2f7a43; font-weight: 700; }
 .screen[data-s="3"] .lu-acct { transform: none; }
 .lu-toast { position: absolute; left: 22px; right: 22px; bottom: 22px; padding: 13px 16px; background: var(--ink); color: var(--card); font: 700 14.5px/1.3 var(--f-type);
-  transform: translateY(160%); transition: transform .55s var(--ease); }
-.screen[data-s="2"] .t2, .screen[data-s="4"] .t4 { transform: none; transition-delay: .35s; }
-.lu-cur { position: absolute; left: 0; top: 0; width: 26px; height: 26px; z-index: 9; pointer-events: none; transition: transform .9s var(--ease), opacity .4s; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+  transform: translateY(160%); transition: transform .85s var(--ease); }
+.screen[data-s="2"] .t2, .screen[data-s="4"] .t4 { transform: none; transition-delay: .6s; }
+.lu-cur { position: absolute; left: 0; top: 0; width: 26px; height: 26px; z-index: 9; pointer-events: none; transition: transform 1.3s var(--ease), opacity .6s; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
 .screen[data-s="3"] .lu-cur, .screen[data-s="4"] .lu-cur { opacity: 0; }
 
 /* ---------- por dentro ---------- */
@@ -498,11 +518,20 @@ body::after {
 .live .small b { color: #f1ece2; }
 
 /* ---------- responsive ---------- */
+@media (max-width: 1120px) {
+  .req-flow { grid-template-columns: repeat(2, minmax(0,1fr)); margin-inline: 0; }
+  .req-flow > li { min-height: 0; }
+  .req-flow > li:nth-child(3)::before { display: none; }
+}
+@media (max-width: 960px) { .req-key { margin-left: 0; } }
 @media (max-width: 960px) {
   .lu-grid, .flow-grid { grid-template-columns: 1fr; }
   .team { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .ledger.cmp .row { grid-template-columns: 1fr; }
   .demo-grid, .sec-grid { grid-template-columns: 1fr; }
+  .req-flow { grid-template-columns: repeat(2, minmax(0,1fr)); margin-inline: 0; }
+  .req-flow > li { min-height: 0; }
+  .req-flow > li:nth-child(3)::before { display: none; }
   .entry { grid-template-columns: 1fr; gap: 4px; }
   .hero-grid, .scene, .reports { grid-template-columns: 1fr; }
   .hero .ficha { justify-self: start; }
@@ -538,6 +567,8 @@ body::after {
   .lu-cover { height: 78px; font-size: 9px; }
   .lu-acct, .lu-toast { left: 14px; right: 14px; bottom: 14px; }
   .src { font-size: 12.5px; padding: 14px; }
+  .req-flow { grid-template-columns: 1fr; }
+  .req-flow > li + li::before, .req-flow > li:nth-child(3)::before { display: block; content: "↓"; left: 50%; top: -31px; transform: translateX(-50%); }
 }
 </style>
 
@@ -578,11 +609,11 @@ body::after {
       </article>
       <article class="carnet" data-r style="--d:2; --c:#3b6b3f; --rot:.8deg">
         <div class="band"><span>Equipo</span><span>02</span></div>
-        <div class="body"><div class="ph">MS</div><h3>Mateo Saavedra</h3><p class="role">Frontend y documentación</p><ul><li>Catálogo y carrito</li><li>Paneles de cada rol</li><li>Documentación del proyecto</li></ul></div>
+        <div class="body"><div class="ph">MS</div><h3>Mateo Saavedra</h3><p class="role">Backend y documentación</p><ul><li>Modelo de datos</li><li>Migraciones y reportes</li><li>Documentación del proyecto</li></ul></div>
       </article>
       <article class="carnet" data-r style="--d:3; --c:var(--stamp); --rot:-.6deg">
         <div class="band"><span>Equipo</span><span>03</span></div>
-        <div class="body"><div class="ph">RR</div><h3>Rodrigo Roquero</h3><p class="role">Base de datos</p><ul><li>Modelo de datos</li><li>Migraciones y reportes</li><li>Ayudante de documentación</li></ul></div>
+        <div class="body"><div class="ph">RR</div><h3>Rodrigo Roquero</h3><p class="role">Frontend</p><ul><li>Catálogo y carrito</li><li>Paneles de cada rol</li><li>Ayudante de documentación</li></ul></div>
       </article>
       <article class="carnet" data-r style="--d:4; --c:var(--oak); --rot:1.2deg">
         <div class="band"><span>Equipo</span><span>04</span></div>
@@ -675,10 +706,10 @@ body::after {
       <div data-r style="--d:2">
         <ol class="lu-steps" id="luSteps">
           <li><button type="button" data-i="0"><time>Martes 16:40</time><span><b>Busca el libro</b><span class="d">Entra al catálogo desde su casa. Para buscar no hace falta iniciar sesión.</span></span></button></li>
-          <li><button type="button" data-i="1"><time>16:40</time><span><b>Ve que está prestado</b><span class="d">El sistema le muestra que no queda ningún ejemplar libre.</span></span></button></li>
-          <li><button type="button" data-i="2"><time>16:41</time><span><b>Lo reserva</b><span class="d">Inicia sesión y toca Reservar. Queda primera en la fila, a su nombre.</span></span></button></li>
-          <li><button type="button" data-i="3"><time>Miércoles 10:15</time><span><b>El libro vuelve</b><span class="d">Cuando lo devuelven, la reserva pasa sola a Lucía. Tiene 2 días para retirarlo.</span></span></button></li>
-          <li><button type="button" data-i="4"><time>Miércoles 17:00</time><span><b>Se lo lleva</b><span class="d">La bibliotecaria registra el préstamo, con 14 días de plazo.</span></span></button></li>
+          <li><button type="button" data-i="1"><time>16:40</time><span><b>Ve que hay uno libre</b><span class="d">Sin ir a la estantería, el sistema le muestra que queda un ejemplar disponible.</span></span></button></li>
+          <li><button type="button" data-i="2"><time>16:41</time><span><b>Lo reserva</b><span class="d">Inicia sesión y toca Reservar. Esa copia queda apartada a su nombre y nadie más se la puede llevar.</span></span></button></li>
+          <li><button type="button" data-i="3"><time>Miércoles 10:15</time><span><b>Lo tiene guardado</b><span class="d">En Mis reservas ve que la copia la espera hasta el jueves: tiene 2 días para retirarla.</span></span></button></li>
+          <li><button type="button" data-i="4"><time>Miércoles 17:00</time><span><b>Se lo lleva</b><span class="d">La bibliotecaria confirma la reserva y registra el préstamo, con 14 días de plazo.</span></span></button></li>
         </ol>
         <div class="lu-ctrl"><button type="button" id="luPlay">↺ Repetir</button><span class="lu-prog"><span id="luProg"></span></span></div>
       </div>
@@ -691,14 +722,14 @@ body::after {
             <div>
               <h4 id="luTitle">Cien años de soledad</h4>
               <p class="au">Gabriel García Márquez · 1 ejemplar</p>
-              <span class="lu-badge b1">Prestado · 0 disponibles</span><span class="lu-badge b3">Listo para retirar · 2 días</span><span class="lu-badge b4">Prestado a Lucía · 14 días</span>
+              <span class="lu-badge b1">Disponible · 1 libre</span><span class="lu-badge b3">Apartado para Lucía · 2 días</span><span class="lu-badge b4">Prestado a Lucía · 14 días</span>
               <div><span class="lu-btn" id="luBtn"><span class="a">Reservar</span><span class="b">Reservado ✓</span></span></div>
             </div>
             <span class="stamp lu-st r">Reserva</span>
             <span class="stamp lu-st p red">Prestado</span>
           </div>
-          <div class="lu-acct"><b>Mis reservas</b><span>Cien años de soledad</span><span class="ok">Lista para retirar · hasta el viernes</span></div>
-          <div class="lu-toast t2">Reserva creada · Sos la 1.ª en la fila</div>
+          <div class="lu-acct"><b>Mis reservas</b><span>Cien años de soledad</span><span class="ok">Lista para retirar · hasta el jueves</span></div>
+          <div class="lu-toast t2">Reserva creada · Retiralo antes del jueves</div>
           <div class="lu-toast t4">Préstamo registrado · Vence en 14 días</div>
           <svg class="lu-cur" id="luCur" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2 L4 19 L8.5 14.8 L11.6 21.6 L14.6 20.2 L11.6 13.6 L18 13.6 Z" fill="#1d1b18" stroke="#fcfbf7" stroke-width="1.4" stroke-linejoin="round"/></svg>
         </div>
@@ -737,7 +768,7 @@ body::after {
       </div>
       <div class="row" data-r>
         <div class="topic">Socios</div>
-        <div class="before">Carnets vencidos y datos duplicados.<span class="stamp drop red">Resuelto</span></div>
+        <div class="before">Mal registro y/o datos duplicados.<span class="stamp drop red">Resuelto</span></div>
         <div class="after">La cédula es el <b>código de barras del carnet</b>, que vale hasta fin de año. Cada socio está activo, suspendido o inactivo, y la cédula no se repite.</div>
       </div>
       <div class="row" data-r>
@@ -750,8 +781,8 @@ body::after {
 </section>
 
 <!-- 5. Escena: tarjeta de préstamo -->
-<section class="scrolly" id="reservas" aria-label="Fila de reservas">
-  <div class="stop" style="top:0" data-stop data-label="Fila de reservas" data-call="025.6|RES"></div>
+<section class="scrolly" id="reservas" aria-label="La reserva se maneja sola">
+  <div class="stop" style="top:0" data-stop data-label="Reservas" data-call="025.6|RES"></div>
   <div class="stop" style="top:100vh" data-stop></div>
   <div class="stop" style="top:200vh" data-stop></div>
   <div class="stop" style="top:300vh" data-stop></div>
@@ -759,12 +790,12 @@ body::after {
     <div class="wrap scene">
       <div>
         <div class="label" style="margin-bottom:22px">025.6<br>RES</div>
-        <h2 class="h2">La fila de espera se maneja sola</h2>
+        <h2 class="h2">La reserva se maneja sola</h2>
         <div class="steps" id="steps">
-          <div class="step on"><p class="n">1 / 4</p><h3>El libro está prestado</h3><p>Ana lo tiene en su casa. Bruno y Carla lo reservaron y quedan en fila, en el orden en que lo pidieron.</p></div>
-          <div class="step"><p class="n">2 / 4</p><h3>Ana lo devuelve</h3><p>La copia no vuelve al estante: queda apartada para el primero de la fila. Bruno tiene 2 días para retirarla.</p></div>
-          <div class="step"><p class="n">3 / 4</p><h3>Bruno cancela</h3><p>El sistema le pasa la reserva directo a Carla, la siguiente en la fila, con un nuevo plazo de 2 días.</p></div>
-          <div class="step"><p class="n">4 / 4</p><h3>Carla la retira</h3><p>Se registra el préstamo con vencimiento a 14 días y la reserva queda confirmada. Nadie tuvo que acordarse de nada.</p></div>
+          <div class="step on"><p class="n">1 / 4</p><h3>Lo tiene Ana</h3><p>La única copia está prestada. En el catálogo figura sin copias libres, así que nadie puede reservarla ni se la prometen a nadie.</p></div>
+          <div class="step"><p class="n">2 / 4</p><h3>Ana lo devuelve y Bruno lo reserva</h3><p>Vuelve a figurar disponible. Bruno lo reserva y la copia queda apartada a su nombre: tiene 2 días para retirarla.</p></div>
+          <div class="step"><p class="n">3 / 4</p><h3>Bruno cancela</h3><p>La copia se libera sola. Carla, que también lo buscaba, lo ve disponible y lo reserva, con sus propios 2 días.</p></div>
+          <div class="step"><p class="n">4 / 4</p><h3>Carla lo retira</h3><p>Se registra el préstamo con vencimiento a 14 días y la reserva queda confirmada. Nadie tuvo que acordarse de nada.</p></div>
         </div>
         <div class="counter" id="counter"><span class="on">1</span><span>2</span><span>3</span><span>4</span></div>
         <div class="sprog" aria-hidden="true"><span id="sprog"></span></div>
@@ -786,10 +817,10 @@ body::after {
             </tbody>
           </table>
           <div class="wait">
-            <p class="wl">En espera</p>
+            <p class="wl">Reservas</p>
             <ol>
-              <li id="wB"><span class="who">1. Bruno · reservó 02 NOV</span><span class="st" id="wBs"></span></li>
-              <li id="wC"><span class="who"><span id="nC">2.</span> Carla · reservó 04 NOV</span><span class="st" id="wCs"></span></li>
+              <li id="wB" class="pre"><span class="who">Bruno · reservó 09 NOV</span><span class="st" id="wBs"></span></li>
+              <li id="wC" class="pre"><span class="who"><span id="nC"></span>Carla · reservó 10 NOV</span><span class="st" id="wCs"></span></li>
             </ol>
           </div>
         </div>
@@ -818,7 +849,7 @@ body::after {
         <text class="edge-lbl" x="242" y="34">alguien lo reserva</text>
         <text class="edge-lbl" x="668" y="34">lo retira</text>
         <text class="edge-lbl" x="430" y="210">préstamo directo</text>
-        <text class="edge-lbl" x="320" y="292">lo devuelve (o pasa al siguiente en la fila)</text>
+        <text class="edge-lbl" x="450" y="270"> lo devuelve</text>
         <g class="st" id="s1"><rect x="40" y="100" width="180" height="56"/><text x="130" y="134" text-anchor="middle">DISPONIBLE</text></g>
         <g class="st" id="s2"><rect x="410" y="100" width="190" height="56"/><text x="505" y="134" text-anchor="middle">RESERVADO</text></g>
         <g class="st" id="s3"><rect x="780" y="100" width="180" height="56"/><text x="870" y="134" text-anchor="middle">PRESTADO</text></g>
@@ -944,7 +975,7 @@ Ciencia   <span class="bar">██████</span> 20</pre>
         <div class="topic">BiblioTech<small>Nuestro proyecto · 2026</small></div>
         <div>Hecho a medida.</div>
         <div>La Biblioteca Central y sus socios.</div>
-        <div>Sus propias reglas: carnet con cédula, centros educativos verificados, multas con pagos parciales y la fila de reservas automática. Se levanta con Docker en cualquier computadora.</div>
+        <div>Sus propias reglas: carnet con cédula, centros educativos verificados, multas con pagos parciales y reservas con 2 días para retirar. Se levanta con Docker en cualquier computadora.</div>
       </div>
     </div>
     <p class="cmp-foot" data-r>Son sistemas excelentes, pero pensados para bibliotecas grandes con un equipo técnico detrás. <b>BiblioTech hace menos cosas, y son justo las que necesita la Biblioteca Central.</b></p>
@@ -966,9 +997,9 @@ Ciencia   <span class="bar">██████</span> 20</pre>
         <div class="top"><b>Guion de la demo</b><span>tocá cada paso</span></div>
         <ol>
           <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Buscar un libro en el catálogo, sin iniciar sesión.</span></button></li>
-          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Entrar como socio y reservar un libro prestado.</span></button></li>
-          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Entrar como bibliotecario y registrar la devolución.</span></button></li>
-          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Ver que la reserva pasó sola al socio.</span></button></li>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Entrar como socio y reservar un libro con una copia libre.</span></button></li>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Entrar como bibliotecario, confirmar la reserva y registrar el préstamo.</span></button></li>
+          <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Registrar la devolución y ver que la copia vuelve a estar disponible.</span></button></li>
           <li><button type="button" aria-pressed="false"><span class="box"></span><span class="t">Mostrar una multa y los reportes como administrador.</span></button></li>
         </ol>
       </div>
@@ -1022,8 +1053,8 @@ Content-Type: application/json
 
 {
   "id": <span class="cn">58</span>,
-  "estado": <span class="cs">"pendiente"</span>,
-  "fecha_limite": <span class="cn">null</span>,
+  "estado": <span class="cs">"pendiente_retiro"</span>,
+  "fecha_limite": <span class="cs">"2026-11-12"</span>,
   "libro": { "titulo": <span class="cs">"Cien años de soledad"</span> }
 }</pre>
         <p class="code-h">Y en ReservaController.php</p>
@@ -1080,6 +1111,49 @@ Content-Type: application/json
       <div data-r style="--d:2"><b>Próximo paso</b><strong>Límite de intentos</strong> al iniciar sesión, contra quien prueba contraseñas.</div>
       <div data-r style="--d:3"><b>Próximo paso</b><strong>Copias de seguridad</strong> automáticas de la base de datos.</div>
     </div>
+  </div>
+</section>
+
+<!-- Requerimientos -->
+<section class="sec" id="requerimientos" data-stop data-label="Requerimientos" data-call="025.1|REQ">
+  <div class="wrap">
+    <div class="head">
+      <div class="label" data-r>025.1<br>REQ</div>
+      <div>
+        <h2 class="h2" data-r style="--d:1">De dónde salió todo</h2>
+        <p class="lead" data-r style="--d:2">Antes de programar, ordenamos lo que nos pidió el cliente en cuatro pasos. Cada paso se arma con las piezas del anterior.</p>
+      </div>
+    </div>
+    <p class="req-key" data-r style="--d:2">De izquierda a derecha todo se vuelve más concreto: <b>empezamos con una charla con el cliente y terminamos con algo que se puede programar y probar.</b></p>
+    <ol class="req-flow">
+      <li data-r style="--d:2; --c:var(--ink)">
+        <span class="n">Paso 1</span>
+        <h3>Entrevistas</h3>
+        <p>Nos sentamos con el cliente, la Biblioteca Central, y le preguntamos cómo trabaja hoy y qué le falta. <b>De ahí sacamos prácticamente todos los requerimientos.</b></p>
+        <div class="ex"><div><b>Ejemplo</b>Hoy no saben si un libro está en la estantería hasta que alguien va a buscarlo.</div></div>
+      </li>
+      <li data-r style="--d:3; --c:var(--brand)">
+        <span class="n">Paso 2</span>
+        <h3>Requerimientos</h3>
+        <p>Los <b>funcionales</b> son lo que el sistema hace. Los <b>no funcionales</b> son cómo lo hace.</p>
+        <div class="mix"><span class="c-rf">Funcional</span><span class="c-rnf">No funcional</span></div>
+        <div class="ex"><div><b>Ejemplo</b><span class="c-rf">Funcional:</span> reservar un libro.<br><span class="c-rnf">No funcional:</span> que dos personas no se lleven la misma copia.</div></div>
+      </li>
+      <li data-r style="--d:4; --c:#2f7a43">
+        <span class="n">Paso 3</span>
+        <h3>Épicas</h3>
+        <p>Una épica es un <b>conjunto de requerimientos funcionales y no funcionales</b> que tratan del mismo tema.</p>
+        <div class="mix"><span class="c-rf">Funcionales</span><span class="c-rnf">No funcionales</span></div>
+        <div class="ex"><div><b>Ejemplo · Épica Reservas</b>Reservar, cancelar y ver mis reservas, de forma confiable y segura.</div></div>
+      </li>
+      <li data-r style="--d:5; --c:var(--stamp)">
+        <span class="n">Paso 4</span>
+        <h3>Historias de usuario</h3>
+        <p>Juntan <b>requerimientos funcionales, no funcionales, la épica y las reglas propias del local</b>, contado desde quien lo usa.</p>
+        <div class="mix"><span class="c-rf">Funcionales</span><span class="c-rnf">No funcionales</span><span class="c-ep">Épica</span><span class="c-rl">Reglas del local</span></div>
+        <div class="ex"><div><b>Ejemplo</b>“Como socio, quiero reservar un libro con una copia libre para retirarlo dentro de 2 días.”<br><span class="c-rl">Regla del local:</span> un socio particular tiene una sola reserva a la vez.</div></div>
+      </li>
+    </ol>
   </div>
 </section>
 
@@ -1252,6 +1326,7 @@ Content-Type: application/json
     copy.textContent = n === 3 ? 'Cumplida' : 'Reserva';
     copy.classList.toggle('on', n === 1 || n === 2);
     copy.classList.toggle('done', n === 3);
+    copy.classList.toggle('hide', n === 0);   // antes de que Bruno reserve no hay ficha
   }
   // la ficha salta en el lugar (cuando cambia de estado sin cambiar de dueño)
   function hopCopy(ms, fn) {
@@ -1293,9 +1368,9 @@ Content-Type: application/json
     big.classList.remove('hit'); sAna.classList.remove('hit');
     setBig(n === 1 || n === 2 ? 'Reservado' : 'Prestado', n === 1 || n === 2);
     sAna.hidden = n < 1;
+    wB.classList.toggle('pre', n < 1); wC.classList.toggle('pre', n < 2);
     wB.classList.toggle('x', n >= 2); wB.classList.toggle('gone', n >= 2);
     wBs.textContent = n >= 2 ? 'canceló' : n === 1 ? 'apartado hasta 11 NOV' : '';
-    nC.textContent = n >= 2 ? '1.' : '2.';
     wC.classList.toggle('x', n >= 3);
     wCs.textContent = n >= 3 ? 'retiró ✓' : n === 2 ? 'apartado hasta 12 NOV' : '';
     var vals = ['Carla', '10 NOV', '24 NOV'];
@@ -1307,8 +1382,9 @@ Content-Type: application/json
 
   // cada transición entre pasos, en los dos sentidos; devuelve cuánto dura (ms, sin el factor k)
   var go = {
-    '0>1': function () {   // Ana devuelve: se sella la fecha, queda reservado y se anota a Bruno
+    '0>1': function () {   // Ana devuelve: se sella la fecha, Bruno reserva y queda apartado
       stampAt($('tdAna'), false, 150, function () { sAna.hidden = false; hit(sAna); });
+      later(750, function () { wB.classList.remove('pre'); });
       hopCopy(900, function () { setTicket(1); });   // la reserva de Bruno se activa
       type(wBs, 'apartado hasta 11 NOV', 1000);
       stampAt(big, true, 1350, function () { setBig('Reservado', true); hit(big); });
@@ -1317,25 +1393,27 @@ Content-Type: application/json
     '1>0': function () {   // se despega la fecha, se borra el aviso y vuelve a "prestado"
       erase(wBs, 100);
       hopCopy(200, function () { setTicket(0); });
+      later(450, function () { wB.classList.add('pre'); });
       later(250, function () { peel(sAna, function () { sAna.hidden = true; }); });
       stampAt(big, false, 650, function () { setBig('Prestado', false); hit(big); });
       return 1900;
     },
-    '1>2': function () {   // Bruno cancela: se tacha, se va y Carla sube
+    '1>2': function () {   // Bruno cancela: se tacha y se va; Carla reserva la copia que quedó libre
       erase(wBs, 50, function () { type(wBs, 'canceló', 0); });
       later(650, function () { wB.classList.add('x'); });
+      later(1000, function () { wC.classList.remove('pre'); });
       later(1250, function () { wB.classList.add('gone'); });
-      // la copia salta a Carla mientras ella sube al primer lugar
+      // la copia salta a Carla mientras su renglón sube
       flyCopy(1250, function () { var p = holder(2); return { x: p.x, y: p.y - wB.offsetHeight }; });
-      later(1600, function () { bumpC('1.'); });
       type(wCs, 'apartado hasta 12 NOV', 1900);
       return 2900;
     },
-    '2>1': function () {   // Bruno vuelve a la fila y Carla baja al segundo lugar
+    '2>1': function () {   // se deshace: Carla desaparece y la copia vuelve a Bruno
       erase(wCs, 50);
+      later(500, function () { wC.classList.add('pre'); });
       // Bruno vuelve al lugar que ocupa ahora Carla: la copia vuelve a él
       flyCopy(650, function () { return holder(2); });
-      later(650, function () { bumpC('2.'); wB.classList.remove('gone'); });
+      later(650, function () { wB.classList.remove('gone'); });
       later(1250, function () { wB.classList.remove('x'); });
       erase(wBs, 1350, function () { type(wBs, 'apartado hasta 11 NOV', 0); });
       return 2700;
@@ -1448,7 +1526,7 @@ Content-Type: application/json
       q.textContent = ''; q.classList.add('typing');
       if (reduce) { q.textContent = word; q.classList.remove('typing'); if (done) done(); return; }
       var i = 0;
-      (function t() { q.textContent = word.slice(0, ++i); if (i < word.length) later(t, 70 + Math.random() * 60); else { later(function () { q.classList.remove('typing'); if (done) done(); }, 300); } })();
+      (function t() { q.textContent = word.slice(0, ++i); if (i < word.length) later(t, 110 + Math.random() * 70); else { later(function () { q.classList.remove('typing'); if (done) done(); }, 500); } })();
     }
     function show(n) {
       s = n;
@@ -1465,12 +1543,12 @@ Content-Type: application/json
       clear(); playing = true;
       show(0);
       type(function () {
-        later(function () { show(1); }, 500);
-        later(function () { aim(btn, 26, 14); }, 2300);
-        later(function () { btn.classList.add('press'); }, 3300);
-        later(function () { btn.classList.remove('press'); show(2); }, 3480);
-        later(function () { show(3); }, 6600);
-        later(function () { show(4); playing = false; }, 9800);
+        later(function () { show(1); }, 900);
+        later(function () { aim(btn, 26, 14); }, 3800);
+        later(function () { btn.classList.add('press'); }, 5300);
+        later(function () { btn.classList.remove('press'); show(2); }, 5550);
+        later(function () { show(3); }, 10500);
+        later(function () { show(4); playing = false; }, 15500);
       });
     }
     btns.forEach(function (b, i) {

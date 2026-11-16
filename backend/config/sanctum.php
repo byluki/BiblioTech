@@ -9,7 +9,7 @@ return [
 
     'guard' => ['web'],
 
-    'expiration' => null,
+    'expiration' => (int) env('SANCTUM_EXPIRATION', 480), // minutos (8 h)
 
     'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 

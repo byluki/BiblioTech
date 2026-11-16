@@ -85,6 +85,7 @@
             <li><hr class="dropdown-divider"></li>
             <li><button type="button" class="dropdown-item" id="menu-usuario-cuenta"><i class="fa-solid fa-user me-2"></i>Mi cuenta</button></li>
             <li><button type="button" class="dropdown-item" id="menu-usuario-prestamos"><i class="fa-solid fa-book me-2"></i>Mis libros prestados</button></li>
+            <li><button type="button" class="dropdown-item" id="menu-usuario-multas"><i class="fa-solid fa-receipt me-2"></i>Mis multas</button></li>
             <li><button type="button" class="dropdown-item" id="menu-usuario-salir"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar sesión</button></li>
           </ul>
         </div>
@@ -616,7 +617,7 @@
                 <option value="Particular">Particular</option>
                 <option value="Centro educativo">Centro educativo</option>
               </select>
-              <div class="form-text">Los usuarios particulares (y los centros educativos que todavía no fueron verificados por un bibliotecario) pueden reservar varios libros, pero no más de un ejemplar del mismo. Un centro educativo ya verificado también puede reservar varios ejemplares del mismo libro.</div>
+              <div class="form-text">Los usuarios particulares (y los centros educativos que todavía no fueron verificados por un bibliotecario) solo pueden tener 1 reserva activa a la vez. Un centro educativo ya verificado puede reservar varios libros.</div>
             </div>
             <div class="mb-2">
               <label for="reservar-fecha" class="form-label">¿Para cuándo lo querés retirar?</label>
@@ -646,6 +647,28 @@
           <ul class="list-unstyled lista-reservas" id="lista-modal-prestamos"></ul>
           <div id="estado-vacio-modal-prestamos" class="text-center text-muted py-4 d-none">
             <p class="mb-0">No tenés libros prestados en este momento.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: mis multas -->
+  <div class="modal fade" id="modal-mis-multas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-receipt me-2"></i>Mis multas</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="multas-total d-none" id="mis-multas-total"></div>
+          <ul class="list-unstyled lista-reservas" id="lista-mis-multas"></ul>
+          <div id="estado-vacio-mis-multas" class="text-center text-muted py-4 d-none">
+            <p class="mb-0">No tenés multas. ¡Bien ahí!</p>
           </div>
         </div>
         <div class="modal-footer">
@@ -766,7 +789,7 @@
               </label>
             </div>
             <p class="mb-0 small text-muted">
-              Tu cuenta se crea como usuario particular (varios libros, pero un solo ejemplar de cada uno). Si pertenecés a un
+              Tu cuenta se crea como usuario particular (1 reserva activa a la vez). Si pertenecés a un
               centro educativo, un bibliotecario puede verificarlo desde tu perfil para que puedas
               reservar varios libros a la vez.
             </p>
@@ -1088,115 +1111,19 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body texto-legal">
-        <h6>MARCO LEGAL</h6>
-
-        <h6>Términos y Condiciones</h6>
-
-        <h6>Objeto</h6>
-        <p>Los presentes Términos y Condiciones establecen las normas para el uso de los servicios de la biblioteca, incluyendo el registro de socios, préstamos, devoluciones, renovaciones y reservas de ejemplares.</p>
-        <p>Al registrarse como socio y utilizar los servicios de la biblioteca, el usuario acepta cumplir con estas condiciones y con las normas establecidas por la institución.</p>
-
-        <h6>Registro de socios</h6>
-        <p>Para utilizar los servicios de préstamo y reserva, el usuario deberá estar registrado como socio de la biblioteca y proporcionar los datos necesarios para su identificación y gestión de los servicios.</p>
-        <p>Cada socio es responsable de mantener actualizados sus datos y de utilizar correctamente su cuenta.</p>
-
-        <h6>Préstamos</h6>
-        <p>Los préstamos permiten a los socios retirar ejemplares de la biblioteca durante un período determinado.</p>
-        <p>Se establecen las siguientes reglas:</p>
-        <p>- Un socio suspendido no puede solicitar ni realizar préstamos mientras dure la suspensión.</p>
-        <p>- Un ejemplar solo puede tener un préstamo activo a la vez.</p>
-        <p>- El socio deberá devolver el ejemplar dentro del plazo establecido.</p>
-        <p>- El socio es responsable de los ejemplares que tenga registrados a su nombre durante el período del préstamo.</p>
-        <p>- La biblioteca podrá establecer límites sobre la cantidad de ejemplares que un socio puede tener prestados simultáneamente.</p>
-
-        <h6>Renovaciones</h6>
-        <p>Los préstamos podrán renovarse cuando las condiciones de la biblioteca lo permitan.</p>
-        <p>No será posible renovar un préstamo cuando:</p>
-        <p>- El ejemplar tenga una reserva pendiente realizada por otro socio.</p>
-        <p>- El socio se encuentre suspendido.</p>
-        <p>- Se haya alcanzado el límite de renovaciones establecido por la biblioteca.</p>
-        <p>La renovación estará sujeta a la disponibilidad del ejemplar y a las condiciones vigentes.</p>
-
-        <h6>Reservas</h6>
-        <p>Los socios podrán realizar reservas sobre ejemplares que se encuentren disponibles para este servicio.</p>
-        <p>Se establecen las siguientes condiciones:</p>
-        <p>- Un socio no puede reservar el mismo libro más de una vez simultáneamente.</p>
-        <p>- Una reserva será válida durante el período establecido por la biblioteca.</p>
-        <p>- Una vez que el ejemplar sea asignado al socio que realizó la reserva, este deberá retirarlo dentro del plazo establecido.</p>
-        <p>- La biblioteca podrá cancelar una reserva cuando haya vencido el plazo para retirarla o cuando se detecte una reserva duplicada.</p>
-
-        <h6>Suspensiones</h6>
-        <p>La biblioteca podrá suspender temporalmente a un socio cuando incumpla las normas establecidas, por ejemplo, por retrasos reiterados en las devoluciones o por otras situaciones previstas en el reglamento interno.</p>
-        <p>Mientras dure la suspensión, el socio no podrá realizar nuevos préstamos.</p>
-        <p>La suspensión no implica necesariamente la eliminación de la cuenta ni de los datos del socio.</p>
-
-        <h6>Responsabilidades del usuario</h6>
-        <p>El usuario se compromete a:</p>
-        <p>- Proporcionar información correcta al registrarse.</p>
-        <p>- Respetar los plazos de devolución.</p>
-        <p>- Cuidar los ejemplares prestados.</p>
-        <p>- No utilizar la cuenta de otro socio.</p>
-        <p>- Respetar las normas de préstamos, renovaciones y reservas.</p>
-        <p>- Informar a la biblioteca sobre cualquier inconveniente relacionado con su cuenta o con los ejemplares recibidos.</p>
-
-        <h6>Modificaciones</h6>
-        <p>La biblioteca podrá modificar estos Términos y Condiciones cuando sea necesario para actualizar sus servicios, procedimientos o normas internas.</p>
-        <p>Los cambios serán comunicados a los usuarios cuando corresponda.</p>
-
-        <h6>Política de Privacidad</h6>
-
-        <h6>Finalidad</h6>
-        <p>La biblioteca se compromete a proteger la privacidad de sus socios y a utilizar sus datos personales únicamente para fines relacionados con la prestación y gestión de sus servicios.</p>
-
-        <h6>Datos recopilados</h6>
-        <p>Para gestionar el funcionamiento de la biblioteca podrán recopilarse datos como:</p>
-        <p>- Nombre y apellido.</p>
-        <p>- Datos de contacto.</p>
-        <p>- Información necesaria para identificar al socio.</p>
-        <p>- Historial de préstamos.</p>
-        <p>- Reservas realizadas.</p>
-        <p>- Renovaciones.</p>
-        <p>- Estado de la cuenta, incluyendo posibles suspensiones.</p>
-        <p>La información recopilada deberá limitarse a los datos necesarios para el funcionamiento del servicio.</p>
-
-        <h6>Uso de los datos</h6>
-        <p>Los datos personales podrán utilizarse para:</p>
-        <p>- Registrar y administrar socios.</p>
-        <p>- Gestionar préstamos y devoluciones.</p>
-        <p>- Gestionar reservas y renovaciones.</p>
-        <p>- Informar sobre vencimientos o disponibilidad de ejemplares.</p>
-        <p>- Controlar el estado de las cuentas.</p>
-        <p>- Aplicar las normas de la biblioteca.</p>
-        <p>- Mejorar la organización y funcionamiento del servicio.</p>
-        <p>Los datos no deberán utilizarse para fines ajenos a los servicios de la biblioteca sin la correspondiente autorización o base legal.</p>
-
-        <h6>Protección de la información</h6>
-        <p>La biblioteca deberá adoptar medidas razonables para proteger los datos personales frente al acceso, modificación, pérdida o divulgación no autorizada.</p>
-        <p>El acceso a la información de los socios estará limitado a las personas que necesiten utilizarla para cumplir funciones relacionadas con la administración de la biblioteca.</p>
-
-        <h6>Confidencialidad</h6>
-        <p>La información relacionada con los préstamos, reservas y actividad de los socios será tratada de forma confidencial.</p>
-        <p>La biblioteca no deberá divulgar información personal de sus socios a terceros, salvo que exista una obligación legal, una autorización válida o una situación que lo permita conforme a la normativa aplicable.</p>
-
-        <h6>Conservación de los datos</h6>
-        <p>Los datos personales serán conservados durante el tiempo necesario para cumplir con las finalidades para las cuales fueron recopilados y con las obligaciones legales correspondientes.</p>
-        <p>Cuando los datos ya no sean necesarios, podrán ser eliminados o tratados de acuerdo con las normas aplicables.</p>
-
-        <h6>Derechos de los usuarios</h6>
-        <p>Los socios podrán solicitar información sobre los datos personales que la biblioteca mantiene sobre ellos y, cuando corresponda, solicitar su actualización, corrección o eliminación conforme a la normativa vigente.</p>
-
-        <h6>Aceptación</h6>
-        <p>Al registrarse y utilizar los servicios de la biblioteca, el usuario declara conocer y aceptar los presentes Términos y Condiciones y la Política de Privacidad, sin perjuicio de los derechos que le correspondan conforme a la legislación vigente.</p>
-        <h6>Legislación aplicable</h6>
-        <p>El tratamiento de los datos personales y el funcionamiento de la biblioteca deberán ajustarse a la normativa vigente aplicable, incluyendo las disposiciones uruguayas relativas a la protección de datos personales y privacidad.</p>
-        
-        <h6>Legislación aplicable</h6>
-        <p>El tratamiento de los datos personales y el funcionamiento de la biblioteca deberán ajustarse a la normativa vigente aplicable, en particular a:</p>
-        <p>- Ley N° 18.331 de Protección de Datos Personales y Acción de Habeas Data.</p>
-        <p>- Decreto N° 414/009, reglamentario de la Ley N° 18.331.</p>
-        <p>- Artículos 37 a 40 de la Ley N° 19.670, que modificaron la Ley N° 18.331 (ámbito de aplicación, comunicación de vulneraciones de seguridad, delegado de protección de datos y responsabilidad proactiva).</p>
-        <p>- Decreto N° 64/020, reglamentario de los artículos 37 a 40 de la Ley N° 19.670.</p>
-        <p class="mb-0">y demás disposiciones uruguayas relativas a la protección de datos personales y privacidad.</p>
+          <h6>1. Objeto del servicio</h6>
+          <p>Este sitio permite a los socios de la Biblioteca Central de San José consultar el catálogo, reservar libros y ver sus préstamos. Las reservas se retiran y las multas se pagan en el local de la biblioteca.</p>
+          <h6>2. Uso permitido</h6>
+          <p>La cuenta es personal. No se permite compartirla, usar datos de otra persona, intentar acceder a información de otros socios ni afectar el funcionamiento del sistema.</p>
+          <h6>3. Responsabilidades del socio</h6>
+          <p>El socio es responsable de que sus datos sean correctos y de devolver los libros en fecha y en buen estado. Los atrasos, pérdidas o daños pueden generar multas.</p>
+          <h6>4. Suspensión de cuentas</h6>
+          <p>La biblioteca puede suspender una cuenta ante incumplimientos de estos términos o multas impagas.</p>
+          <h6>5. Cambios en los términos</h6>
+          <p>Estos términos pueden actualizarse. Los cambios se informan en este sitio.</p>
+          <h6>6. Política de privacidad (Ley N.º 18.331)</h6>
+          <p>En cumplimiento de la Ley de Protección de Datos Personales N.º 18.331 de la República Oriental del Uruguay, se informa que los datos recolectados (nombre, apellido, cédula, teléfono, dirección y correo electrónico) se usan únicamente para gestionar el carnet de socio, las reservas, los préstamos y las multas de la biblioteca. El responsable de los datos es la Biblioteca Central de San José. Los datos se conservan mientras la cuenta esté activa. Las contraseñas se guardan cifradas y el acceso a los datos está limitado al personal de la biblioteca.</p>
+          <p class="mb-0">Podés ejercer tus derechos de acceso, rectificación, actualización, inclusión y supresión pidiéndolo en el mostrador de la biblioteca o desde "Mi cuenta".</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-brand" data-bs-dismiss="modal">Cerrar</button>

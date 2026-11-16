@@ -31,7 +31,7 @@ class PrestamoController extends Controller
         }
 
         if ($request->boolean('vencidos')) {
-            $query->where('estado', 'activo')->where('fecha_vencimiento', '<', now());
+            $query->atrasados();
         }
 
         return $query->orderByDesc('fecha_prestamo')->paginate($request->integer('per_page', 20));
@@ -112,12 +112,16 @@ class PrestamoController extends Controller
             'observaciones.max' => 'La observación puede tener hasta 500 caracteres.',
         ]);
 
-        if ($prestamo->estado !== 'activo') {
-            return response()->json(['message' => 'El préstamo no está activo.'], 422);
-        }
-
         return DB::transaction(function () use ($request, $prestamo, $data) {
-            $vencido = $prestamo->fecha_vencimiento->isPast();
+            // bloqueo: si dos personas registran la misma devolución a la vez,
+            // la segunda ve que ya no está en curso
+            $prestamo = Prestamo::lockForUpdate()->findOrFail($prestamo->id);
+
+            if (! in_array($prestamo->estado, ['activo', 'vencido'], true)) {
+                return response()->json(['message' => 'El préstamo no está activo.'], 422);
+            }
+
+            $vencido = $prestamo->estaVencido();
 
             $prestamo->update([
                 'estado' => 'devuelto',
@@ -125,12 +129,14 @@ class PrestamoController extends Controller
                 'observaciones' => isset($data['observaciones']) ? trim($data['observaciones']) ?: null : null,
             ]);
 
-            $ejemplar = $prestamo->ejemplar;
+            $ejemplar = Ejemplar::lockForUpdate()->findOrFail($prestamo->ejemplar_id);
 
             // si alguien esperaba el libro, la copia queda reservada para esa persona
             $reserva = Reserva::where('libro_id', $ejemplar->libro_id)
                 ->where('estado', 'pendiente')
                 ->oldest('fecha_reserva')
+                ->oldest('id')
+                ->lockForUpdate()
                 ->first();
 
             if ($reserva) {
@@ -168,7 +174,7 @@ class PrestamoController extends Controller
         }
 
         // Regla: no debe estar vencido.
-        if ($prestamo->fecha_vencimiento->isPast()) {
+        if ($prestamo->estaVencido()) {
             return response()->json(['message' => 'No se puede renovar un préstamo vencido.'], 422);
         }
 

@@ -71,7 +71,7 @@ class Socio extends Model
 
     public function tieneAtrasos(): bool
     {
-        return $this->prestamos()->where('estado', 'vencido')->exists();
+        return $this->prestamos()->atrasados()->exists();
     }
 
     // centro educativo = tipo centro_educativo y verificado por un bibliotecario

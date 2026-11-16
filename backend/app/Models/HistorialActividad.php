@@ -16,6 +16,13 @@ class HistorialActividad extends Model
         'fecha' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        // es un registro de auditoría: solo se agregan filas
+        static::updating(fn () => throw new \LogicException('El historial de actividad no se puede modificar.'));
+        static::deleting(fn () => throw new \LogicException('El historial de actividad no se puede borrar.'));
+    }
+
     public function usuario()
     {
         return $this->belongsTo(Usuario::class);
